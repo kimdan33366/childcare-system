@@ -1,0 +1,71 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+html,
+body,
+#root{
+    width:100%;
+    height:100%;
+}
+.help-dashboard{
+    width:100%;
+    height:100vh;
+    display:grid;
+    grid-template-columns:260px 1fr;
+    overflow:hidden;
+}
+
+
+.help-container {
+  flex: 1;
+  padding: 15px;
+}
+
+.help-card {
+  background: #cde5f3;
+  border: 2px solid #555;
+  border-radius: 12px;
+  padding: 20px;
+  height: calc(100vh - 30px);
+  overflow-y: auto;
+}
+
+.help-card h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 32px;
+}
+
+.help-card h2 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: #222;
+}
+
+.help-card p {
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.help-card ul {
+  padding-left: 22px;
+}
+
+.help-card li {
+  margin-bottom: 6px;
+}
+
+.help-card::-webkit-scrollbar {
+  width: 8px;
+}
+
+.help-card::-webkit-scrollbar-thumb {
+  background: #1c2b5a;
+  border-radius: 10px;
+}
+
+

@@ -1,0 +1,479 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+html,
+body,
+#root {
+    width: 100%;
+    min-height: 100%;
+}
+
+body {
+    background: #B5B5B5;
+}
+
+
+.login-page {
+    width: 100%;
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 40px;
+}
+
+.login-container {
+    width: 1110px;
+    height: 575px;
+
+    background: #ffffff;
+
+    border: 4px solid #6AA8FF;
+
+    border-radius: 28px;
+
+    overflow: hidden;
+
+    display: grid;
+
+    /* LOGO LEFT - LOGIN RIGHT */
+    grid-template-columns: 48% 52%;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+}
+
+.login-left {
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    background: #ffffff;
+
+    padding: 30px;
+}
+
+
+.left-logo {
+    width: 440px;
+    max-width: 95%;
+
+    height: auto;
+
+    object-fit: contain;
+
+    transition: .3s;
+}
+
+.left-logo:hover {
+    transform: scale(1.04);
+}
+
+.login-right {
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    background: #ffffff;
+
+    padding: 50px 60px;
+}
+
+.login-content {
+    width: 100%;
+    max-width: 420px;
+}
+
+.brand {
+    margin-bottom: 35px;
+}
+
+.brand h1 {
+    font-size: 48px;
+
+    color: #5E93F5;
+
+    font-weight: 700;
+
+    line-height: 1;
+
+    text-transform: lowercase;
+}
+/* ================= OTP POPUP ================= */
+
+.otp-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.55);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 999;
+}
+
+.otp-popup {
+  position: relative;
+
+  width: 400px;
+  max-width: 90%;
+
+  background: white;
+  border-radius: 12px;
+
+  padding: 35px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+
+  text-align: center;
+}
+
+.otp-popup h2 {
+  margin-bottom: 10px;
+}
+
+.otp-popup p {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 25px;
+}
+
+.otp-popup form {
+  text-align: left;
+}
+
+.otp-popup label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.otp-popup input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 18px;
+}
+
+.popup-close {
+  position: absolute;
+
+  top: 12px;
+  right: 15px;
+
+  border: none;
+  background: none;
+
+  font-size: 28px;
+  cursor: pointer;
+
+  color: #777;
+}
+
+.popup-close:hover {
+  color: #000;
+}
+
+.resend-otp {
+  margin-top: 18px;
+  font-size: 13px;
+  color: #777;
+}
+
+.resend-otp span {
+  cursor: pointer;
+  font-weight: bold;
+}
+.forgot-description {
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+  line-height: 1.5;
+  margin: 10px 0 25px;
+}
+
+.brand h2 {
+    font-size: 28px;
+
+    color: #333;
+
+    font-weight: 600;
+
+    margin-top: 10px;
+
+    text-align: center;
+}
+
+
+.login-content label {
+    display: block;
+
+    font-size: 16px;
+
+    font-weight: 600;
+
+    margin-bottom: 8px;
+
+    color: #333;
+}
+
+
+.login-content input[type="text"],
+.login-content input[type="password"] {
+
+    width: 100%;
+
+    height: 50px;
+
+    border: 2px solid #BDBDBD;
+
+    border-radius: 12px;
+
+    padding: 0 18px;
+
+    font-size: 15px;
+
+    outline: none;
+
+    margin-bottom: 18px;
+
+    transition: .3s;
+}
+
+.login-content input[type="text"]:focus,
+.login-content input[type="password"]:focus {
+
+    border-color: #5E93F5;
+
+    box-shadow: 0 0 8px rgba(94, 147, 245, .2);
+}
+
+
+
+.password-wrapper {
+    position: relative;
+
+    width: 100%;
+}
+
+.password-wrapper input {
+    padding-right: 55px !important;
+}
+
+.eye-icon {
+    position: absolute;
+
+    top: 15px;
+
+    right: 18px;
+
+    font-size: 19px;
+
+    color: #777;
+
+    cursor: pointer;
+}
+
+.eye-icon:hover {
+    color: #5E93F5;
+}
+
+
+.login-content select {
+
+    width: 100%;
+
+    height: 50px;
+
+    border: 2px solid #BDBDBD;
+
+    border-radius: 12px;
+
+    padding: 0 18px;
+
+    font-size: 15px;
+
+    color: #333;
+
+    background: white;
+
+    outline: none;
+
+    margin-bottom: 18px;
+
+    cursor: pointer;
+
+    transition: .3s;
+}
+
+.login-content select:focus {
+    border-color: #5E93F5;
+
+    box-shadow: 0 0 8px rgba(94, 147, 245, .2);
+}
+
+
+.account-message {
+    text-align: center;
+
+    margin-top: 5px;
+    margin-bottom: 20px;
+
+    font-size: 14px;
+
+    color: #666;
+}
+
+.account-message {
+    text-align: center;
+
+    margin-top: 5px;
+    margin-bottom: 20px;
+
+    font-size: 14px;
+
+    color: #666;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+}
+
+.account-message:hover {
+    color: #5E93F5;
+
+    transform: scale(1.03);
+}
+
+
+.login-btn {
+
+    width: 220px;
+
+    height: 55px;
+
+    margin: 20px auto 0;
+
+    display: block;
+
+    font-size: 22px;
+
+    font-weight: bold;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: white;
+
+    box-shadow: 0 8px 18px rgba(0, 0, 0, .18);
+
+    cursor: pointer;
+
+    transition: .25s;
+}
+
+.login-btn:hover {
+
+    transform: translateY(-2px);
+
+    background: #5E93F5;
+
+    color: white;
+}
+
+.login-btn:active {
+    transform: scale(.98);
+}
+
+@media (max-width: 960px) {
+
+    .login-container {
+
+        width: 90%;
+
+        height: auto;
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .login-left {
+
+        padding: 40px;
+    }
+
+    .left-logo {
+
+        width: 280px;
+    }
+
+    .login-right {
+
+        padding: 40px 35px;
+    }
+
+    .login-content {
+
+        max-width: 500px;
+    }
+
+    .brand h1 {
+        font-size: 45px;
+    }
+
+    .login-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+
+    .login-page {
+        padding: 15px;
+    }
+
+    .login-container {
+        width: 100%;
+
+        border-radius: 20px;
+    }
+
+    .login-left {
+        padding: 25px;
+    }
+
+    .left-logo {
+        width: 220px;
+    }
+
+    .login-right {
+        padding: 30px 20px;
+    }
+
+    .brand h1 {
+        font-size: 36px;
+    }
+
+    .options {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 12px;
+    }
+
+    .login-btn {
+        width: 100%;
+    }
+}

@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "../childcare-backend"
+		},
+		{
+			"path": "../childcare-frontend"
+		}
+	],
+	"settings": {}
+}

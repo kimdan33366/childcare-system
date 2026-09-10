@@ -1,0 +1,437 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+html,
+body,
+#root {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #f4f4f4;
+}
+
+.appointment-dashboard {
+    width: 100%;
+    height: 100vh;
+
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+
+    overflow: hidden;
+}
+
+.appointment-main-content {
+    width: 100%;
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    background: #f4f4f4;
+}
+
+
+.appointment-header {
+    width: 100%;
+    height: 70px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 25px;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #d0d0d0;
+
+    flex-shrink: 0;
+}
+
+.appointment-header h3 {
+    margin: 0;
+
+    font-size: 22px;
+    font-weight: 600;
+
+    color: #21457B;
+}
+
+
+.appointment-toolbar {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+
+    gap: 15px;
+
+    padding: 18px 25px;
+
+    flex-shrink: 0;
+}
+
+
+
+.appointment-search-box {
+    width: 450px;
+}
+
+.appointment-search-box input {
+    width: 100%;
+    height: 42px;
+
+    padding: 0 18px;
+
+    border: 1px solid #d0d0d0;
+    outline: none;
+
+    border-radius: 25px;
+
+    background: white;
+
+    font-size: 15px;
+}
+
+.appointment-search-box input:focus {
+    border-color: #72A7F8;
+}
+
+.appointment-filter {
+    width: 180px;
+    height: 42px;
+
+    padding: 0 15px;
+
+    border: 1px solid #d0d0d0;
+    outline: none;
+
+    border-radius: 25px;
+
+    background: white;
+
+    cursor: pointer;
+
+    font-size: 15px;
+}
+
+.appointment-button {
+    height: 42px;
+
+    padding: 0 20px;
+
+    border: none;
+    border-radius: 25px;
+
+    background: #21457B;
+
+    color: white;
+
+    cursor: pointer;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition: 0.3s;
+
+    margin-left: auto;
+}
+
+.appointment-button:hover {
+    background: #007d21;
+}
+
+.appointment-button:active {
+    background: #bcff02;
+    color: black;
+}
+
+.appointment-content-container {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 10px;
+
+    padding: 0 25px 25px;
+
+    overflow-y: auto;
+
+    flex: 1;
+}
+
+.appointment-content {
+    width: 100%;
+
+    min-height: 85px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 15px;
+
+    padding: 12px 15px;
+
+    border: 1px solid #c8c8c8;
+    border-radius: 10px;
+
+    background: white;
+
+    flex-shrink: 0;
+
+    transition: 0.2s;
+}
+
+.appointment-content:hover {
+    transform: scale(1.01);
+
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+}
+.appointment-content-icon {
+    font-size: 35px;
+
+    color: #287dcc;
+
+    flex-shrink: 0;
+}
+
+
+.appointment-content-text {
+    text-align: left;
+
+    flex: 1;
+}
+
+.appointment-content-text h3 {
+    margin: 0 0 4px;
+
+    font-size: 17px;
+
+    color: #21457B;
+}
+
+.appointment-content-text h6 {
+    margin: 2px 0;
+
+    font-size: 12px;
+
+    font-weight: normal;
+
+    color: #555;
+}
+
+.appointment-action-buttons {
+    display: flex;
+
+    gap: 10px;
+
+    flex-shrink: 0;
+}
+
+.appointment-edit-btn {
+    width: 40px;
+    height: 40px;
+
+    border-radius: 50%;
+
+    border: none;
+
+    background: #19f16b;
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+}
+
+.appointment-edit-btn:hover {
+    background: blue;
+    color: white;
+}
+
+.appointment-edit-btn:active {
+    background: yellow;
+    color: black;
+}
+
+.appointment-delete-btn {
+    width: 40px;
+    height: 40px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: #ff4d4d;
+
+    color: white;
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+}
+
+.appointment-delete-btn:hover {
+    background: #d62828;
+}
+
+.appointment-delete-btn:active {
+    background: #ffcc00;
+    color: black;
+}
+
+
+.appointment-popup-overlay {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: rgba(0, 0, 0, 0.5);
+
+    backdrop-filter: blur(5px);
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    z-index: 9999;
+}
+
+
+.appointment-popup {
+    background: rgb(121, 151, 242);
+
+    width: 450px;
+
+    padding: 25px;
+
+    border-radius: 10px;
+
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+
+    color: blue;
+}
+
+.appointment-popup h3 {
+    margin-bottom: 20px;
+
+    text-align: center;
+
+    color: white;
+}
+
+.appointment-popup h5 {
+    text-align: left;
+
+    margin: 10px 0 5px;
+
+    color: white;
+}
+
+.appointment-popup input {
+    width: 100%;
+
+    padding: 9px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    box-sizing: border-box;
+}
+
+
+.appointment-popup button {
+    margin-right: 10px;
+
+    cursor: pointer;
+}
+
+
+.appointment-popup .appointment-cancel {
+    margin-top: 20px;
+
+    width: 80px;
+    height: 40px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background-color: rgb(205, 200, 200);
+}
+
+.appointment-popup .appointment-cancel:hover {
+    background-color: rgb(0, 24, 132);
+
+    color: white;
+}
+
+.appointment-popup .set {
+    margin-top: 20px;
+
+    width: 70px;
+    height: 40px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background-color: rgb(77, 243, 91);
+}
+
+.appointment-popup .set:hover {
+    background-color: rgb(152, 255, 79);
+}
+
+@media (max-width: 1000px) {
+
+    .appointment-search-box {
+        width: 350px;
+    }
+
+    .appointment-button {
+        margin-left: auto;
+    }
+}
+
+@media (max-width: 750px) {
+
+    .appointment-dashboard {
+        grid-template-columns: 220px minmax(0, 1fr);
+    }
+
+    .appointment-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .appointment-search-box {
+        width: 100%;
+    }
+
+    .appointment-filter {
+        width: 150px;
+    }
+}

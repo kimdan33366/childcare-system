@@ -1,0 +1,260 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+html,
+body,
+#root {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #f4f4f4;
+}
+
+
+.dashboard {
+    width: 100%;
+    height: 100vh;
+
+    display: grid;
+    grid-template-columns: 260px 1fr;
+
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 260px;
+    height: 100vh;
+
+    background: #72A7F8;
+
+    display: flex;
+    flex-direction: column;
+
+    position: relative;
+    z-index: 10;
+
+    overflow: hidden;
+}
+
+.dashboard-content {
+    position: relative;
+
+    width: 100%;
+    height: 100vh;
+
+    overflow: hidden;
+
+    background: #f4f4f4;
+
+    padding: 18px 20px;
+}
+
+
+
+.dashboard-cards{
+    display:grid;
+    grid-template-columns:repeat(4, 250px);
+    justify-content:center;
+    gap:20px;
+}
+.dashboard-card{
+    background:#edf4ff;
+    border:1px solid #b8b8b8;
+    border-radius:12px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    padding:8px;
+    min-height:50px;
+    min-width:60px;
+
+   
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    
+  
+    position:relative;
+    z-index:1;
+}
+
+
+.dashboard-card:hover{
+    transform: scale(1.05);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+    z-index:2;
+}
+
+.dashboard-card small{
+    color:#555;
+    text-transform:uppercase;
+    font-size:11px;      
+}
+
+.dashboard-card h2{
+    margin-top:5px;
+    color:#21457B;
+    font-size:24px;      
+}
+
+.dashboard-card-top{
+    width:100%;
+    display:flex;
+    justify-content:flex-start;
+    margin-bottom:5px;
+}
+
+.dashboard-card-icon{
+    font-size:18px;       
+    color:black;
+}
+
+.overdue,
+.due,
+.vaccine{
+    color:black;
+}
+
+
+
+.dashboard-chart-row{
+    display:grid;
+    grid-template-columns:repeat(2, 350px);
+    gap:25px;
+    justify-content:center;
+}
+
+.dashboard-chart-card{
+    background:#6CC4FF;
+    border-radius:12px;
+    padding:10px;
+
+    width:350px;
+    height:240px;
+    margin-top: 25px;
+
+    display:flex;
+    flex-direction:column;
+
+    transition:transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+
+.dashboard-chart-card:hover{
+    transform:scale(1.03);
+    box-shadow:0 6px 15px rgba(0, 0, 0, 0.15);
+    z-index:2;
+}
+
+.dashboard-chart-card h4{
+    color:white;
+    text-align:center;
+    font-size:14px;
+    margin-bottom:5px;
+}
+.recharts-responsive-container{
+    flex:1;
+}
+.dashboard-chart-container{
+    flex:1;
+    width:100%;
+    min-height:220px;
+}
+
+
+
+
+.dashboard-appointments{
+
+    margin-top: 15px;
+    background:#D7F1FF;
+    border-radius:15px;
+    border:1px solid #999;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+}
+
+.dashboard-appointment-header{
+    background:#D0EBFF;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 20px;
+    flex-shrink:0;
+}
+
+.dashboard-appointment-header h3{
+    font-size:20px;
+}
+
+.dashboard-appointment-header a{
+    text-decoration:none;
+    color:#1f4f93;
+}
+
+.dashboard-appointments-list{
+    flex:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    min-height:0;
+}
+
+.dashboard-appointments-list::-webkit-scrollbar{
+    width:6px;
+}
+
+.dashboard-appointments-list::-webkit-scrollbar-track{
+    background:#D7F1FF;
+    border-radius:10px;
+}
+
+.dashboard-appointments-list::-webkit-scrollbar-thumb{
+    background:#72A7F8;
+    border-radius:10px;
+}
+
+.dashboard-appointments-list::-webkit-scrollbar-thumb:hover{
+    background:#4F8FE8;
+}
+
+.dashboard-appointment{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:12px 20px;
+    border-top:1px solid #A4C9DD;
+    flex-shrink:0;
+
+    
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    position:relative;
+    z-index:1;
+}
+
+
+.dashboard-appointment:hover{
+    transform:scale(1.02);
+    box-shadow:0 5px 12px rgba(0, 0, 0, 0.15);
+    z-index:2;
+    color: whitesmoke;
+    cursor:pointer;
+}
+
+.dashboard-appointment h4{
+    color:#284D86;
+    font-size:16px;
+}
+
+.dashboard-appointment p{
+    color:#666;
+    font-size:13px;
+}
+
+.dashboard-appointment-icon{
+    font-size:22px;
+    color:#2A74C9;
+}

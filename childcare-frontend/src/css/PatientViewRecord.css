@@ -1,0 +1,506 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+html,
+body,
+#root{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#f4f4f4;
+}
+
+.viewRecord-dashboard{
+    width:100%;
+    height:100vh;
+    display:grid;
+    grid-template-columns:260px 1fr;
+    overflow:hidden;
+}
+.viewRecord-container{
+    width:100%;
+    height:100vh;
+    padding:25px;
+    background:#fffcfc;
+    overflow-y:auto;
+}
+.viewRecord-content {
+    flex: 1;
+    padding: 20px;
+    overflow-x: hidden;
+}
+
+.viewRecord-patient-card {
+    width: 100%;
+    min-height: 115px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 18px 22px;
+
+    background: #ffffff;
+
+    border: 1px solid #d8d8d8;
+    border-radius: 12px;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    margin-bottom: 20px;
+}
+
+
+.viewRecord-patient-left {
+    display: flex;
+    align-items: center;
+
+    gap: 18px;
+
+    min-width: 0;
+}
+
+.viewRecord-patient-profile {
+    width: 75px;
+    height: 75px;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+    flex-shrink: 0;
+
+    margin: 0;
+}
+
+.viewRecord-patient-info {
+    display: flex;
+    flex-direction: column;
+
+    justify-content: center;
+
+    min-width: 0;
+}
+
+.viewRecord-patient-info h2 {
+    margin: 0 0 8px;
+
+    font-size: 22px;
+    font-weight: 700;
+
+    color: #21457B;
+
+    text-align: left;
+
+    line-height: 1.2;
+}
+
+.viewRecord-patient-details {
+    display: flex;
+
+    align-items: center;
+
+    gap: 25px;
+
+    flex-wrap: wrap;
+}
+
+.viewRecord-patient-detail {
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+}
+
+.viewRecord-patient-details p,
+.viewRecord-patient-detail p {
+    margin: 0;
+
+    font-size: 13px;
+
+    color: #555;
+
+    line-height: 1.4;
+}
+
+
+.viewRecord-patient-details p strong,
+.viewRecord-patient-detail p strong {
+    color: #29258B;
+    font-weight: 600;
+}
+
+.viewRecord-sms-btn {
+    padding: 10px 18px;
+
+    background: #2f278f;
+
+    color: white;
+
+    border: none;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    transition: 0.3s ease;
+
+    flex-shrink: 0;
+}
+
+.viewRecord-sms-btn:hover {
+    background: #1dbe40;
+
+    transform: translateY(-2px);
+}
+
+.viewRecord-sms-btn:active {
+    background: #ffe600;
+
+    color: black;
+
+    transform: translateY(0);
+}
+
+.viewRecord-sms-btn{
+    padding:12px 20px;
+    background:#2f278f;
+    color:white;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    transition: transform 0.3s ease;
+}
+.viewRecord-sms-btn:hover{
+    background:#1dbe40;
+    transform: translateY(-5px);
+
+}
+.viewRecord-sms-btn:active{
+   background:yellow;
+   color:black
+}
+.viewRecord-patient-box{
+    width:100%;
+    min-height:100%;
+    background:#fffefe;
+    border-radius:12px;
+    padding:25px;
+    box-shadow:0 4px 10px rgba(0,0,0,.15);
+}
+table {
+
+    width: 100%;
+    border-collapse: separate; 
+    border-spacing: 0;
+    margin-top: 20px;
+    border-radius: 15px;
+    overflow: hidden;
+    border: 1px solid #000000;
+}
+
+table, th, td {
+    border-bottom: 1px solid #000000;
+    color:#29258B
+}
+
+th {
+    background-color: #f2f2f2;
+    padding: 12px;
+    text-align: left;
+}
+
+td {
+    padding: 12px;
+}
+
+thead tr:nth-child(2) th {
+    background-color: #898888;
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center;
+}
+.viewRecord-status {
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-weight: bold;
+    display: inline-block;
+    font-size: 14px;
+}
+
+.viewRecord-done {
+    background-color: #69f589;
+    color: #000000;
+}
+
+.viewRecord-upcoming {
+    background-color: #7f85fa;
+    color: #000000;
+}
+
+.viewRecord-completed {
+    background-color: #535455;
+    color: #000000;
+}
+.viewRecord-popup textarea{
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+.viewRecord-popup h2,.viewRecord-popup h4{
+    text-align: left;
+    color: black;
+}
+.viewRecord-popup h2{
+    font-family:sans-serif;
+}
+
+.viewRecord-popup-buttons {
+    display: flex;
+   
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.viewRecord-popup .cancel {
+    width: 150px;
+    height: 40px;
+     padding:10px;
+    border-radius: 10px;
+    background-color: rgb(205, 200, 200);
+}
+
+.viewRecord-popup .cancel:hover {
+    background-color: rgb(0, 24, 132);
+    color: white;
+}
+
+.viewRecord-popup .set {
+    width: 100px;
+    height: 40px;
+     padding:10px;
+    border-radius: 10px;
+    background-color: rgb(77, 243, 91);
+}
+
+.viewRecord-popup .set:hover {
+    background-color: rgb(152, 255, 79);
+}
+
+.viewRecord-popup .setall {
+    width: 130px;
+    height: 40px;
+     padding-left:40px;
+     text-align: center;
+    border-radius: 10px;
+    background-color: rgb(77, 243, 91);
+}
+.viewRecord-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    margin-bottom: 20px;
+    background: #29258B;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: 0.3s ease;
+}
+
+.viewRecord-back-btn:hover {
+    background: #1b3768;
+}
+
+.viewRecord-back-btn svg {
+    font-size: 14px;
+}
+/* Overlay */
+
+.viewRecord-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 1000;
+}
+
+.viewRecord-popup {
+    width: 500px;
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,.25);
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+
+
+.viewRecord-popup input,
+.viewRecord-popup textarea{
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    outline: none;
+    resize: none;
+}
+
+
+.viewRecord-popup label{
+    font-weight: 600;
+}
+
+
+
+
+.viewRecord-popup-buttons{
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+
+
+.viewRecord-cancel-btn,
+.viewRecord-send-btn,
+.viewRecord-send-all-btn{
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: .3s;
+}
+
+
+
+.viewRecord-cancel-btn{
+    background: #d9d9d9;
+}
+
+.viewRecord-cancel-btn:hover{
+    background: #bdbdbd;
+}
+
+
+
+.viewRecord-send-btn{
+    background: #2f278f;
+    color: white;
+}
+
+.viewRecord-send-btn:hover{
+    background: #1dbe40;
+}
+
+
+
+.viewRecord-send-all-btn{
+    background: #72A7F8;
+    color: white;
+}
+
+.viewRecord-send-all-btn:hover{
+    background: #4d8df3;
+}
+.viewRecord-table-input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    text-align: center;
+    font-size: 14px;
+    padding: 6px;
+}
+
+.viewRecord-table-input:focus {
+    border: 1px solid #4a90e2;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.viewRecord-schedule-table select {
+    width: 100%;
+    border: none;
+    outline: none;
+    padding: 6px;
+    text-align: center;
+    background: transparent;
+    cursor: pointer;
+}
+
+.viewRecord-schedule-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.viewRecord-schedule-table th,
+.viewRecord-schedule-table td {
+    padding: 10px 8px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.viewRecord-schedule-table th:nth-child(1) {
+    width: 16%;
+}
+
+.viewRecord-schedule-table th:nth-child(2) {
+    width: 10%;
+}
+
+.viewRecord-schedule-table th:nth-child(3) {
+    width: 14%;
+}
+
+.viewRecord-schedule-table th:nth-child(4) {
+    width: 14%;
+}
+
+.viewRecord-schedule-table th:nth-child(5) {
+    width: 25%;
+}
+
+.viewRecord-schedule-table th:nth-child(6) {
+    width: 21%;
+}
+
+.viewRecord-table-input {
+    width: 100%;
+    min-width: 0;
+
+    border: none;
+    outline: none;
+
+    background: transparent;
+
+    text-align: center;
+
+    font-size: 13px;
+
+    padding: 6px;
+}
+
+.viewRecord-table-input:focus {
+    border: 1px solid #4a90e2;
+    border-radius: 4px;
+    background: #fff;
+}

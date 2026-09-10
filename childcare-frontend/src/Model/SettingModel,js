@@ -1,0 +1,7 @@
+export const adminProfile = {
+  name: "Carolene Ann Oblianda",
+  role: "System Administrator",
+  username: "",
+  email: "",
+  image: "/profile.jpg",
+};

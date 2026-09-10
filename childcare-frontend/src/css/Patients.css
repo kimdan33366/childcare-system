@@ -1,0 +1,531 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+html,
+body,
+#root{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#f4f4f4;
+}
+
+.patients-dashboard{
+    width:100%;
+    height:100vh;
+    display:grid;
+    grid-template-columns:260px 1fr;
+    overflow:hidden;
+}
+
+.patients-content{
+    position:relative;
+    width:100%;
+    height:100vh;
+
+    padding:0;
+
+    background:#f7f7f7;
+
+    display:flex;
+    flex-direction:column;
+
+    overflow:hidden;
+}
+
+
+
+.patients-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    background:#D9D9D9;
+
+  
+    width:calc(100% + 20px);
+    margin-top:-10px;
+    margin-left:0px;
+    margin-right:-10px;
+
+    margin-bottom:10px;
+
+    padding:12px 20px;
+
+    flex-shrink:0;
+}
+
+.patients-header h2{
+    font-size:28px;
+    color:#23286B;
+}
+
+.patients-header h3{
+    font-size:18px;
+    font-weight:500;
+}
+
+
+
+.patients-search-section{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    width:100%;
+
+    padding:8px 10px;
+}
+
+.patients-search-bar{
+    flex:1;
+
+    height:45px;
+
+    background:white;
+
+    border:1px solid #c7c7c7;
+    border-radius:8px;
+
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    padding:0 15px;
+}
+
+.patients-search-bar svg{
+    font-size:18px;
+}
+
+.patients-search-bar input{
+    width:100%;
+
+    border:none;
+    outline:none;
+
+    font-size:15px;
+}
+
+.patients-add-btn{
+    height:35px;
+
+    padding:0 12px;
+
+    border:none;
+    border-radius:6px;
+
+    background:#27238B;
+    color:white;
+
+    display:flex;
+    align-items:center;
+    gap:5px;
+
+    cursor:pointer;
+
+    font-size:13px;
+}
+
+.patients-add-btn svg{
+    font-size:12px;
+}
+
+
+.patient-list{
+    flex:1;
+
+    display:flex;
+    flex-direction:column;
+
+    gap:5px;
+
+    width:100%;
+
+    padding:0 10px;
+}
+
+
+.patient-card{
+    width:100%;
+
+    background:white;
+
+    border:1px solid #c7c7c7;
+    border-radius:8px;
+
+    display:flex;
+    align-items:center;
+
+    padding:10px 15px;
+
+    min-height:75px;
+}
+
+
+.progress-circle{
+    width:55px;
+    height:55px;
+
+    border-radius:50%;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    background:
+    conic-gradient(
+        #6550DD var(--progress),
+        #E4E4E4 0%
+    );
+
+    position:relative;
+
+    flex-shrink:0;
+}
+
+.progress-circle::before{
+    content:"";
+
+    position:absolute;
+
+    width:42px;
+    height:42px;
+
+    border-radius:50%;
+
+    background:white;
+}
+
+.progress-circle span{
+    position:relative;
+
+    z-index:1;
+
+    font-size:10px;
+    font-weight:bold;
+
+    color:#23286B;
+}
+
+.patient-icon{
+    font-size:45px;
+
+    color:#6B7698;
+
+    margin-left:12px;
+
+    flex-shrink:0;
+}
+
+.patient-info{
+    flex:3;
+
+    margin-left:15px;
+}
+
+.patient-info h3{
+    color:#23286B;
+
+    font-size:20px;
+
+    margin-bottom:4px;
+}
+
+.patient-details{
+    display:flex;
+    gap:35px;
+}
+
+.patient-details p{
+    color:#666;
+
+    font-size:13px;
+}
+
+.patient-actions{
+    display:flex;
+    gap:18px;
+
+    font-size:20px;
+
+    cursor:pointer;
+}
+
+.patient-actions svg:hover{
+    color:#27238B;
+}
+
+.patients-sms-overlay{
+    position:absolute;
+
+    top:0;
+    left:0;
+
+    width:100%;
+    height:100%;
+
+    background:rgba(0,0,0,0.25);
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    z-index:999;
+}
+
+
+.patients-sms-modal{
+    width:550px;
+    max-width:90%;
+
+    background:#79A8EE;
+
+    border-radius:12px;
+
+    padding:25px;
+
+    box-shadow:0 0 15px rgba(0,0,0,0.25);
+
+    transform:translateX(120px);
+}
+
+
+.patients-sms-modal h2{
+    color:#1A2870;
+
+    margin-bottom:8px;
+}
+
+.patients-sms-modal p{
+    color:#4D4D4D;
+
+    font-size:14px;
+
+    margin-bottom:5px;
+}
+
+.patients-sms-modal label{
+    display:block;
+
+    margin-top:18px;
+    margin-bottom:8px;
+
+    font-size:22px;
+
+    color:#1A2870;
+}
+
+
+.patients-phone-container{
+    width:100%;
+
+    background:white;
+
+    border-radius:10px;
+
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    padding:10px 15px;
+}
+
+.patients-phone-container input{
+    width:100%;
+
+    border:none;
+    outline:none;
+
+    font-size:16px;
+}
+
+
+.patients-sms-modal textarea{
+    width:100%;
+    height:120px;
+
+    resize:none;
+
+    border:none;
+    border-radius:10px;
+
+    padding:15px;
+
+    outline:none;
+
+    font-size:15px;
+}
+
+
+/* BUTTONS */
+
+.patients-sms-buttons{
+    margin-top:20px;
+
+    display:flex;
+    justify-content:space-between;
+}
+
+.patients-cancel-btn{
+    width:120px;
+    height:40px;
+
+    border:none;
+    border-radius:10px;
+
+    background:#E2E2E2;
+
+    cursor:pointer;
+}
+
+.patients-send-btn{
+    width:140px;
+    height:40px;
+
+    border:none;
+    border-radius:10px;
+
+    background:#005DB6;
+    color:white;
+
+    cursor:pointer;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:8px;
+}
+
+
+.patients-message-overlay{
+    position:absolute;
+
+    top:0;
+    left:0;
+
+    width:100%;
+    height:100%;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    background:rgba(0,0,0,0.2);
+
+    z-index:1000;
+}
+
+.patients-message-sent{
+    background:white;
+
+    padding:20px 40px;
+
+    border-radius:10px;
+
+    font-size:20px;
+    font-weight:bold;
+
+    color:#27238B;
+
+    box-shadow:0 0 15px rgba(0,0,0,0.2);
+}
+
+
+.patients-send-all-container{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    margin-top:10px;
+    margin-bottom:10px;
+}
+
+.patients-send-all-container label{
+    margin:0;
+
+    font-size:16px;
+
+    color:#1A2870;
+}
+
+.patients-send-all-container input{
+    cursor:pointer;
+}
+
+.patients-broadcast-message{
+    margin-top:10px;
+
+    padding:10px;
+
+    background:white;
+
+    border-radius:8px;
+
+    color:#1A2870;
+
+    font-size:14px;
+}
+
+.patients-add-overlay{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,.3);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+}
+
+.patients-add-modal{
+    width:420px;
+    background:white;
+    border-radius:12px;
+    padding:25px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.patients-add-modal h2{
+    color:#23286B;
+    margin-bottom:10px;
+}
+
+.patients-add-modal input{
+    width:100%;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    outline:none;
+}
+
+.patients-add-buttons{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    margin-top:10px;
+}
+
+.patients-add-buttons button{
+    padding:10px 18px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.patients-add-buttons button:first-child{
+    background:#d9d9d9;
+}
+
+.patients-add-buttons button:last-child{
+    background:#27238B;
+    color:white;
+}
