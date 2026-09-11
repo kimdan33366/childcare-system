@@ -23,7 +23,7 @@ function App() {
 
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/patients" element={<Patients />} />
-      <Route path="/patient_viewrecord" element={<PatientViewRecord />} />
+      <Route path="/patient_viewrecord/:child_id" element={<PatientViewRecord />} />
       <Route path="/appointments" element={<Appointments />} />
       <Route path="/vaccines"element={<Vaccine />}/>
       <Route path="/notification" element={<Notification />} />

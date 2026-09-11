@@ -14,6 +14,7 @@ use App\Http\Controllers\VaccineController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PatientViewRecordController;
 
 Route::get('/children', [ChildController::class, 'index']);
 Route::get('/children/{id}', [ChildController::class, 'show']);
@@ -59,7 +60,8 @@ Route::post('/notifications', [NotificationController::class, 'store']);
 Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
 Route::post('/notifications/broadcast', [NotificationController::class, 'broadcast']);
 
-
+Route::get('/patient-records/{child_id}', [PatientViewRecordController::class, 'getRecords']);
+Route::put('/patient-records/{patient_recordID}/status', [PatientViewRecordController::class, 'updateStatus']);
 
 Route::get('/test-email', function () {
     Mail::to('arielamit43@gmail.com')->send(new TestMail());

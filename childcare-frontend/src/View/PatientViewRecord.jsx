@@ -1,6 +1,6 @@
 import "../css/PatientViewRecord.css";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
   FaPaperPlane,
@@ -8,7 +8,7 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useParams } from "react-router-dom";
 
 import Sidebar from "../View/Sidebar";
 
@@ -21,6 +21,28 @@ import {
 } from "../Controller/PatientViewRecordController";
 
 function PatientViewRecord() {
+  const { child_id } = useParams();
+    const [child, setChild] = useState(null);
+    
+  useEffect(() => {
+  fetch(`http://127.0.0.1:8000/api/children/${child_id}`)
+    .then((response) => response.json())
+    .then((data) => {
+      setChild(data);
+    })
+    .catch((error) => {
+      console.error("Error fetching child:", error);
+    });
+
+  fetch(`http://127.0.0.1:8000/api/patient-records/${child_id}`)
+    .then((response) => response.json())
+    .then((data) => {
+      setVaccines(data);
+    })
+    .catch((error) => {
+      console.error("Error fetching vaccine records:", error);
+    });
+}, [child_id]);
 
   const [showSMSPopup, setShowSMSPopup] =
     useState(false);
@@ -29,24 +51,50 @@ function PatientViewRecord() {
     useState("");
 
   const [vaccines, setVaccines] =
-    useState(initialVaccines);
+    useState([]);
 
-  const handleVaccineChange = (
-    index,
-    field,
-    value
-  ) => {
+  const handleVaccineChange = async (
+  index,
+  field,
+  value
+) => {
+  const updatedVaccines = [...vaccines];
 
-    setVaccines(
-      PatientRecordController.updateVaccine(
-        vaccines,
-        index,
-        field,
-        value
-      )
-    );
-
+  updatedVaccines[index] = {
+    ...updatedVaccines[index],
+    [field]: value,
   };
+
+  setVaccines(updatedVaccines);
+
+  if (field === "status") {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/patient-records/${updatedVaccines[index].patient_recordID}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: value,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update status");
+      }
+
+      console.log("Status updated successfully");
+    } catch (error) {
+      console.error(
+        "Error updating status:",
+        error
+      );
+    }
+  }
+};
 
   return (
     <div className="viewRecord-dashboard">
@@ -67,20 +115,20 @@ function PatientViewRecord() {
 
           <div className="viewRecord-patient-info">
 
-            <h2>Janice Alojado</h2>
+            <h2>{child?.child_name || "Child's Name"}</h2>
 
             <div className="viewRecord-patient-details">
 
               <p>
-                Birthday: Jan. 1, 2020
+                Birthday: {child?.birthdate || "Date of Birth"}
               </p>
 
               <p>
-                Weight: 10 kg
+                Weight: {child?.weight || "Weight"} kg
               </p>
 
               <p>
-                Height: 75 cm
+                Height: {child?.height || "Height"} cm
               </p>
 
             </div>
@@ -89,11 +137,11 @@ function PatientViewRecord() {
 
               <p>
                 <FaUserCircle />
-                Ariel Amit
+                {child?.parent_name || "Parent's Name"}
               </p>
 
               <p>
-                097853253
+                {child?.phone_number || "Phone Number"}
               </p>
 
             </div>
@@ -123,7 +171,7 @@ function PatientViewRecord() {
               </h2>
 
               <h4>
-                Janice Alojado
+                {child?.child_name || "Child's Name"}
               </h4>
 
               <label>

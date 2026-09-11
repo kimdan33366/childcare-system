@@ -10,6 +10,7 @@ import {
   FaClock,
   FaShieldAlt,
   FaCalendarCheck,
+ 
 } from "react-icons/fa";
 
 import {
@@ -96,47 +97,39 @@ const [children, setChildren] = useState([]);
 
         <div className="dashboard-cards">
 
-          {dashboardStats.map((item, index) => {
+  <div className="dashboard-card">
+    <div className="dashboard-card-top">
+      <FaChild className="dashboard-card-icon" />
+    </div>
+    <small>Total Children</small>
+    <h2>{dashboardData.children}</h2>
+  </div>
 
-            let Icon;
+  <div className="dashboard-card">
+    <div className="dashboard-card-top">
+      <FaExclamationTriangle className="dashboard-card-icon overdue" />
+    </div>
+    <small>Overdue</small>
+    <h2>{dashboardData.overdue}</h2>
+  </div>
 
-            if (item.type === "children") {
-              Icon = FaChild;
-            } else if (item.type === "overdue") {
-              Icon = FaExclamationTriangle;
-            } else if (item.type === "due") {
-              Icon = FaClock;
-            } else {
-              Icon = FaShieldAlt;
-            }
+  <div className="dashboard-card">
+    <div className="dashboard-card-top">
+      <FaClock className="dashboard-card-icon due" />
+    </div>
+    <small>Due Soon</small>
+    <h2>{dashboardData.due_soon}</h2>
+  </div>
 
-            return (
-              <div
-                className="dashboard-card"
-                key={index}
-              >
+  <div className="dashboard-card">
+    <div className="dashboard-card-top">
+      <FaShieldAlt className="dashboard-card-icon vaccine" />
+    </div>
+    <small>Doses Given</small>
+    <h2>{dashboardData.doses_given}</h2>
+  </div>
 
-                <div className="dashboard-card-top">
-                  <Icon className="dashboard-card-icon" />
-                </div>
-
-                <small>{item.title}</small>
-
-                <h2>{item.type === "children"
-                 ? dashboardData.children
-                  : item.type === "overdue"
-                   ? dashboardData.overdue
-                    : item.type === "due"
-                     ? dashboardData.due_soon
-                      :item.type === "vaccine"
-                        ? dashboardData.doses_given
-                      : 0}</h2>
-
-              </div>
-            );
-          })}
-
-        </div>
+</div>
 
         <div className="dashboard-chart-row">
 
@@ -258,7 +251,7 @@ const [children, setChildren] = useState([]);
 
           <div className="dashboard-appointments-list">
 
-            {appointments.map((item) => (
+            {appointments.slice(0, 2).map((item) => (
 
               <div
                 className="dashboard-appointment"
@@ -276,7 +269,7 @@ const [children, setChildren] = useState([]);
 
                   <p>{item.appointment_date}</p>
 
-                  <p>{item.appointment_address}</p>
+                  
 
                 </div>
 

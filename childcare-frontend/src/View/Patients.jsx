@@ -236,7 +236,7 @@ function Patients() {
                 <FaEye
                   onClick={() =>
                     navigate(
-                      "/patient_viewrecord"
+                      `/patient_viewrecord/${patient.child_id}`
                     )
                   }
                 />
@@ -260,11 +260,11 @@ function Patients() {
             <h2>Send SMS</h2>
 
             <p>
-              Child: Janice Alojado
+              Child: {child?.child_name || "Child's Name"}
             </p>
 
             <p>
-              Parent: Ariel Amit
+              Parent: {child?.parent_name || "Parent's Name"}
             </p>
 
             <div className="patients-send-all-container">
