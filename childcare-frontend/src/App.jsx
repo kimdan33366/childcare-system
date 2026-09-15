@@ -14,6 +14,7 @@ import Help from "./View/Help";
 import About from "./View/About";
 import Register from "./View/Register";
 import ForgotPassword from "./View/forgotpassword";
+import UserManagement from "./View/UserManagement";
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
       <Route path="/about" element={<About />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/user-management" element={<UserManagement />} />
     </Routes>
   );
 }

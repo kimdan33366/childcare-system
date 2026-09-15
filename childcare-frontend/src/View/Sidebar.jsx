@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { getCurrentUser } from "../Controller/AuthController";
 
@@ -23,8 +23,16 @@ import {
 } from "react-icons/fa";
 
 function Sidebar() {
+  const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
-   const currentUser = getCurrentUser();
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/api/Admin")
+    .then((response) => response.json())
+    .then((data) => {
+      setCurrentUser(data);
+    })
+  }, []);
 
   const [showSettings, setShowSettings] = useState(false);
 
@@ -122,6 +130,11 @@ function Sidebar() {
                 Help
               </NavLink>
 
+              <NavLink to="/user-management">
+                <FaSignOutAlt/>
+                User management
+              </NavLink>
+
             </div>
           )}
 
@@ -135,8 +148,8 @@ function Sidebar() {
     <FaUserCircle className="administrator-icon" />
 
     <div className="administrator-info">
-      <h3>{currentUser?.name || "Administrator"}</h3>
-      <p>{currentUser?.role || "Admin"}</p>
+      <h3>{currentUser?.Admin_name || "Administrator"}</h3>
+      <p>{currentUser?.Admin_role || "Admin"}</p>
     </div>
   </div>
 
