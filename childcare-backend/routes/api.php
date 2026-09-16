@@ -62,6 +62,8 @@ Route::post('/notifications/broadcast', [NotificationController::class, 'broadca
 
 Route::get('/patient-records/{child_id}', [PatientViewRecordController::class, 'getRecords']);
 Route::put('/patient-records/{patient_recordID}/status', [PatientViewRecordController::class, 'updateStatus']);
+Route::post('/patient-records', [PatientViewRecordController::class, 'store']); 
+Route::put('/patient-records/{patient_recordID}', [PatientViewRecordController::class, 'update']);
 
 Route::get('/test-email', function () {
     Mail::to('arielamit43@gmail.com')->send(new TestMail());

@@ -37,32 +37,28 @@ body,
     overflow:hidden;
 }
 
+.patients-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
+    background: #ffffff;
 
-.patients-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+    width: 100%;
+    padding: 20px 25px;
 
-    background:#D9D9D9;
+    border-bottom: 1px solid #e5e7eb;
 
-  
-    width:calc(100% + 20px);
-    margin-top:-10px;
-    margin-left:0px;
-    margin-right:-10px;
-
-    margin-bottom:10px;
-
-    padding:12px 20px;
-
-    flex-shrink:0;
+    flex-shrink: 0;
 }
 
-.patients-header h2{
-    font-size:28px;
-    color:#23286B;
+.patients-header h2 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #21457B;
+    margin: 0;
 }
+
 
 .patients-header h3{
     font-size:18px;
@@ -70,33 +66,95 @@ body,
 }
 
 
+.patients-search-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 
-.patients-search-section{
-    display:flex;
-    align-items:center;
-    gap:10px;
+    width: 100%;
 
-    width:100%;
-
-    padding:8px 10px;
+    padding: 18px 25px 12px;
 }
 
-.patients-search-bar{
-    flex:1;
+.patients-search-bar {
+    flex: 1;
 
-    height:45px;
+    height: 42px;
 
-    background:white;
+    background: #ffffff;
 
-    border:1px solid #c7c7c7;
-    border-radius:8px;
+    border: 1px solid #d9dee7;
+    border-radius: 8px;
 
-    display:flex;
-    align-items:center;
-    gap:10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 
-    padding:0 15px;
+    padding: 0 14px;
+
+    transition: 0.2s ease;
 }
+
+.patients-search-bar:focus-within {
+    border-color: #21457B;
+    box-shadow: 0 0 0 2px rgba(33, 69, 123, 0.08);
+}
+
+.patients-search-bar:hover {
+    border-color:#c5ccd8;
+}
+
+.patients-search-bar svg {
+    font-size: 15px;
+    color: #718096;
+}
+
+.patients-search-bar input {
+    width: 100%;
+
+    border: none;
+    outline: none;
+
+    font-size: 14px;
+    color: #333;
+}
+
+.patients-search-bar input::placeholder {
+    color: #9aa3af;
+}
+
+.patients-add-btn {
+    height: 42px;
+
+    padding: 0 16px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #21457B;
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    cursor: pointer;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    transition: 0.2s ease;
+}
+
+.patients-add-btn:hover {
+    background: #193961;
+}
+
+.patients-add-btn svg {
+    font-size: 12px;
+}
+
 
 .patients-search-bar svg{
     font-size:18px;
@@ -111,254 +169,397 @@ body,
     font-size:15px;
 }
 
-.patients-add-btn{
-    height:35px;
 
-    padding:0 12px;
-
-    border:none;
-    border-radius:6px;
-
-    background:#27238B;
-    color:white;
-
-    display:flex;
-    align-items:center;
-    gap:5px;
-
-    cursor:pointer;
-
-    font-size:13px;
-}
 
 .patients-add-btn svg{
     font-size:12px;
 }
 
+.patient-list {
+    flex: 1;
 
-.patient-list{
-    flex:1;
+    display: flex;
+    flex-direction: column;
 
+    gap: 8px;
+
+    width: 100%;
+
+    padding: 6px 25px 20px;
+
+    overflow-y: auto;
+}
+
+.patient-list-header {
     display:flex;
-    flex-direction:column;
+    justify-content:space-between;
+    align-items:center;
+    padding:4px 2px 8px;
+    flex-shrink:0;
+    background:#f7f7f7;
+}
 
-    gap:5px;
+.patient-list-header h3 {
+    margin: 0;
 
-    width:100%;
+    font-size: 15px;
+    font-weight: 600;
 
-    padding:0 10px;
+    color: #21457B;
+}
+
+.patient-list-header span {
+    font-size: 12px;
+    color: #718096;
+}
+
+.patient-card {
+    width: 100%;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 12px 16px;
+
+    min-height: 78px;
+
+    transition: 0.2s ease;
+}
+
+.patient-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
 }
 
 
-.patient-card{
-    width:100%;
+/* Coverage */
 
-    background:white;
+.progress-circle {
+    width: 52px;
+    height: 52px;
 
-    border:1px solid #c7c7c7;
-    border-radius:8px;
+    border-radius: 50%;
 
-    display:flex;
-    align-items:center;
-
-    padding:10px 15px;
-
-    min-height:75px;
-}
-
-
-.progress-circle{
-    width:55px;
-    height:55px;
-
-    border-radius:50%;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
     background:
-    conic-gradient(
-        #6550DD var(--progress),
-        #E4E4E4 0%
-    );
+        conic-gradient(
+            #21457B var(--progress),
+            #e5e7eb 0%
+        );
 
-    position:relative;
+    position: relative;
 
-    flex-shrink:0;
+    flex-shrink: 0;
 }
 
-.progress-circle::before{
-    content:"";
+.progress-circle::before {
+    content: "";
 
-    position:absolute;
+    position: absolute;
 
-    width:42px;
-    height:42px;
+    width: 40px;
+    height: 40px;
 
-    border-radius:50%;
+    border-radius: 50%;
 
-    background:white;
+    background: #ffffff;
 }
 
-.progress-circle span{
-    position:relative;
+.progress-circle span {
+    position: relative;
 
-    z-index:1;
+    z-index: 1;
 
-    font-size:10px;
-    font-weight:bold;
+    font-size: 10px;
+    font-weight: 700;
 
-    color:#23286B;
+    color: #21457B;
 }
 
-.patient-icon{
-    font-size:45px;
 
-    color:#6B7698;
+/* Patient icon */
 
-    margin-left:12px;
+.patient-icon {
+    font-size: 42px;
 
-    flex-shrink:0;
+    color: #9aa8bd;
+
+    margin-left: 14px;
+
+    flex-shrink: 0;
 }
 
-.patient-info{
-    flex:3;
 
-    margin-left:15px;
+/* Patient information */
+
+.patient-info {
+    flex: 1;
+
+    margin-left: 14px;
 }
 
-.patient-info h3{
-    color:#23286B;
+.patient-info h3 {
+    color: #21457B;
 
-    font-size:20px;
+    font-size: 16px;
+    font-weight: 600;
 
-    margin-bottom:4px;
+    margin-bottom: 6px;
 }
 
-.patient-details{
-    display:flex;
-    gap:35px;
+.patient-details {
+    display: flex;
+    gap: 32px;
+    align-items: center;
 }
 
-.patient-details p{
-    color:#666;
+.patient-details p {
+    color: #718096;
 
-    font-size:13px;
+    font-size: 12px;
+
+    margin: 0;
 }
 
-.patient-actions{
-    display:flex;
-    gap:18px;
 
-    font-size:20px;
+/* Actions */
 
+.patient-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 15px;
+}
+
+/* .patient-actions svg {
+    width:34px;
+    height:34px;
+    padding:9px;
+    border-radius:7px;
+    color:#718096;
     cursor:pointer;
+    transition: 0.2s ease;
 }
 
-.patient-actions svg:hover{
-    color:#27238B;
+.patient-actions svg:hover {
+    color: #21457B;
+    background: #f0f5ff;
 }
 
-.patients-sms-overlay{
-    position:absolute;
+.patient-actions svg:last-child:hover {
+    color:#D9534F;
+    background:#fff1f1;
+} */
 
-    top:0;
-    left:0;
-
-    width:100%;
-    height:100%;
-
-    background:rgba(0,0,0,0.25);
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    z-index:999;
+.patient-actions svg {
+    width:34px;
+    height:34px;
+    padding:9px;
+    border-radius:7px;
+    cursor:pointer;
+    transition:.2s ease;
 }
 
-
-.patients-sms-modal{
-    width:550px;
-    max-width:90%;
-
-    background:#79A8EE;
-
-    border-radius:12px;
-
-    padding:25px;
-
-    box-shadow:0 0 15px rgba(0,0,0,0.25);
-
-    transform:translateX(120px);
+.patient-actions .edit-action {
+    color:#28A745;
 }
 
-
-.patients-sms-modal h2{
-    color:#1A2870;
-
-    margin-bottom:8px;
+.patient-actions .sms-action {
+    color:#2E86DE;
 }
 
-.patients-sms-modal p{
-    color:#4D4D4D;
-
-    font-size:14px;
-
-    margin-bottom:5px;
+.patient-actions .view-action {
+    color:#21457B;
 }
 
-.patients-sms-modal label{
-    display:block;
+.patient-actions .delete-action {
+    color:#D9534F;
+}
 
-    margin-top:18px;
-    margin-bottom:8px;
+.patient-actions .edit-action:hover {
+    background:#eef9f0;
+}
 
-    font-size:22px;
+.patient-actions .sms-action:hover {
+    background:#eef5ff;
+}
 
-    color:#1A2870;
+.patient-actions .view-action:hover {
+    background:#eaf2ff;
+}
+
+.patient-actions .delete-action:hover {
+    background:#fff1f1;
 }
 
 
-.patients-phone-container{
-    width:100%;
+.patients-sms-overlay {
+    position: fixed;
 
-    background:white;
+    top: 0;
+    left: 0;
 
-    border-radius:10px;
+    width: 100%;
+    height: 100%;
 
-    display:flex;
-    align-items:center;
-    gap:10px;
+    background: rgba(15, 23, 42, 0.35);
 
-    padding:10px 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 999;
 }
 
-.patients-phone-container input{
-    width:100%;
+.patients-sms-modal {
+    width: 520px;
+    max-width: 90%;
 
-    border:none;
-    outline:none;
+    background: #ffffff;
 
-    font-size:16px;
+    border-radius: 12px;
+
+    padding: 25px;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+
+    transform: none;
 }
 
+.patients-sms-modal h2 {
+    color: #21457B;
 
-.patients-sms-modal textarea{
-    width:100%;
-    height:120px;
+    font-size: 21px;
+    font-weight: 700;
 
-    resize:none;
+    margin-bottom: 12px;
+}
 
-    border:none;
-    border-radius:10px;
+.patients-sms-modal p {
+    color: #718096;
 
-    padding:15px;
+    font-size: 13px;
 
-    outline:none;
+    margin-bottom: 5px;
+}
 
-    font-size:15px;
+.patients-sms-modal label {
+    display: block;
+
+    margin-top: 16px;
+    margin-bottom: 7px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    color: #4a5568;
+}
+
+.patients-phone-container {
+    width: 100%;
+
+    height: 42px;
+
+    background: #ffffff;
+
+    border: 1px solid #d9dee7;
+    border-radius: 7px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 0 12px;
+}
+
+.patients-phone-container svg {
+    color: #718096;
+    font-size: 14px;
+}
+
+.patients-phone-container input {
+    width: 100%;
+
+    border: none;
+    outline: none;
+
+    font-size: 13px;
+}
+
+.patients-sms-modal textarea {
+    width: 100%;
+    height: 110px;
+
+    resize: none;
+
+    border: 1px solid #d9dee7;
+    border-radius: 7px;
+
+    padding: 12px;
+
+    outline: none;
+
+    font-size: 13px;
+
+    transition: 0.2s ease;
+}
+
+.patients-sms-modal textarea:focus {
+    border-color: #21457B;
+    box-shadow: 0 0 0 2px rgba(33, 69, 123, 0.08);
+}
+
+.patients-cancel-btn {
+    width: 100px;
+    height: 38px;
+
+    border: none;
+    border-radius: 7px;
+
+    background: #f1f3f5;
+    color: #4a5568;
+
+    cursor: pointer;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.patients-cancel-btn:hover {
+    background: #e5e7eb;
+}
+
+.patients-send-btn {
+    width: 125px;
+    height: 38px;
+
+    border: none;
+    border-radius: 7px;
+
+    background: #21457B;
+    color: white;
+
+    cursor: pointer;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 7px;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.patients-send-btn:hover {
+    background: #193961;
 }
 
 
@@ -371,35 +572,7 @@ body,
     justify-content:space-between;
 }
 
-.patients-cancel-btn{
-    width:120px;
-    height:40px;
 
-    border:none;
-    border-radius:10px;
-
-    background:#E2E2E2;
-
-    cursor:pointer;
-}
-
-.patients-send-btn{
-    width:140px;
-    height:40px;
-
-    border:none;
-    border-radius:10px;
-
-    background:#005DB6;
-    color:white;
-
-    cursor:pointer;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:8px;
-}
 
 
 .patients-message-overlay{
@@ -471,54 +644,110 @@ body,
     font-size:14px;
 }
 
-.patients-add-overlay{
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,.3);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    z-index:999;
+.patients-add-overlay {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: rgba(15, 23, 42, 0.35);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 999;
 }
 
-.patients-add-modal{
-    width:420px;
-    background:white;
-    border-radius:12px;
-    padding:25px;
-    display:flex;
-    flex-direction:column;
-    gap:12px;
+.patients-add-modal {
+    width: 440px;
+    max-width: 90%;
+
+    background: #ffffff;
+
+    border-radius: 12px;
+
+    padding: 25px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 }
 
-.patients-add-modal h2{
-    color:#23286B;
-    margin-bottom:10px;
+.patients-add-modal h2 {
+    color: #21457B;
+
+    font-size: 21px;
+    font-weight: 700;
+
+    margin-bottom: 8px;
 }
 
-.patients-add-modal input{
-    width:100%;
-    padding:12px;
-    border:1px solid #ccc;
-    border-radius:8px;
-    outline:none;
+.patients-add-modal input {
+    width: 100%;
+
+    height: 40px;
+
+    padding: 0 12px;
+
+    border: 1px solid #d9dee7;
+    border-radius: 7px;
+
+    outline: none;
+
+    font-size: 13px;
+    color: #333;
+
+    transition: 0.2s ease;
 }
 
-.patients-add-buttons{
-    display:flex;
-    justify-content:flex-end;
-    gap:10px;
-    margin-top:10px;
+.patients-add-modal input:focus {
+    border-color: #21457B;
+    box-shadow: 0 0 0 2px rgba(33, 69, 123, 0.08);
 }
 
-.patients-add-buttons button{
-    padding:10px 18px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
+.patients-add-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+
+    margin-top: 8px;
+}
+
+.patients-add-buttons button {
+    min-width: 85px;
+    height: 38px;
+
+    border: none;
+    border-radius: 7px;
+
+    cursor: pointer;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.patients-add-buttons button:first-child {
+    background: #f1f3f5;
+    color: #4a5568;
+}
+
+.patients-add-buttons button:first-child:hover {
+    background: #e5e7eb;
+}
+
+.patients-add-buttons button:last-child {
+    background: #21457B;
+    color: white;
+}
+
+.patients-add-buttons button:last-child:hover {
+    background: #193961;
 }
 
 .patients-add-buttons button:first-child{
@@ -528,4 +757,32 @@ body,
 .patients-add-buttons button:last-child{
     background:#27238B;
     color:white;
+}
+.patients-empty-state {
+    flex:1;
+    min-height:180px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    color:#718096;
+}
+
+.patients-empty-state svg {
+    font-size:38px;
+    color:#cbd5e1;
+    margin-bottom:10px;
+}
+
+.patients-empty-state p {
+    font-size:14px;
+    font-weight:600;
+    color:#4a5568;
+    margin-bottom:4px;
+}
+
+.patients-empty-state span {
+    font-size:12px;
+    color:#9aa3af;
 }

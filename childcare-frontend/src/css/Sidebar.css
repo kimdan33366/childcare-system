@@ -2,7 +2,7 @@
     width:260px;
     height:100vh;
 
-    background:#72A7F8;
+    background:#ffffff;
 
     display:flex;
     flex-direction:column;
@@ -13,27 +13,28 @@
     z-index:10;
 }
 .logo-section {
-    padding:15px;
-    margin-left:30px;
-    margin-top:5px;
-    margin-bottom:10px;
+    padding: 18px 15px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
 }
 
 .logo-container {
-    width:110px;
-    height:110px;
-    background:white;
-    border-radius:50%;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    margin-left:20px;
+    width: 82px;
+    height: 82px;
+    background: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 0 8px;
 }
 
 .logo {
-    width:140px;
-    height:140px;
-    object-fit:contain;
+    width: 82px;
+    height: 82px;
+    object-fit: contain;
 }
 
 .logo-section h2 {
@@ -52,8 +53,8 @@
 .sidebar nav a {
     display:flex;
     align-items:center;
-    gap:10px;
-    padding:10px 14px;
+    gap: 12px;
+    padding:11px 14px;
     font-size:14px;
     border-radius:8px;
     text-decoration:none;
@@ -66,11 +67,12 @@
 }
 
 .sidebar nav a:hover {
-    background:rgba(255,255,255,0.15);
+    background:#f0f5ff;
+    color:#21457B;
 }
 
 .sidebar nav a.active {
-    background:white;
+    background:#eaf2ff;
     color:#21457B;
     width:100%;
     border-radius:8px;
@@ -87,23 +89,24 @@
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:10px 14px;
+    padding:11px 14px;
     cursor:pointer;
-    color:#1b3768;
+    color:#4a5568;
     border-radius:8px;
     font-size:14px;
-    font-weight:500;
+    /* font-weight:500; */
     transition:0.3s;
 }
 
 .settings-btn:hover {
-    background:white;
+    background:#f0f5ff;
+    color:#21457B;
 }
 
 .settings-left {
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:12px;
 }
 
 .settings-dropdown {
@@ -114,8 +117,9 @@
 
     display:flex;
     flex-direction:column;
-
-    background:#72A7F8;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+    background:#ffffff;
     border-radius:8px;
     padding-top:5px;
 
@@ -125,12 +129,12 @@
 .settings-dropdown a {
     display:flex;
     align-items:center;
-    gap:8px;
+    gap:12px;
     text-decoration:none;
-    color:#1b3768;
-    padding:8px 14px;
+    color:#4a5568;
+    padding:9px 14px 8px 42px;
     font-size:13px;
-    border-radius:6px;
+    border-radius:8px;
     transition:0.3s;
 }
 
@@ -150,9 +154,11 @@
 /* Bottom */
 
 .bottom-menu {
-    background:#29258B;
-    color:white;
-    padding:15px;
+    background:#ffffff;
+    color:#21457B;
+    padding:14px 15px;
+    margin-top:auto;
+    border-top:1px solid #e5e7eb;
 }
 
 .bottom-menu p {
@@ -163,7 +169,7 @@
     width:100%;
     background:transparent;
     border:none;
-    color:white;
+    color:#21457B;
     cursor:pointer;
     display:flex;
     align-items:center;
@@ -173,6 +179,19 @@
     font-weight:600;
     padding:8px 0;
     transition:0.3s;
+   position:relative;
+    z-index:1;
+}
+.bottom-menu::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    opacity: 1.0;
+    pointer-events: none;
+    background: linear-gradient(to top, #1ad85c, transparent);
 }
 
 .bottom-menu button:hover {
@@ -184,8 +203,8 @@
 }
 
 .bottom-menu {
-    background:#29258B;
-    color:white;
+    background:#ffffff;
+    color:#21457B;
     padding:15px;
     margin-top:auto;
 }
@@ -195,11 +214,13 @@
     align-items:center;
     gap:10px;
     margin-bottom:18px;
+    position:relative;
+    z-index:1;
 }
 
 .administrator-icon {
     font-size:34px;
-    color:white;
+    color:#21457B;
     flex-shrink:0;
 }
 
@@ -210,23 +231,23 @@
 }
 
 .administrator-info h3 {
-    margin:0;
-    font-size:15px;
-    font-weight:700;
-    color:white;
+    margin:3px 0 0;
+    font-size:14px;
+    font-weight:600;
+    color:#21457B;
 }
 
 .administrator-info p {
     margin:3px 0 0;
     font-size:13px;
-    color:white;
+    color:#21457B;
 }
 
 .bottom-menu button {
     width:100%;
     background:transparent;
     border:none;
-    color:white;
+    color:#21457B;
     cursor:pointer;
 
     display:flex;

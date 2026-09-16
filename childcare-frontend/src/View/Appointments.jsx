@@ -3,155 +3,129 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useState, useEffect } from "react";
 
-import {
-  FaCalendarAlt,
-  FaPen,
-  FaTrash,
-} from "react-icons/fa";
+import { FaCalendarAlt, FaPen, FaTrash } from "react-icons/fa";
 
 import Sidebar from "../View/Sidebar";
 
 function Appointments() {
+  const navigate = useNavigate();
 
-    const navigate = useNavigate();
-
-  const currentUser = JSON.parse(
-    localStorage.getItem("currentUser")
-  );
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
   const [appointments, setAppointments] = useState([]);
-    const [children, setChildren] = useState([]);
+  const [children, setChildren] = useState([]);
 
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
-  const [dateFilter, setDateFilter] =
-    useState("All");
+  const [dateFilter, setDateFilter] = useState("All");
 
-  const [showPopup, setShowPopup] =
-    useState(false);
+  const [showPopup, setShowPopup] = useState(false);
 
-  const [patient, setPatient] =
-    useState("");
+  const [patient, setPatient] = useState("");
 
-  const [date, setDate] =
-    useState("");
+  const [date, setDate] = useState("");
 
-  const [time, setTime] =
-    useState("");
+  const [time, setTime] = useState("");
 
-  const [subject, setSubject] =
-    useState("");
+  const [subject, setSubject] = useState("");
 
-  const [editingId, setEditingId] =
-    useState(null);
-
+  const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
-  fetch("http://127.0.0.1:8000/api/appointments")
-    .then((response) => response.json())
-    .then((data) => {
-      setAppointments(data);
-    })
-    .catch((error) => {
-      console.error("Error fetching appointments:", error);
-    });
+    fetch("http://127.0.0.1:8000/api/appointments")
+      .then((response) => response.json())
+      .then((data) => {
+        setAppointments(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching appointments:", error);
+      });
 
-fetch("http://127.0.0.1:8000/api/children")
-    .then((response) => response.json())
-    .then((data) => {
-      setChildren(data);
-    })
-    .catch((error) => {
-      console.error("Error fetching children:", error);
-    });
-
-}, []);
+    fetch("http://127.0.0.1:8000/api/children")
+      .then((response) => response.json())
+      .then((data) => {
+        setChildren(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching children:", error);
+      });
+  }, []);
 
   const filteredAppointments = appointments.filter((appointment) => {
-  const matchesSearch =
-    String(appointment.child_id)
-      .includes(search);
+    const matchesSearch = String(appointment.child_id).includes(search);
 
-  const matchesDate =
-    dateFilter === "All" ||
-    appointment.appointment_date === dateFilter;
+    const matchesDate =
+      dateFilter === "All" || appointment.appointment_date === dateFilter;
 
-  return matchesSearch && matchesDate;
-});
-const saveAppointment = async () => {
-  const data = {
-    child_id: patient,
-    appointment_date: date,
-    appointment_time: time,
-    subject: subject,
-    address: "Barangay Health Center",
-    status: "Pending",
-    admin_id: 1,
-    user_id: 1,
-  };
+    return matchesSearch && matchesDate;
+  });
+  const saveAppointment = async () => {
+    const data = {
+      child_id: patient,
+      appointment_date: date,
+      appointment_time: time,
+      subject: subject,
+      address: "Barangay Health Center",
+      status: "Pending",
+      admin_id: 1,
+      user_id: 3,
+    };
 
-  try {
-    let response;
+    try {
+      let response;
 
-    if (editingId !== null) {
-      // UPDATE
-      response = await fetch(
-        `http://127.0.0.1:8000/api/appointments/${editingId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
+      if (editingId !== null) {
+        // UPDATE
+        response = await fetch(
+          `http://127.0.0.1:8000/api/appointments/${editingId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify(data),
           },
-          body: JSON.stringify(data),
-        }
-      );
-    } else {
-      // ADD
-      response = await fetch(
-        "http://127.0.0.1:8000/api/appointments",
-        {
+        );
+      } else {
+        // ADD
+        response = await fetch("http://127.0.0.1:8000/api/appointments", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Accept": "application/json",
+            Accept: "application/json",
           },
           body: JSON.stringify(data),
-        }
+        });
+      }
+
+      const result = await response.json();
+      console.log("Appointment response:", result);
+
+      if (!response.ok) {
+        console.error("Laravel error:", result);
+        alert(result.message || "An error occurred while saving the appointment.");
+        return;
+      }
+      
+      console.log(
+        editingId !== null ? "Appointment updated:" : "Appointment created:",
+        result,
       );
+
+      const updated = await fetch("http://127.0.0.1:8000/api/appointments");
+
+      const updatedData = await updated.json();
+
+      setAppointments(updatedData);
+
+      clearForm();
+    } catch (error) {
+      console.error("Error saving appointment:", error);
     }
+  };
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error("Laravel error:", result);
-      return;
-    }
-
-    console.log(
-      editingId !== null
-        ? "Appointment updated:"
-        : "Appointment created:",
-      result
-    );
-
-    const updated = await fetch(
-      "http://127.0.0.1:8000/api/appointments"
-    );
-
-    const updatedData = await updated.json();
-
-    setAppointments(updatedData);
-
-    clearForm();
-
-  } catch (error) {
-    console.error("Error saving appointment:", error);
-  }
-};
-
-// const saveAppointment = () => {
+  // const saveAppointment = () => {
 
   //   const data = {
   //     patient,
@@ -183,185 +157,167 @@ const saveAppointment = async () => {
 
   //   clearForm();
   // };
-const deleteAppointment = async (id) => {
-  try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/appointments/${id}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Accept": "application/json",
+  const deleteAppointment = async (id) => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/appointments/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Accept: "application/json",
+          },
         },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error("Laravel error:", result);
+        return;
       }
-    );
 
-    const result = await response.json();
+      console.log("Appointment deleted:", result);
 
-    if (!response.ok) {
-      console.error("Laravel error:", result);
-      return;
+      // Refresh appointments
+      const updated = await fetch("http://127.0.0.1:8000/api/appointments");
+
+      const updatedData = await updated.json();
+
+      setAppointments(updatedData);
+    } catch (error) {
+      console.error("Error deleting appointment:", error);
     }
-
-    console.log("Appointment deleted:", result);
-
-    // Refresh appointments
-    const updated = await fetch(
-      "http://127.0.0.1:8000/api/appointments"
-    );
-
-    const updatedData = await updated.json();
-
-    setAppointments(updatedData);
-
-  } catch (error) {
-    console.error("Error deleting appointment:", error);
-  }
-};
+  };
 
   const clearForm = () => {
-
     setPatient("");
     setDate("");
     setTime("");
     setSubject("");
     setEditingId(null);
     setShowPopup(false);
-
   };
 
   return (
     <div className="appointment-dashboard">
-
       <Sidebar />
 
       <div className="appointment-main-content">
-
         <div className="appointment-header">
           <h3>Appointments</h3>
         </div>
 
         <div className="appointment-toolbar">
-
           <div className="appointment-search-box">
-
             <input
               type="text"
               placeholder="Search patient..."
               value={search}
-              onChange={(e) =>
-                setSearch(e.target.value)
-              }
+              onChange={(e) => setSearch(e.target.value)}
             />
-
           </div>
 
           <select
             className="appointment-filter"
             value={dateFilter}
-            onChange={(e) =>
-              setDateFilter(e.target.value)
-            }
+            onChange={(e) => setDateFilter(e.target.value)}
           >
-
-            <option value="All">
-              All Dates
-            </option>
+            <option value="All">All Dates</option>
 
             {[
               ...new Set(
-                appointments.map(
-                  (appointment) =>
-                    appointment.appointment_date
-                )
+                appointments.map((appointment) => appointment.appointment_date),
               ),
             ].map((date) => (
-
-              <option
-                key={date}
-                value={date}
-              >
+              <option key={date} value={date}>
                 {date}
               </option>
-
             ))}
-
           </select>
 
           <button
             className="appointment-button"
-            onClick={() =>
-              setShowPopup(true)
-            }
+            onClick={() => setShowPopup(true)}
           >
             Add Appointment
           </button>
-
         </div>
 
         <div className="appointment-content-container">
+          {filteredAppointments.length === 0 ? (
+            <div className="appointment-empty-state">
+              <div className="appointment-empty-icon">
+                <FaCalendarAlt />
+              </div>
 
-          {filteredAppointments.map(
-            (appointment) => (
+              <h3>No appointments yet</h3>
 
+              <p>There are currently no appointments scheduled.</p>
+
+              <button
+                className="appointment-empty-button"
+                onClick={() => setShowPopup(true)}
+              >
+                Add Appointment
+              </button>
+            </div>
+          ) : (
+            filteredAppointments.map((appointment) => (
               <div
                 className="appointment-content"
                 key={appointment.appointment_id}
               >
-
-                <FaCalendarAlt className="appointment-content-icon" />
+                <div className="appointment-icon-wrapper">
+                  <FaCalendarAlt className="appointment-content-icon" />
+                </div>
 
                 <div className="appointment-content-text">
+                  <div className="appointment-title-row">
+                    <h3>
+                      {children.find(
+                        (child) => child.child_id === appointment.child_id,
+                      )?.child_name || "Unknown Child"}
+                    </h3>
 
-                        <h3>
-                          {children.find((child) => child.child_id === appointment.child_id)?.child_name || "Unknown Child"}
-                      </h3>
+                    <span className="appointment-status">
+                      {appointment.status || "Pending"}
+                    </span>
+                  </div>
 
-                      <h6>
-                        Appointment Date: {appointment.appointment_date}
-                      </h6>
+                  <div className="appointment-details">
+                    <div className="appointment-detail">
+                      <span className="appointment-detail-label">Date</span>
+                      <span>{appointment.appointment_date}</span>
+                    </div>
 
-                      <h6>
-                        Time: {appointment.appointment_time}
-                      </h6>
+                    <div className="appointment-detail">
+                      <span className="appointment-detail-label">Time</span>
+                      <span>{appointment.appointment_time}</span>
+                    </div>
 
-                      <h6>
-                        {appointment.subject}
-                      </h6>
+                    <div className="appointment-detail">
+                      <span className="appointment-detail-label">Subject</span>
+                      <span>{appointment.subject}</span>
+                    </div>
 
-                      <h6>
-                        {appointment.address}
-                      </h6>
-
+                    <div className="appointment-detail">
+                      <span className="appointment-detail-label">Location</span>
+                      <span>{appointment.address}</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="appointment-action-buttons">
-
                   <button
                     className="appointment-edit-btn"
+                    title="Edit appointment"
                     onClick={() => {
-
-                      setEditingId(
-                        appointment.appointment_id
-                      );
-
-                      setPatient(
-                        appointment.child_id
-                      );
-
-                      setDate(
-                        appointment.appointment_date
-                      );
-
-                      setTime(
-                        appointment.appointment_time
-                      );
-
-                      setSubject(
-                        appointment.subject
-                      );
-
+                      setEditingId(appointment.appointment_id);
+                      setPatient(appointment.child_id);
+                      setDate(appointment.appointment_date);
+                      setTime(appointment.appointment_time);
+                      setSubject(appointment.subject);
                       setShowPopup(true);
-
                     }}
                   >
                     <FaPen />
@@ -369,48 +325,35 @@ const deleteAppointment = async (id) => {
 
                   <button
                     className="appointment-delete-btn"
+                    title="Delete appointment"
                     onClick={() =>
-                      deleteAppointment(
-                        appointment.appointment_id
-                      )
+                      deleteAppointment(appointment.appointment_id)
                     }
                   >
                     <FaTrash />
                   </button>
-
                 </div>
-
               </div>
-
-            )
+            ))
           )}
-
         </div>
 
         {showPopup && (
-
           <div className="appointment-popup-overlay">
-
             <div className="appointment-popup">
-
               <h3>
-                {editingId !== null
-                  ? "Edit Appointment"
-                  : "Set Appointment"}
+                {editingId !== null ? "Edit Appointment" : "Set Appointment"}
               </h3>
 
               <h5>To:</h5>
-                    <select
+              <select
                 value={patient}
                 onChange={(e) => setPatient(e.target.value)}
               >
                 <option value="">Select Child</option>
 
                 {children.map((child) => (
-                  <option
-                    key={child.child_id}
-                    value={child.child_id}
-                  >
+                  <option key={child.child_id} value={child.child_id}>
                     {child.child_name}
                   </option>
                 ))}
@@ -421,9 +364,7 @@ const deleteAppointment = async (id) => {
               <input
                 type="date"
                 value={date}
-                onChange={(e) =>
-                  setDate(e.target.value)
-                }
+                onChange={(e) => setDate(e.target.value)}
               />
 
               <h5>Time:</h5>
@@ -431,9 +372,7 @@ const deleteAppointment = async (id) => {
               <input
                 type="time"
                 value={time}
-                onChange={(e) =>
-                  setTime(e.target.value)
-                }
+                onChange={(e) => setTime(e.target.value)}
               />
 
               <h5>Subject:</h5>
@@ -441,35 +380,20 @@ const deleteAppointment = async (id) => {
               <input
                 type="text"
                 value={subject}
-                onChange={(e) =>
-                  setSubject(e.target.value)
-                }
+                onChange={(e) => setSubject(e.target.value)}
               />
 
-              <button
-                className="appointment-cancel"
-                onClick={clearForm}
-              >
+              <button className="appointment-cancel" onClick={clearForm}>
                 Cancel
               </button>
 
-              <button
-                className="set"
-                onClick={saveAppointment}
-              >
-                {editingId !== null
-                  ? "Update"
-                  : "Set"}
+              <button className="set" onClick={saveAppointment}>
+                {editingId !== null ? "Update" : "Set"}
               </button>
-
             </div>
-
           </div>
-
         )}
-
       </div>
-
     </div>
   );
 }

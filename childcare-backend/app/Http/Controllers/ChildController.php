@@ -8,9 +8,12 @@ use Illuminate\Http\Request;
 class ChildController extends Controller
 {
      public function index()
-    {
-        return response()->json(Child::all());
-    }
+{
+    return response()->json(
+        Child::with('patientRecords')->get()
+    );
+    
+}
 
     // GET /api/children/{id}
     public function show($id)
@@ -29,6 +32,8 @@ class ChildController extends Controller
             'age_months' => $request->age_months,
             'birthdate' => $request->birthdate,
             'gender' => $request->gender,
+            'mother_name' => $request->mother_name,
+            'father_name' => $request->father_name,
             'address' => $request->address,
         ]);
 
@@ -46,6 +51,8 @@ class ChildController extends Controller
             'age_months' => $request->age_months,
             'birthdate' => $request->birthdate,
             'gender' => $request->gender,
+            'mother_name' => $request->mother_name,
+            'father_name' => $request->father_name,
             'address' => $request->address,
         ]);
 

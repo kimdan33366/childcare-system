@@ -1,474 +1,346 @@
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, Helvetica, sans-serif;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 html,
 body,
-#root{
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    background:#f4f4f4;
+#root {
+    width: 100%;
+    height: 100%;
+    background: #f5f7fa;
 }
 
-.viewRecord-dashboard{
-    width:100%;
-    height:100vh;
-    display:grid;
-    grid-template-columns:260px 1fr;
-    overflow:hidden;
+
+/* =========================
+   MAIN LAYOUT
+========================= */
+
+.viewRecord-dashboard {
+    width: 100%;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    background: #f5f7fa;
 }
-.viewRecord-container{
-    width:100%;
-    height:100vh;
-    padding:25px;
-    background:#fffcfc;
-    overflow-y:auto;
+
+.viewRecord-main {
+    width: 100%;
+    min-height: 100vh;
+    padding: 30px;
+    overflow-y: auto;
 }
-.viewRecord-content {
-    flex: 1;
-    padding: 20px;
-    overflow-x: hidden;
+
+
+/* =========================
+   HEADER
+========================= */
+
+.viewRecord-header {
+    margin-bottom: 25px;
 }
+
+.viewRecord-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    margin-bottom: 14px;
+
+    color: #21457b;
+    text-decoration: none;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    transition: 0.2s ease;
+}
+
+.viewRecord-back-link:hover {
+    color: #16345f;
+}
+
+.viewRecord-back-link svg {
+    font-size: 12px;
+}
+
+.viewRecord-header h1 {
+    font-size: 26px;
+    color: #1f2937;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.viewRecord-header p {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+
+/* =========================
+   PATIENT INFORMATION CARD
+========================= */
 
 .viewRecord-patient-card {
     width: 100%;
-    min-height: 115px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    padding: 18px 22px;
 
     background: #ffffff;
 
-    border: 1px solid #d8d8d8;
+    border: 1px solid #e5e7eb;
     border-radius: 12px;
 
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 22px 24px;
 
-    margin-bottom: 20px;
-}
+    margin-bottom: 25px;
 
-
-.viewRecord-patient-left {
     display: flex;
     align-items: center;
+    gap: 25px;
 
-    gap: 18px;
-
-    min-width: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
-.viewRecord-patient-profile {
-    width: 75px;
-    height: 75px;
+
+/* Patient name */
+
+.viewRecord-patient-main {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    min-width: 210px;
+}
+
+.viewRecord-avatar {
+    width: 54px;
+    height: 54px;
 
     border-radius: 50%;
 
-    object-fit: cover;
+    background: #eef3f9;
 
-    flex-shrink: 0;
-
-    margin: 0;
-}
-
-.viewRecord-patient-info {
     display: flex;
-    flex-direction: column;
-
+    align-items: center;
     justify-content: center;
 
-    min-width: 0;
+    color: #21457b;
+
+    flex-shrink: 0;
+}
+
+.viewRecord-avatar svg {
+    font-size: 30px;
 }
 
 .viewRecord-patient-info h2 {
-    margin: 0 0 8px;
-
-    font-size: 22px;
-    font-weight: 700;
-
-    color: #21457B;
-
-    text-align: left;
-
-    line-height: 1.2;
+    font-size: 18px;
+    color: #1f2937;
+    margin-bottom: 5px;
 }
+
+.viewRecord-patient-label {
+    font-size: 11px;
+    color: #6b7280;
+}
+
+
+/* Patient details */
 
 .viewRecord-patient-details {
-    display: flex;
+    flex: 1;
 
-    align-items: center;
+    display: grid;
 
-    gap: 25px;
+    grid-template-columns:
+        repeat(3, minmax(120px, 1fr));
 
-    flex-wrap: wrap;
+    gap: 15px 25px;
 }
 
-.viewRecord-patient-detail {
+.viewRecord-patient-details div {
     display: flex;
-
-    align-items: center;
-
-    gap: 5px;
+    flex-direction: column;
+    gap: 4px;
 }
 
-.viewRecord-patient-details p,
-.viewRecord-patient-detail p {
-    margin: 0;
+.viewRecord-patient-details span {
+    font-size: 11px;
+    color: #9ca3af;
+}
 
+.viewRecord-patient-details strong {
     font-size: 13px;
-
-    color: #555;
-
-    line-height: 1.4;
-}
-
-
-.viewRecord-patient-details p strong,
-.viewRecord-patient-detail p strong {
-    color: #29258B;
+    color: #374151;
     font-weight: 600;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+
+
+/* SMS */
 
 .viewRecord-sms-btn {
-    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
 
-    background: #2f278f;
+    padding: 10px 16px;
 
-    color: white;
+    background: #21457b;
+    color: #ffffff;
 
     border: none;
+    border-radius: 7px;
 
-    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
 
     cursor: pointer;
 
-    font-size: 13px;
-    font-weight: 600;
-
-    transition: 0.3s ease;
+    transition: 0.2s ease;
 
     flex-shrink: 0;
 }
 
 .viewRecord-sms-btn:hover {
-    background: #1dbe40;
-
-    transform: translateY(-2px);
+    background: #19365f;
 }
 
-.viewRecord-sms-btn:active {
-    background: #ffe600;
 
-    color: black;
+/* =========================
+   VACCINATION SECTION
+========================= */
 
-    transform: translateY(0);
-}
-
-.viewRecord-sms-btn{
-    padding:12px 20px;
-    background:#2f278f;
-    color:white;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    transition: transform 0.3s ease;
-}
-.viewRecord-sms-btn:hover{
-    background:#1dbe40;
-    transform: translateY(-5px);
-
-}
-.viewRecord-sms-btn:active{
-   background:yellow;
-   color:black
-}
-.viewRecord-patient-box{
-    width:100%;
-    min-height:100%;
-    background:#fffefe;
-    border-radius:12px;
-    padding:25px;
-    box-shadow:0 4px 10px rgba(0,0,0,.15);
-}
-table {
-
+.viewRecord-record-section {
     width: 100%;
-    border-collapse: separate; 
-    border-spacing: 0;
-    margin-top: 20px;
-    border-radius: 15px;
-    overflow: hidden;
-    border: 1px solid #000000;
-}
 
-table, th, td {
-    border-bottom: 1px solid #000000;
-    color:#29258B
-}
+    background: #ffffff;
 
-th {
-    background-color: #f2f2f2;
-    padding: 12px;
-    text-align: left;
-}
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
 
-td {
-    padding: 12px;
-}
+    padding: 22px 24px;
 
-thead tr:nth-child(2) th {
-    background-color: #898888;
-    font-weight: bold;
-    font-size: 16px;
-    text-align: center;
-}
-.viewRecord-status {
-    padding: 5px 12px;
-    border-radius: 15px;
-    font-weight: bold;
-    display: inline-block;
-    font-size: 14px;
-}
-
-.viewRecord-done {
-    background-color: #69f589;
-    color: #000000;
-}
-
-.viewRecord-upcoming {
-    background-color: #7f85fa;
-    color: #000000;
-}
-
-.viewRecord-completed {
-    background-color: #535455;
-    color: #000000;
-}
-.viewRecord-popup textarea{
-    width: 100%;
-    padding: 10px;
-    border-radius: 10px;
-    box-sizing: border-box;
-}
-.viewRecord-popup h2,.viewRecord-popup h4{
-    text-align: left;
-    color: black;
-}
-.viewRecord-popup h2{
-    font-family:sans-serif;
-}
-
-.viewRecord-popup-buttons {
-    display: flex;
-   
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.viewRecord-popup .cancel {
-    width: 150px;
-    height: 40px;
-     padding:10px;
-    border-radius: 10px;
-    background-color: rgb(205, 200, 200);
-}
-
-.viewRecord-popup .cancel:hover {
-    background-color: rgb(0, 24, 132);
-    color: white;
-}
-
-.viewRecord-popup .set {
-    width: 100px;
-    height: 40px;
-     padding:10px;
-    border-radius: 10px;
-    background-color: rgb(77, 243, 91);
-}
-
-.viewRecord-popup .set:hover {
-    background-color: rgb(152, 255, 79);
-}
-
-.viewRecord-popup .setall {
-    width: 130px;
-    height: 40px;
-     padding-left:40px;
-     text-align: center;
-    border-radius: 10px;
-    background-color: rgb(77, 243, 91);
-}
-.viewRecord-back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    margin-bottom: 20px;
-    background: #29258B;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    transition: 0.3s ease;
-}
-
-.viewRecord-back-btn:hover {
-    background: #1b3768;
-}
-
-.viewRecord-back-btn svg {
-    font-size: 14px;
-}
-/* Overlay */
-
-.viewRecord-popup-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.5);
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    z-index: 1000;
-}
-
-.viewRecord-popup {
-    width: 500px;
-    background: white;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0,0,0,.25);
-
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 
+/* Section header */
 
-.viewRecord-popup input,
-.viewRecord-popup textarea{
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    outline: none;
-    resize: none;
-}
-
-
-.viewRecord-popup label{
-    font-weight: 600;
-}
-
-
-
-
-.viewRecord-popup-buttons{
+.viewRecord-section-header {
     display: flex;
     justify-content: space-between;
-    gap: 10px;
-    margin-top: 10px;
+    align-items: center;
+
+    margin-bottom: 20px;
+}
+
+.viewRecord-section-header h2 {
+    font-size: 18px;
+    color: #1f2937;
+    margin-bottom: 5px;
+}
+
+.viewRecord-section-header p {
+    font-size: 12px;
+    color: #9ca3af;
 }
 
 
+/* Add button */
 
-.viewRecord-cancel-btn,
-.viewRecord-send-btn,
-.viewRecord-send-all-btn{
-    flex: 1;
-    padding: 12px;
+.viewRecord-add-btn {
+    padding: 10px 16px;
+
+    background: #21457b;
+    color: #ffffff;
+
     border: none;
-    border-radius: 8px;
+    border-radius: 7px;
+
+    font-size: 12px;
+    font-weight: 600;
+
     cursor: pointer;
-    transition: .3s;
+
+    transition: 0.2s ease;
+}
+
+.viewRecord-add-btn:hover {
+    background: #19365f;
 }
 
 
+/* =========================
+   TABLE
+========================= */
 
-.viewRecord-cancel-btn{
-    background: #d9d9d9;
-}
-
-.viewRecord-cancel-btn:hover{
-    background: #bdbdbd;
-}
-
-
-
-.viewRecord-send-btn{
-    background: #2f278f;
-    color: white;
-}
-
-.viewRecord-send-btn:hover{
-    background: #1dbe40;
-}
-
-
-
-.viewRecord-send-all-btn{
-    background: #72A7F8;
-    color: white;
-}
-
-.viewRecord-send-all-btn:hover{
-    background: #4d8df3;
-}
-.viewRecord-table-input {
+.viewRecord-table-wrapper {
     width: 100%;
-    border: none;
-    outline: none;
-    background: transparent;
-    text-align: center;
-    font-size: 14px;
-    padding: 6px;
-}
-
-.viewRecord-table-input:focus {
-    border: 1px solid #4a90e2;
-    border-radius: 4px;
-    background: #fff;
-}
-
-.viewRecord-schedule-table select {
-    width: 100%;
-    border: none;
-    outline: none;
-    padding: 6px;
-    text-align: center;
-    background: transparent;
-    cursor: pointer;
+    overflow-x: auto;
 }
 
 .viewRecord-schedule-table {
     width: 100%;
+
+    border-collapse: collapse;
+
     table-layout: fixed;
+
+    font-size: 12px;
 }
 
-.viewRecord-schedule-table th,
+.viewRecord-schedule-table th {
+    background: #f8fafc;
+
+    color: #6b7280;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    text-align: left;
+
+    padding: 12px 10px;
+
+    border-bottom: 1px solid #e5e7eb;
+}
+
 .viewRecord-schedule-table td {
-    padding: 10px 8px;
-    text-align: center;
+    padding: 14px 10px;
+
+    color: #4b5563;
+
+    border-bottom: 1px solid #eef0f2;
+
     vertical-align: middle;
 }
 
+.viewRecord-schedule-table tbody tr:hover {
+    background: #fafbfd;
+}
+
+.viewRecord-schedule-table td strong {
+    color: #374151;
+    font-weight: 600;
+}
+
+
+/* Column widths */
+
 .viewRecord-schedule-table th:nth-child(1) {
-    width: 16%;
+    width: 15%;
 }
 
 .viewRecord-schedule-table th:nth-child(2) {
-    width: 10%;
+    width: 9%;
 }
 
 .viewRecord-schedule-table th:nth-child(3) {
-    width: 14%;
+    width: 13%;
 }
 
 .viewRecord-schedule-table th:nth-child(4) {
@@ -476,31 +348,492 @@ thead tr:nth-child(2) th {
 }
 
 .viewRecord-schedule-table th:nth-child(5) {
-    width: 25%;
+    width: 18%;
 }
 
 .viewRecord-schedule-table th:nth-child(6) {
-    width: 21%;
+    width: 19%;
 }
 
-.viewRecord-table-input {
-    width: 100%;
-    min-width: 0;
+.viewRecord-schedule-table th:nth-child(7) {
+    width: 12%;
+}
+
+
+/* =========================
+   STATUS SELECT
+========================= */
+
+.viewRecord-status-select {
+    border: none;
+
+    border-radius: 20px;
+
+    padding: 6px 10px;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    outline: none;
+}
+
+.viewRecord-status-select.completed {
+    background: #e8f7ee;
+    color: #23864b;
+}
+
+.viewRecord-status-select.continuing {
+    background: #fff5df;
+    color: #b7791f;
+}
+
+.viewRecord-status-select.missed {
+    background: #fdecec;
+    color: #c0392b;
+}
+
+
+/* =========================
+   EDIT BUTTON
+========================= */
+
+.viewRecord-edit-btn {
+    padding: 6px 12px;
+
+    background: #eef3f9;
+    color: #21457b;
 
     border: none;
-    outline: none;
+    border-radius: 6px;
 
-    background: transparent;
+    font-size: 11px;
+    font-weight: 600;
 
-    text-align: center;
+    cursor: pointer;
 
-    font-size: 13px;
-
-    padding: 6px;
+    transition: 0.2s ease;
 }
 
-.viewRecord-table-input:focus {
-    border: 1px solid #4a90e2;
-    border-radius: 4px;
-    background: #fff;
+.viewRecord-edit-btn:hover {
+    background: #dfe8f3;
+}
+
+
+/* =========================
+   EMPTY STATE
+========================= */
+
+.viewRecord-empty {
+    height: 260px;
+
+    text-align: center !important;
+
+    color: #9ca3af !important;
+}
+
+.viewRecord-empty div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    height: 100%;
+}
+
+.viewRecord-empty svg {
+    font-size: 35px;
+    color: #cbd5e1;
+    margin-bottom: 5px;
+}
+
+.viewRecord-empty h3 {
+    font-size: 14px;
+    color: #4b5563;
+}
+
+.viewRecord-empty p {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+
+/* Empty state add */
+
+.viewRecord-empty-add {
+    margin-top: 8px;
+
+    padding: 8px 14px;
+
+    background: #21457b;
+    color: #ffffff;
+
+    border: none;
+    border-radius: 6px;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+
+/* =========================
+   SMS POPUP
+========================= */
+
+.viewRecord-popup-overlay {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(15, 23, 42, 0.45);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 1000;
+}
+
+.viewRecord-popup {
+    width: 470px;
+
+    background: #ffffff;
+
+    border-radius: 12px;
+
+    padding: 24px;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+
+/* Popup header */
+
+.viewRecord-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    margin-bottom: 8px;
+}
+
+.viewRecord-popup-header h2 {
+    font-size: 18px;
+    color: #1f2937;
+
+    margin-bottom: 4px;
+}
+
+.viewRecord-popup-header p {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.viewRecord-popup-close {
+    border: none;
+    background: transparent;
+
+    font-size: 24px;
+    color: #9ca3af;
+
+    cursor: pointer;
+
+    line-height: 1;
+}
+
+.viewRecord-popup-close:hover {
+    color: #374151;
+}
+
+
+/* Popup child */
+
+.viewRecord-popup-child {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 10px;
+
+    background: #f8fafc;
+
+    border-radius: 7px;
+
+    margin-bottom: 5px;
+}
+
+.viewRecord-popup-child svg {
+    color: #21457b;
+}
+
+.viewRecord-popup-child strong {
+    font-size: 12px;
+    color: #374151;
+}
+
+
+/* Popup fields */
+
+.viewRecord-popup label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+
+    margin-top: 5px;
+}
+
+.viewRecord-popup input,
+.viewRecord-popup textarea {
+    width: 100%;
+
+    padding: 10px 12px;
+
+    border: 1px solid #dfe3e8;
+    border-radius: 7px;
+
+    outline: none;
+
+    font-size: 12px;
+
+    resize: none;
+
+    background: #ffffff;
+}
+
+.viewRecord-popup input:focus,
+.viewRecord-popup textarea:focus {
+    border-color: #21457b;
+}
+
+
+/* Popup buttons */
+
+.viewRecord-popup-buttons {
+    display: flex;
+
+    gap: 8px;
+
+    margin-top: 10px;
+}
+
+.viewRecord-cancel-btn,
+.viewRecord-send-btn,
+.viewRecord-send-all-btn {
+    flex: 1;
+
+    padding: 10px;
+
+    border: none;
+
+    border-radius: 7px;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: 0.2s ease;
+}
+
+.viewRecord-cancel-btn {
+    background: #f1f3f5;
+    color: #4b5563;
+}
+
+.viewRecord-cancel-btn:hover {
+    background: #e5e7eb;
+}
+
+.viewRecord-send-btn {
+    background: #21457b;
+    color: #ffffff;
+}
+
+.viewRecord-send-btn:hover {
+    background: #19365f;
+}
+
+.viewRecord-send-all-btn {
+    background: #eef3f9;
+    color: #21457b;
+}
+
+.viewRecord-send-all-btn:hover {
+    background: #dfe8f3;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 1100px) {
+
+    .viewRecord-patient-card {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .viewRecord-patient-details {
+        width: 100%;
+    }
+
+    .viewRecord-sms-btn {
+        margin-left: auto;
+    }
+}
+
+@media (max-width: 800px) {
+
+    .viewRecord-dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    .viewRecord-main {
+        padding: 20px;
+    }
+
+    .viewRecord-patient-details {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .viewRecord-section-header {
+        align-items: flex-start;
+        gap: 15px;
+        flex-direction: column;
+    }
+}
+.vaccination-popup {
+    width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.vaccination-form-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #dfe3e8;
+    border-radius: 7px;
+    outline: none;
+    font-size: 12px;
+    background: #ffffff;
+    color: #374151;
+}
+
+.vaccination-form-input:focus {
+    border-color: #21457b;
+}
+
+.vaccination-form-input::placeholder {
+    color: #9ca3af;
+}
+.delete-vaccination-popup {
+  max-width: 430px;
+  text-align: center;
+  padding: 32px;
+}
+
+.delete-vaccination-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.delete-vaccination-content h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  color: #1f2937;
+}
+
+.delete-vaccination-content p {
+  margin: 0 auto 20px;
+  max-width: 340px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #6b7280;
+}
+
+.delete-vaccination-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  margin-bottom: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.delete-vaccination-details strong {
+  font-size: 14px;
+  color: #374151;
+}
+
+.delete-vaccination-details span {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.viewRecord-delete-confirm-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 7px;
+  background: #dc2626;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.viewRecord-delete-confirm-btn:hover {
+  background: #b91c1c;
+}
+.viewRecord-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewRecord-edit-btn,
+.viewRecord-delete-btn {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: 0.2s ease;
+}
+
+.viewRecord-edit-btn {
+  color: #2563eb;
+}
+
+.viewRecord-edit-btn:hover {
+  background: #eff6ff;
+}
+
+.viewRecord-delete-btn {
+  color: #dc2626;
+}
+
+.viewRecord-delete-btn:hover {
+  background: #fef2f2;
 }

@@ -17,7 +17,17 @@ class Child extends Model
         'child_name',
         'age_months',
         'birthdate',
+        'mother_name',
+        'father_name',
         'gender',
         'address',
     ];
+    public function patientRecords()
+{
+    return $this->hasMany(
+        \App\Models\PatientRecord::class,
+        'child_id',
+        'child_id'
+    );
+}
 }

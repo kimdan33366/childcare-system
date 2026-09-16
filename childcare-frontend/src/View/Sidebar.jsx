@@ -20,6 +20,7 @@ import {
   FaLock,
   FaQuestionCircle,
   FaUser,
+  FaCog,
 } from "react-icons/fa";
 
 function Sidebar() {
@@ -95,7 +96,7 @@ function Sidebar() {
           >
 
             <div className="settings-left">
-              <FaBell />
+              <FaCog />
               <span>Settings</span>
             </div>
 

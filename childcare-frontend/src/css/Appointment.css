@@ -168,243 +168,273 @@ body,
 
 .appointment-content {
     width: 100%;
-
-    min-height: 85px;
+    min-height: 105px;
 
     display: flex;
     align-items: center;
 
-    gap: 15px;
+    gap: 16px;
 
-    padding: 12px 15px;
+    padding: 16px 18px;
 
-    border: 1px solid #c8c8c8;
+    border: 1px solid #e5e7eb;
     border-radius: 10px;
 
-    background: white;
+    background: #ffffff;
 
     flex-shrink: 0;
 
-    transition: 0.2s;
+    transition: 0.2s ease;
 }
 
 .appointment-content:hover {
-    transform: scale(1.01);
-
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    border-color: #d5dce8;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
 }
-.appointment-content-icon {
-    font-size: 35px;
 
-    color: #287dcc;
+/* Calendar icon */
+
+.appointment-icon-wrapper {
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background: #eff6ff;
 
     flex-shrink: 0;
 }
 
+.appointment-content-icon {
+    font-size: 20px;
+    color: #2563eb;
+}
+
+/* Appointment information */
 
 .appointment-content-text {
-    text-align: left;
-
     flex: 1;
+    min-width: 0;
+}
+
+.appointment-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin-bottom: 10px;
 }
 
 .appointment-content-text h3 {
-    margin: 0 0 4px;
+    margin: 0;
 
-    font-size: 17px;
+    font-size: 16px;
+    font-weight: 600;
 
     color: #21457B;
 }
 
-.appointment-content-text h6 {
-    margin: 2px 0;
+/* Status */
+
+.appointment-status {
+    padding: 4px 9px;
+
+    border-radius: 20px;
+
+    background: #fff7ed;
+    color: #c2410c;
+
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Details */
+
+.appointment-details {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+
+    gap: 18px;
+}
+
+.appointment-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
 
     font-size: 12px;
-
-    font-weight: normal;
-
-    color: #555;
+    color: #4b5563;
 }
+
+.appointment-detail-label {
+    font-size: 10px;
+    font-weight: 600;
+
+    text-transform: uppercase;
+
+    color: #9ca3af;
+}
+
+/* Action buttons */
 
 .appointment-action-buttons {
     display: flex;
+    align-items: center;
 
-    gap: 10px;
+    gap: 7px;
 
     flex-shrink: 0;
 }
 
-.appointment-edit-btn {
-    width: 40px;
-    height: 40px;
-
-    border-radius: 50%;
+.appointment-edit-btn,
+.appointment-delete-btn {
+    width: 34px;
+    height: 34px;
 
     border: none;
-
-    background: #19f16b;
+    border-radius: 7px;
 
     display: flex;
-
     justify-content: center;
     align-items: center;
 
     cursor: pointer;
 
-    transition: 0.3s;
+    transition: 0.2s ease;
+}
+
+/* Edit */
+
+.appointment-edit-btn {
+    background: #eff6ff;
+    color: #2563eb;
 }
 
 .appointment-edit-btn:hover {
-    background: blue;
-    color: white;
+    background: #dbeafe;
+    color: #1d4ed8;
 }
 
-.appointment-edit-btn:active {
-    background: yellow;
-    color: black;
-}
+/* Delete */
 
 .appointment-delete-btn {
-    width: 40px;
-    height: 40px;
-
-    border: none;
-
-    border-radius: 50%;
-
-    background: #ff4d4d;
-
-    color: white;
-
-    display: flex;
-
-    justify-content: center;
-    align-items: center;
-
-    cursor: pointer;
-
-    transition: 0.3s;
+    background: #fef2f2;
+    color: #dc2626;
 }
 
 .appointment-delete-btn:hover {
-    background: #d62828;
+    background: #fee2e2;
+    color: #b91c1c;
 }
 
-.appointment-delete-btn:active {
-    background: #ffcc00;
-    color: black;
-}
-
+/* =========================
+   APPOINTMENT POPUP
+========================= */
 
 .appointment-popup-overlay {
     position: fixed;
-
-    top: 0;
-    left: 0;
-
-    width: 100%;
-    height: 100%;
-
-    background: rgba(0, 0, 0, 0.5);
-
-    backdrop-filter: blur(5px);
-
+    inset: 0;
     display: flex;
-
     justify-content: center;
     align-items: center;
-
+    background: rgba(15, 23, 42, 0.35);
+    backdrop-filter: blur(3px);
     z-index: 9999;
 }
 
-
 .appointment-popup {
-    background: rgb(121, 151, 242);
-
-    width: 450px;
-
-    padding: 25px;
-
-    border-radius: 10px;
-
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-
-    color: blue;
+    width: 460px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 28px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
 }
+
+/* Header */
 
 .appointment-popup h3 {
-    margin-bottom: 20px;
-
-    text-align: center;
-
-    color: white;
+    margin: 0 0 24px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #21457B;
 }
+
+/* Labels */
 
 .appointment-popup h5 {
-    text-align: left;
-
-    margin: 10px 0 5px;
-
-    color: white;
+    margin: 0 0 7px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4b5563;
 }
 
-.appointment-popup input {
+/* Inputs */
+
+.appointment-popup input,
+.appointment-popup select {
     width: 100%;
-
-    padding: 9px;
-
-    border: none;
-
-    border-radius: 10px;
-
+    height: 42px;
+    padding: 0 12px;
+    margin-bottom: 16px;
+    border: 1px solid #d9dee7;
+    border-radius: 7px;
     outline: none;
-
+    background: #ffffff;
+    color: #374151;
+    font-size: 13px;
     box-sizing: border-box;
+    transition: 0.2s ease;
 }
 
+.appointment-popup input:focus,
+.appointment-popup select:focus {
+    border-color: #72a7f8;
+    box-shadow: 0 0 0 3px rgba(114, 167, 248, 0.12);
+}
+
+/* Buttons */
 
 .appointment-popup button {
-    margin-right: 10px;
-
+    height: 40px;
+    border: none;
+    border-radius: 7px;
+    padding: 0 20px;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
+    transition: 0.2s ease;
 }
 
+/* Cancel */
 
 .appointment-popup .appointment-cancel {
-    margin-top: 20px;
-
-    width: 80px;
-    height: 40px;
-
-    border: none;
-
-    border-radius: 10px;
-
-    background-color: rgb(205, 200, 200);
+    margin-top: 8px;
+    margin-right: 8px;
+    background: #f3f4f6;
+    color: #4b5563;
 }
 
 .appointment-popup .appointment-cancel:hover {
-    background-color: rgb(0, 24, 132);
-
-    color: white;
+    background: #e5e7eb;
 }
 
+/* Set / Update */
+
 .appointment-popup .set {
-    margin-top: 20px;
-
-    width: 70px;
-    height: 40px;
-
-    border: none;
-
-    border-radius: 10px;
-
-    background-color: rgb(77, 243, 91);
+    margin-top: 8px;
+    background: #21457B;
+    color: #ffffff;
 }
 
 .appointment-popup .set:hover {
-    background-color: rgb(152, 255, 79);
+    background: #18365f;
 }
+
 
 @media (max-width: 1000px) {
 
