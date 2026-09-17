@@ -1,242 +1,303 @@
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, Helvetica, sans-serif;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-
-html,
-body,
-#root{
-    width:100%;
-    height:100%;
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f7fb;
 }
 
+/* =========================
+   Main Layout
+========================= */
 
-.report-dashboard{
-    width:100%;
-    height:100vh;
-    display:grid;
-    grid-template-columns:260px 1fr;
-    overflow:hidden;
+.report-dashboard {
+    width: 100%;
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    overflow: hidden;
 }
 
-
-.report-content{
-
-    flex:1;
-
-    padding:30px;
-
-    overflow-y:auto;
-
+.report-content {
+    background: #E8F0FA;
+    overflow-y: auto;
 }
 
+/* =========================
+   Page Header
+========================= */
 
-
-
-
-.report-topbar{
-
-    background:white;
-
-    border:1px solid #cfcfcf;
-
-    padding:8px 13px;
-
-    margin-bottom:20px;
-
-    width:calc(100% + 60px);
-
-    margin-top:-30px;
-
-    margin-left:-30px;
-
+.report-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 10px;
+    background: white;
+    border-bottom: 1px solid #e1e6ed;
 }
 
-
-
-.report-topbar h1{
-
-    font-size:42px;
-
-    font-family:Georgia, serif;
-
-    font-weight:normal;
-
-    color:black;
-
+.report-topbar h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: #1e293b;
+}
+.report-topbar p {
+    margin-top: 5px;
+    font-size: 13px;
+    color: #64748b;
 }
 
-
-.report-cards{
-
-    display:flex;
-
-    gap:30px;
-
-    margin-bottom:40px;
-
-    justify-content:center;
-
-    flex-wrap:wrap;
-
+.report-export-btn {
+    height: 36px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 7px;
+    background: #21457B;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.2s ease;
 }
 
+.report-export-btn:hover {
+    background: #19365f;
+}
+/* =========================
+   Summary Cards
+========================= */
 
-
-.report-card{
-
-    width:300px;
-
-    background:#b1d7ff;
-
-    border:2px solid #404090;
-
-    border-radius:15px;
-
-    padding:18px;
-
-    margin-top:20px;
-
+.report-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    padding: 18px 24px 8px;
 }
 
-
-
-.report-card h2{
-
-    font-size:40px;
-
-    color:black;
-
+.report-summary-card {
+    background: white;
+    border: 1px solid #e1e6ed;
+    border-radius: 10px;
+    padding: 14px 16px;
 }
 
-
-
-.report-card h3{
-
-    margin-top:10px;
-
-    font-size:26px;
-
-    font-weight:normal;
-
-    font-family:Georgia, serif;
-
-    color:black;
-
+.report-summary-card span {
+    display: block;
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 6px;
 }
 
+.report-summary-card strong {
+    font-size: 24px;
+    font-weight: 600;
+    color: #21457B;
+}
+/* =========================
+   Middle Sections
+========================= */
 
-
-.report-card p{
-
-    color:#555;
-
-    margin-top:8px;
-
+.report-middle {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 14px;
+    padding: 10px 24px;
 }
 
-
-.report-chart-container{
-
-    background:#cfe9ff;
-    border-radius:18px;
-    padding:25px;
-    border:2px solid navy;
-    width:80%;
-    justify-content:center;
-    margin-left: 120px;
-
+.report-section {
+    background: white;
+    border: 1px solid #e1e6ed;
+    border-radius: 10px;
+    padding: 16px;
 }
 
-
-
-.report-chart-container h2{
-
-    font-family:Georgia, serif;
-    font-size:40px;
-    text-align: center;
-    margin-bottom:20px;
-    color: black;
-
+.report-section-header {
+    margin-bottom: 14px;
 }
+
+.report-section-header h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.report-section-header p {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* =========================
+   Monthly Chart
+========================= */
 
 .report-chart {
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    height: 300px;
+    height: 220px;
 }
 
-
-/* Y-axis */
 .report-y-axis {
+    width: 30px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-
-    height: 260px;
-
-    margin-right: 30px;
-    margin-top: 0;
-
-    color: black;
+    padding-bottom: 22px;
 }
 
+.report-y-axis span {
+    font-size: 10px;
+    color: #94a3b8;
+}
 
-/* Bars area */
 .report-bars {
+    flex: 1;
     display: flex;
     align-items: flex-end;
-
-    gap: 50px;
-
-    height: 300px;
+    justify-content: space-around;
+    height: 100%;
+    border-bottom: 1px solid #e1e6ed;
 }
 
-
-/* Each month */
 .report-bar-group {
     position: relative;
-
-    width: 40px;
-    height: 300px;
-
+    width: 30px;
+    height: 100%;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: flex-end;
+    flex-direction: column;
 }
 
-
-/* Bar */
 .report-bar {
-    width: 30px;
-
-    min-height: 5px;
-
-    background: #1f1d8f;
-
-    border-radius: 3px 3px 0 0;
-
-    margin-bottom: 30px;
+    width: 20px;
+    min-height: 4px;
+    background: #21457B;
+    border-radius: 4px 4px 0 0;
 }
 
-
-/* Month */
 .report-bar-group span {
-    position: absolute;
-
-    bottom: 0;
-
-    font-size: 18px;
+    margin-top: 7px;
+    font-size: 10px;
+    color: #64748b;
 }
 
+/* =========================
+   Vaccination Status
+========================= */
 
+.report-status-list {
+    display: flex;
+    flex-direction: column;
+}
 
+.report-status-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 0;
+    border-bottom: 1px solid #edf0f3;
+}
 
+.report-status-item:last-child {
+    border-bottom: none;
+}
 
+.report-status-item span {
+    font-size: 12px;
+    color: #475569;
+}
 
+.report-status-item strong {
+    font-size: 15px;
+    font-weight: 600;
+    color: #21457B;
+}
+/* =========================
+   Bottom Sections
+========================= */
 
+.report-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    padding: 10px 24px 24px;
+}
+.report-bottom .report-section {
+    height: 220px;
+    overflow-y: auto;
+}
+.report-bottom .report-section-header {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+    padding-bottom: 8px;
+}
+
+/* =========================
+   Vaccine Usage
+========================= */
+
+.report-usage-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.report-usage-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid #edf0f3;
+}
+
+.report-usage-item:last-child {
+    border-bottom: none;
+}
+
+.report-usage-item span {
+    font-size: 12px;
+    color: #475569;
+}
+
+.report-usage-item strong {
+    font-size: 12px;
+    font-weight: 600;
+    color: #21457B;
+}
+
+/* =========================
+   Appointment Summary
+========================= */
+
+.report-appointment-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.report-appointment-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid #edf0f3;
+}
+
+.report-appointment-item:last-child {
+    border-bottom: none;
+}
+
+.report-appointment-item span {
+    font-size: 12px;
+    color: #475569;
+}
+
+.report-appointment-item strong {
+    font-size: 12px;
+    font-weight: 600;
+    color: #21457B;
+}

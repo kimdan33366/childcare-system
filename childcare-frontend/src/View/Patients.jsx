@@ -12,6 +12,7 @@ import {
   FaPhoneAlt,
   FaEdit,
   FaTrash,
+  FaChevronDown,
 } from "react-icons/fa";
 
 import Sidebar from "../View/Sidebar";
@@ -28,6 +29,7 @@ function Patients() {
   const [patients, setPatients] = useState([]);
 
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
 
   const [showAddPatient, setShowAddPatient] = useState(false);
 
@@ -55,10 +57,45 @@ function Patients() {
 
   const [address, setAddress] = useState("");
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const getPatientStatus = (patient) => {
+    const records = patient.patient_records || [];
 
-  const filteredPatients = patients.filter((patient) =>
-    patient.child_name?.toLowerCase().includes(search.toLowerCase()),
-  );
+    if (records.length === 0) {
+      return "Not Started";
+    }
+
+    if (records.some((record) => record.status === "Missed")) {
+      return "Missed";
+    }
+
+    if (records.some((record) => record.status === "Continuing")) {
+      return "Continuing";
+    }
+
+    if (records.every((record) => record.status === "Completed")) {
+      return "Completed";
+    }
+
+    return "Continuing";
+  };
+  const filteredPatients = patients.filter((patient) => {
+    const searchValue = search.toLowerCase();
+
+    const parentNames = [patient.mother_name, patient.father_name]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    const matchesSearch =
+      patient.child_name?.toLowerCase().includes(searchValue) ||
+      parentNames.includes(searchValue);
+
+    const patientStatus = getPatientStatus(patient);
+    const matchesStatus =
+      statusFilter === "All" || patientStatus === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   const handleAddPatient = async () => {
     try {
@@ -181,19 +218,10 @@ function Patients() {
 
       <main className="patients-content">
         <div className="patients-header">
-          <h2>{isEditingPatient ? "Edit Patient" : "Add Patient"}</h2>
-        </div>
+          <div>
+            <h2>Patients</h2>
 
-        <div className="patients-search-section">
-          <div className="patients-search-bar">
-            <FaSearch />
-
-            <input
-              type="text"
-              placeholder="Search names of children........"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <p>Manage registered children and vaccination records.</p>
           </div>
 
           <button
@@ -205,131 +233,199 @@ function Patients() {
             }}
           >
             <FaPlus />
-            Add
+            Add Patient
           </button>
+        </div>
+
+        <div className="patients-search-section">
+          <div className="patients-search-bar">
+            <FaSearch />
+
+            <input
+              type="text"
+              placeholder="Search child or parent..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="patients-status-filter">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="All">All Status</option>
+              <option value="Not Started">Not Started</option>
+              <option value="Continuing">Continuing</option>
+              <option value="Completed">Completed</option>
+              <option value="Missed">Missed</option>
+            </select>
+
+            <FaChevronDown />
+          </div>
         </div>
 
         <div className="patient-list">
           <div className="patient-list-header">
             <h3>Registered Patients</h3>
+
             <span>
               {filteredPatients.length}
-              {filteredPatients.length === 1 ? " Patient" : " Patients"}{" "}
+              {filteredPatients.length === 1 ? " Patient" : " Patients"}
             </span>
           </div>
+
           {filteredPatients.length > 0 ? (
-            filteredPatients.map((patient) => (
-              <div className="patient-card" key={patient.child_id}>
-                <div
-                  className="progress-circle"
-                  style={{
-                    "--progress": patient.coverage,
-                  }}
-                >
-                  <span>{patient.coverage || "0%"}</span>
-                </div>
+            <div className="patients-table-wrapper">
+              <table className="patients-table">
+                <thead>
+                  <tr>
+                    <th>Child</th>
+                    <th>Parent / Guardian</th>
+                    <th>Age</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
 
-                <FaUserCircle className="patient-icon" />
+                <tbody>
+                  {filteredPatients.map((patient) => (
+                    <tr key={patient.child_id}>
+                      {/* Child */}
+                      <td>
+                        <div className="patient-child-info">
+                          <FaUserCircle />
 
-                <div className="patient-info">
-                  <h3>{patient.child_name}</h3>
+                          <span>{patient.child_name}</span>
+                        </div>
+                      </td>
 
-                  <div className="patient-details">
-                    <p>{patient.age_months || "—"} months old</p>
+                      {/* Parent / Guardian */}
+                      <td>
+                        <span className="patient-parent">
+                          {patient.mother_name && patient.father_name
+                            ? `${patient.mother_name} / ${patient.father_name}`
+                            : patient.mother_name || patient.father_name || "—"}
+                        </span>
+                      </td>
 
-                    <p>{patient.gender || "—"}</p>
+                      {/* Age */}
+                      <td>
+                        {patient.age_months
+                          ? `${patient.age_months} months`
+                          : "—"}
+                      </td>
 
-                    <p>{patient.address || "No address"}</p>
+                      {/* Status */}
+                      <td>
+                        <span
+                          className={`patient-status status-${getPatientStatus(
+                            patient,
+                          )
+                            .toLowerCase()
+                            .replace(" ", "-")}`}
+                        >
+                          {getPatientStatus(patient)}
+                        </span>
+                      </td>
 
-                    <p>{patient.coverage || "0%"} covered</p>
-                  </div>
-                </div>
+                      {/* Actions */}
+                      <td>
+                        <div className="patient-actions">
+                          <FaEye
+                            className="view-action"
+                            title="View Record"
+                            onClick={() =>
+                              navigate(
+                                `/patient_viewrecord/${patient.child_id}`,
+                              )
+                            }
+                          />
 
-                <div className="patient-actions">
-                  <FaEdit
-                    className="edit-action"
-                    title="Edit Patient"
-                    onClick={() => {
-                      setSelectedPatient(patient);
-                      setIsEditingPatient(true);
+                          <FaEdit
+                            className="edit-action"
+                            title="Edit Patient"
+                            onClick={() => {
+                              setSelectedPatient(patient);
+                              setIsEditingPatient(true);
 
-                      setChildName(patient.child_name || "");
-                      setAge(patient.age_months || "");
-                      setBirthdate(patient.birthdate || "");
-                      setSex(patient.gender || "");
-                      setAddress(patient.address || "");
-                      setMotherName(patient.mother_name || "");
-                      setFatherName(patient.father_name || "");
+                              setChildName(patient.child_name || "");
 
-                      setShowAddPatient(true);
-                    }}
-                  />
+                              setAge(patient.age_months || "");
 
-                  <FaPaperPlane
-                    className="sms-action"
-                    title="Send SMS"
-                    onClick={() => {
-                      setSelectedPatient(patient);
-                      setShowSMSModal(true);
-                    }}
-                  />
+                              setBirthdate(patient.birthdate || "");
 
-                  <FaEye
-                    className="view-action"
-                    title="View Record"
-                    onClick={() =>
-                      navigate(`/patient_viewrecord/${patient.child_id}`)
-                    }
-                  />
+                              setSex(patient.gender || "");
 
-                  <FaTrash
-                    className="delete-action"
-                    title="Delete Patient"
-                    onClick={async () => {
-                      const confirmed = window.confirm(
-                        `Are you sure you want to delete ${patient.child_name}?`,
-                      );
+                              setMotherName(patient.mother_name || "");
 
-                      if (!confirmed) return;
+                              setFatherName(patient.father_name || "");
 
-                      try {
-                        const response = await fetch(
-                          `http://127.0.0.1:8000/api/children/${patient.child_id}`,
-                          {
-                            method: "DELETE",
-                            headers: {
-                              Accept: "application/json",
-                            },
-                          },
-                        );
+                              setAddress(patient.address || "");
 
-                        if (!response.ok) {
-                          const data = await response.json();
-                          console.error(data);
-                          alert("Failed to delete patient.");
-                          return;
-                        }
+                              setShowAddPatient(true);
+                            }}
+                          />
 
-                        setPatients((prevPatients) =>
-                          prevPatients.filter(
-                            (item) => item.child_id !== patient.child_id,
-                          ),
-                        );
+                          <FaTrash
+                            className="delete-action"
+                            title="Delete Patient"
+                            onClick={async () => {
+                              const confirmed = window.confirm(
+                                `Are you sure you want to delete ${patient.child_name}?`,
+                              );
 
-                        alert("Patient deleted successfully!");
-                      } catch (error) {
-                        console.error("Error deleting patient:", error);
-                        alert("Could not connect to the server.");
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-            ))
+                              if (!confirmed) return;
+
+                              try {
+                                const response = await fetch(
+                                  `http://127.0.0.1:8000/api/children/${patient.child_id}`,
+                                  {
+                                    method: "DELETE",
+                                    headers: {
+                                      Accept: "application/json",
+                                    },
+                                  },
+                                );
+
+                                if (!response.ok) {
+                                  const data = await response.json();
+
+                                  console.error(data);
+
+                                  alert("Failed to delete patient.");
+
+                                  return;
+                                }
+
+                                setPatients((prevPatients) =>
+                                  prevPatients.filter(
+                                    (item) =>
+                                      item.child_id !== patient.child_id,
+                                  ),
+                                );
+
+                                alert("Patient deleted successfully!");
+                              } catch (error) {
+                                console.error("Error deleting patient:", error);
+
+                                alert("Could not connect to the server.");
+                              }
+                            }}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div className="patients-empty-state">
               <FaUserCircle />
+
               <p>No patients found</p>
+
               <span>Try searching for a different name.</span>
             </div>
           )}
@@ -469,25 +565,24 @@ function Patients() {
             />
 
             <div className="patients-add-buttons">
-              <button onClick={() => {
-                  setSelectedPatient(patient);
-                  setIsEditingPatient(true);
-
-                  setChildName(patient.child_name || "");
-                  setAge(patient.age_months || "");
-                  setBirthdate(patient.birthdate || "");
-                  setSex(patient.gender || "");
-                  setMotherName(patient.mother_name || "");
-                  setFatherName(patient.father_name || "");
-                  setAddress(patient.address || "");
-
-                setShowAddPatient(true);
-              }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddPatient(false);
+                  setSelectedPatient(null);
+                  setIsEditingPatient(false);
+                }}
+              >
                 Cancel
               </button>
 
-              <button onClick={isEditingPatient ? handleEditPatient : handleAddPatient}>
-                Save
+              <button
+                type="button"
+                onClick={
+                  isEditingPatient ? handleEditPatient : handleAddPatient
+                }
+              >
+                {isEditingPatient ? "Update Patient" : "Save Patient"}
               </button>
             </div>
           </div>

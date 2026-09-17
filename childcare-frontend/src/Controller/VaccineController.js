@@ -13,7 +13,7 @@ function VaccineController() {
   const [showModal, setShowModal] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
-
+const [openMenuId, setOpenMenuId] = useState(null);
   const [newVaccine, setNewVaccine] = useState(emptyVaccine);
 
   const handleInputChange = (field, value) => {
@@ -90,33 +90,40 @@ function VaccineController() {
   }
 
   try {
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/vaccines",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
-        body: JSON.stringify({
-          vaccine_name: newVaccine.name,
-          date_stored: new Date().toISOString().split("T")[0],
-          expiration_date: newVaccine.expiration,
-          stock_quantity: quantity,
-          status: quantity > 0 ? "Available" : "Out of Stock",
-        }),
-      }
-    );
+    const isEditing = editingId !== null;
+
+    const url = isEditing
+      ? `http://127.0.0.1:8000/api/vaccines/${editingId}`
+      : "http://127.0.0.1:8000/api/vaccines";
+
+    const response = await fetch(url, {
+      method: isEditing ? "PUT" : "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        vaccine_name: newVaccine.name,
+        date_stored: new Date().toISOString().split("T")[0],
+        expiration_date: newVaccine.expiration,
+        stock_quantity: quantity,
+        status: quantity > 0 ? "Available" : "Out of Stock",
+      }),
+    });
 
     const data = await response.json();
 
     if (!response.ok) {
       console.error(data);
-      alert("Failed to add vaccine.");
+      alert(
+        isEditing
+          ? "Failed to update vaccine."
+          : "Failed to add vaccine."
+      );
       return;
     }
 
-    const vaccineToAdd = {
+    const vaccineData = {
       id: data.vaccine_ID,
       name: data.vaccine_name,
       expiration: data.expiration_date,
@@ -127,17 +134,29 @@ function VaccineController() {
           : "Out of Stock",
     };
 
-    setVaccines((previous) => [
-      ...previous,
-      vaccineToAdd,
-    ]);
+    if (isEditing) {
+      setVaccines((previous) =>
+        previous.map((vaccine) =>
+          vaccine.id === editingId
+            ? vaccineData
+            : vaccine
+        )
+      );
 
-    alert("Vaccine added successfully!");
+      alert("Vaccine updated successfully!");
+    } else {
+      setVaccines((previous) => [
+        ...previous,
+        vaccineData,
+      ]);
+
+      alert("Vaccine added successfully!");
+    }
 
     closeModal();
 
   } catch (error) {
-    console.error("Error adding vaccine:", error);
+    console.error("Error saving vaccine:", error);
     alert("Could not connect to the server.");
   }
 };
@@ -175,6 +194,10 @@ function VaccineController() {
     setStatusFilter,
     showModal,
     editingId,
+    openMenuId,
+    setOpenMenuId,
+    vaccines,
+    setVaccines,
     newVaccine,
     handleInputChange,
     openAddModal,

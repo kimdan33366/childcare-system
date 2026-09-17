@@ -66,7 +66,12 @@ function Appointments() {
       appointment_time: time,
       subject: subject,
       address: "Barangay Health Center",
-      status: "Pending",
+      status:
+        editingId !== null
+          ? appointments.find(
+              (appointment) => appointment.appointment_id === editingId,
+            ).status || "Pending"
+          : "Pending",
       admin_id: 1,
       user_id: 3,
     };
@@ -104,10 +109,12 @@ function Appointments() {
 
       if (!response.ok) {
         console.error("Laravel error:", result);
-        alert(result.message || "An error occurred while saving the appointment.");
+        alert(
+          result.message || "An error occurred while saving the appointment.",
+        );
         return;
       }
-      
+
       console.log(
         editingId !== null ? "Appointment updated:" : "Appointment created:",
         result,
@@ -186,6 +193,40 @@ function Appointments() {
       setAppointments(updatedData);
     } catch (error) {
       console.error("Error deleting appointment:", error);
+    }
+  };
+  const updateAppointmentStatus = async (id, newStatus) => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/appointments/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            status: newStatus,
+          }),
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error("Laravel error:", result);
+        alert(result.message || "Failed to update appointment status.");
+        return;
+      }
+
+      console.log("Appointment status updated:", result);
+
+      const updated = await fetch("http://127.0.0.1:8000/api/appointments");
+
+      const updatedData = await updated.json();
+      setAppointments(updatedData);
+    } catch (error) {
+      console.error("Error updating appointment status:", error);
     }
   };
 
@@ -279,9 +320,39 @@ function Appointments() {
                       )?.child_name || "Unknown Child"}
                     </h3>
 
-                    <span className="appointment-status">
-                      {appointment.status || "Pending"}
-                    </span>
+                    <select
+                      className={`appointment-status status-${(
+                        appointment.status || "Pending"
+                      )
+                        .toLowerCase()
+                        .replace(" ", "-")}`}
+                      value={appointment.status || "Pending"}
+                      onChange={(e) =>
+                        updateAppointmentStatus(
+                          appointment.appointment_id,
+                          e.target.value,
+                        )
+                      }
+                    >
+                      <option value={appointment.status || "Pending"}>
+                        {appointment.status || "Pending"}
+                      </option>
+
+                      {appointment.status === "Pending" && (
+                        <>
+                          <option value="Confirmed">Confirmed</option>
+                          <option value="Cancelled">Cancelled</option>
+                        </>
+                      )}
+
+                      {appointment.status === "Confirmed" && (
+                        <>
+                          <option value="Completed">Completed</option>
+                          <option value="Missed">Missed</option>
+                          <option value="Cancelled">Cancelled</option>
+                        </>
+                      )}
+                    </select>
                   </div>
 
                   <div className="appointment-details">
