@@ -20,10 +20,12 @@ class ProfileController extends Controller
         $request->validate([
             'Admin_name' => 'required|string|max:255',
             'Admin_email' => 'required|email|max:255|unique:admin,Admin_email,' . $id . ',Admin_id',
+            'Admin_role' => 'required|string|in:System Administrator,Staff',
         ]);
 
         $admin->Admin_name = $request->Admin_name;
         $admin->Admin_email = $request->Admin_email;
+        $admin->Admin_role = $request->Admin_role;
 
         $admin->save();
 

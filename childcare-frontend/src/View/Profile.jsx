@@ -4,162 +4,203 @@ import Sidebar from "../View/Sidebar";
 import { useState } from "react";
 
 function Profile() {
-const currentUser = JSON.parse(
-    localStorage.getItem("currentUser")
-  ) || {
-    Admin_name: "Carolene Ann Oblianda",
-    Admin_email: "",
-    Admin_role: "System Administrator",
-    };
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editName, setEditName] = useState(currentUser.Admin_name || "");
-    const [editEmail, setEditEmail] = useState(currentUser.Admin_email || "");
-  
+  const [currentUser, setCurrentUser] = useState(() => {
+    return (
+      JSON.parse(localStorage.getItem("currentUser")) || {
+        Admin_name: "Carolene Ann Oblianda",
+        Admin_email: "",
+        Admin_role: "System Administrator",
+      }
+    );
+  });
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState(currentUser.Admin_name || "");
+  const [editEmail, setEditEmail] = useState(currentUser.Admin_email || "");
+  const [editRole, setEditRole] = useState(
+    currentUser.Admin_role || "System Administrator",
+  );
   return (
     <div className="profile-dashboard">
-
       <Sidebar />
 
       <main className="profile-main-content">
-
-        <div className="profile-card">
-          <div className="profile-header">
-
-            <img
-              src="/profile.jpg"
-              alt="Profile"
-              className="profile-image"
-            />
-
+        <div className="profile-page">
+          {/* PAGE HEADER */}
+          <div className="profile-page-header">
             <div>
+              <h1>Profile</h1>
+              <p>Manage your personal account information.</p>
+            </div>
+          </div>
 
-              <h2>
-                {currentUser.Admin_name}
-              </h2>
+          {/* PROFILE OVERVIEW */}
+          <div className="profile-overview">
+            <div className="profile-overview-left">
+              <img src="/profile.jpg" alt="Profile" className="profile-image" />
 
-              <p>
-                {currentUser.Admin_role}
-              </p>
+              <div className="profile-overview-info">
+                <h2>{currentUser.Admin_name}</h2>
 
+                <p>{currentUser.Admin_role}</p>
+
+                <span className="profile-status">
+                  <span className="profile-status-dot"></span>
+                  Active
+                </span>
+              </div>
             </div>
 
-          </div>
-          <div className="profile-form-group">
-
-            <label>
-              Username
-            </label>
-
-            <input
-              type="text"
-              value={currentUser.Admin_name || ""}
-              readOnly
-            />
-
+            <button
+              className="profile-edit-btn"
+              onClick={() => setShowEditModal(true)}
+            >
+              Edit Profile
+            </button>
           </div>
 
+          {/* PERSONAL INFORMATION */}
+          <div className="profile-section">
+            <div className="profile-section-header">
+              <h2>Personal Information</h2>
 
-          <div className="profile-form-group">
+              <p>Your basic account information.</p>
+            </div>
 
-            <label>
-              Email
-            </label>
+            <div className="profile-information-grid">
+              <div className="profile-form-group">
+                <label>Full Name</label>
 
-            <input
-              type="email"
-              value={currentUser.Admin_email || ""}
-              readOnly
-            />
+                <input
+                  type="text"
+                  value={currentUser.Admin_name || ""}
+                  readOnly
+                />
+              </div>
 
+              <div className="profile-form-group">
+                <label>Email</label>
+
+                <input
+                  type="email"
+                  value={currentUser.Admin_email || ""}
+                  readOnly
+                />
+              </div>
+
+              <div className="profile-form-group">
+                <label>Role</label>
+                <input
+                  type="text"
+                  value={currentUser.Admin_role || ""}
+                  readOnly
+                />
+              </div>
+            </div>
           </div>
-          <button
-            className="profile-edit-btn"
-            onClick={() => setShowEditModal(true)
-              
-            }
-          >
-            Edit Profile
-          </button>
+
+          {/* EDIT PROFILE MODAL */}
           {showEditModal && (
-  <div className="profile-modal-overlay">
+            <div className="profile-modal-overlay">
+              <div className="profile-modal">
+                <h2>Edit Profile</h2>
 
-    <div className="profile-modal">
+                <div className="profile-form-group">
+                  <label>Name</label>
 
-      <h2>Edit Profile</h2>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                  />
+                </div>
 
-      <div className="profile-form-group">
-        <label>Name</label>
-        <input
-          type="text"
-          value={editName}
-          onChange={(e) => setEditName(e.target.value)}
-        />
-      </div>
+                <div className="profile-form-group">
+                  <label>Email</label>
 
-      <div className="profile-form-group">
-        <label>Email</label>
-        <input
-          type="email"
-          value={editEmail}
-          onChange={(e) => setEditEmail(e.target.value)}
-        />
-      </div>
+                  <input
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                  />
+                </div>
+                <div className="profile-form-group">
+                  <label>Role</label>
+                  <select
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value)}
+                  >
+                    <option value="System Administrator">
+                      System Administrator
+                    </option>
+                    <option value="Staff">Staff</option>
+                  </select>
+                </div>
 
-      <div className="profile-modal-buttons">
+                <div className="profile-modal-buttons">
+                  <button type="button" onClick={() => setShowEditModal(false)}>
+                    Cancel
+                  </button>
 
-  <button
-    type="button"
-    onClick={() => setShowEditModal(false)}
-  >
-    Cancel
-  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(
+                          `http://127.0.0.1:8000/api/profile/${currentUser.Admin_id}`,
+                          {
+                            method: "PUT",
+                            headers: {
+                              "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                              Admin_name: editName,
+                              Admin_email: editEmail,
+                              Admin_role: editRole,
+                            }),
+                          },
+                        );
 
-  <button
-    type="button"
-    onClick={async () => {
-  try {
-    const response = await fetch(
-      `http://127.0.0.1:8000/api/profile/${currentUser.Admin_id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          Admin_name: editName,
-          Admin_email: editEmail,
-        }),
-      }
-    );
+                        const data = await response.json();
 
-    const data = await response.json();
+                        if (!response.ok) {
+                          throw new Error(
+                            data.message || "Failed to update profile",
+                          );
+                        }
 
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to update profile");
-    }
+                        const updatedUser = data.admin;
 
-    alert("Profile updated successfully!");
+                        setCurrentUser(updatedUser);
 
-  } catch (error) {
-    console.error(error);
-    alert("Failed to update profile.");
-  }
-}}
-  >
-    Save Changes
-  </button>
+                        localStorage.setItem(
+                          "currentUser",
+                          JSON.stringify(updatedUser),
+                        );
 
-</div>
+                        setEditName(updatedUser.Admin_name || "");
+                        setEditEmail(updatedUser.Admin_email || "");
+                        setEditRole(
+                          updatedUser.Admin_role || "System Administrator",
+                        );
 
-    </div>
+                        setShowEditModal(false);
 
-  </div>
-)}
+                        alert("Profile updated successfully!");
+                      } catch (error) {
+                        console.error(error);
 
+                        alert("Failed to update profile.");
+                      }
+                    }}
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-
       </main>
-
     </div>
   );
 }

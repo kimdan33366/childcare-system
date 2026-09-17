@@ -23,7 +23,7 @@ body {
 
 .report-content {
     background: #E8F0FA;
-    overflow-y: auto;
+    overflow:hidden;
 }
 
 /* =========================
@@ -300,4 +300,16 @@ body {
     font-size: 12px;
     font-weight: 600;
     color: #21457B;
+}
+.report-bottom .report-section::-webkit-scrollbar {
+    width: 5px;
+}
+
+.report-bottom .report-section::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.report-bottom .report-section::-webkit-scrollbar-track {
+    background: transparent;
 }

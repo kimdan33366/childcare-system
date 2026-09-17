@@ -2,7 +2,6 @@ import "../css/Report.css";
 
 import Sidebar from "../View/Sidebar";
 import { useState, useEffect } from "react";
-import { reportCards } from "../model/ReportModel";
 
 function Report() {
   const [report, setReport] = useState(null);
@@ -27,6 +26,7 @@ function Report() {
 
   const graphMax = Math.ceil(maxDose / 10) * 10 || 10;
 
+  
   return (
     <div className="report-dashboard">
       <Sidebar />
@@ -38,7 +38,7 @@ function Report() {
             <p>Vaccination and clinic performance overview.</p>
           </div>
 
-          <button className="report-export-btn">Export Report</button>
+          
         </div>
 
         <div className="report-summary">

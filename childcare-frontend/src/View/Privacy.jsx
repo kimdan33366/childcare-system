@@ -24,35 +24,43 @@ import {
 
 function Privacy() {
   const navigate = useNavigate();
-   const handleLogout = () => {
+  const handleLogout = () => {
     alert("Logged out!");
     navigate("/login");
-};
+  };
   const [showSettings, setShowSettings] = useState(false);
 
   return (
     <div className="privacy-dashboard">
       <Sidebar />
       <main className="privacy-container">
-        <div className="privacy-card">
+        <div className="privacy-page-header">
           <h1>Privacy & Security</h1>
+          <p>
+            Learn how personal information is protected and handled within the
+            system.
+          </p>
+        </div>
 
-          <section>
+        <section className="privacy-statement-card">
+          <div className="privacy-section-header">
             <h2>Privacy Statement</h2>
-            <p>
-              Your privacy is our priority. This system is designed to protect
-              the personal information of parents, children, and healthcare
-              personnel.
-            </p>
+          </div>
 
-            <p>
-              Personal information is handled responsibly and will not be
-              disclosed to unauthorized individuals except when required by law
-              or with the consent of the parent or legal guardian.
-            </p>
-          </section>
+          <p>
+            Your privacy is our priority. This system is designed to protect the
+            personal information of parents, children, and healthcare personnel.
+          </p>
 
-          <section>
+          <p>
+            Personal information is handled responsibly and will not be
+            disclosed to unauthorized individuals except when required by law or
+            with the consent of the parent or legal guardian.
+          </p>
+        </section>
+
+        <div className="privacy-info-grid">
+          <section className="privacy-info-card">
             <h2>Privacy Policy</h2>
 
             <ul>
@@ -60,12 +68,10 @@ function Privacy() {
                 Child and parent information is collected only for immunization
                 management purposes.
               </li>
-
               <li>
                 Personal data is kept confidential and is accessible only to
                 authorized healthcare personnel.
               </li>
-
               <li>
                 The system complies with applicable data privacy regulations and
                 follows secure data handling practices.
@@ -73,7 +79,7 @@ function Privacy() {
             </ul>
           </section>
 
-          <section>
+          <section className="privacy-info-card">
             <h2>Security Features</h2>
 
             <ul>
@@ -81,31 +87,26 @@ function Privacy() {
                 Secure login authentication for parents and healthcare
                 personnel.
               </li>
-
               <li>
                 Role-based access to prevent unauthorized viewing or editing of
                 records.
               </li>
-
               <li>Encrypted storage of sensitive information.</li>
-
-              <li>
-                Regular database backup to prevent data loss.
-              </li>
+              <li>Regular database backup to prevent data loss.</li>
             </ul>
           </section>
 
-          <section>
+          <section className="privacy-info-card">
             <h2>Data Protection</h2>
 
             <p>
               We use appropriate technical and organizational measures to
-              protect your information against unauthorized access,
-              alteration, disclosure, or destruction.
+              protect your information against unauthorized access, alteration,
+              disclosure, or destruction.
             </p>
           </section>
 
-          <section>
+          <section className="privacy-info-card">
             <h2>Your Rights</h2>
 
             <ul>

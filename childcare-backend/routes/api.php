@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ReportPdfController;
 use App\Http\Controllers\ChildController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController; 
@@ -15,6 +16,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PatientViewRecordController;
+
 
 Route::get('/children', [ChildController::class, 'index']);
 Route::get('/children/{id}', [ChildController::class, 'show']);
@@ -54,6 +56,7 @@ Route::put('/vaccines/{id}', [VaccineController::class, 'update']);
 Route::delete('/vaccines/{id}', [VaccineController::class, 'destroy']);
 
 Route::get('/reports', [ReportController::class, 'index']);
+Route::get('/reports/export', [ReportPdfController::class, 'export']);
 
 Route::get('/notifications', [NotificationController::class, 'index']);
 Route::post('/notifications', [NotificationController::class, 'store']);

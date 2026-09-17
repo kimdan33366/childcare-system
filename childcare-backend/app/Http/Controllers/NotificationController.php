@@ -27,23 +27,31 @@ class NotificationController extends Controller
     }
 
     // Create notification for a specific child
+    
     public function store(Request $request)
-    {
-        $request->validate([
-            'child_id' => 'required|exists:children,child_id',
-            'message' => 'required|string',
-        ]);
+{
+    $request->validate([
+        'child_id' => 'required|exists:children,child_id',
+        'message' => 'required|string',
+    ]);
 
-        $notification = Notification::create([
-            'child_id' => $request->child_id,
-            'message' => $request->message,
-        ]);
+    $child = \App\Models\Child::findOrFail($request->child_id);
 
-        return response()->json([
-            'message' => 'Notification sent successfully.',
-            'notification' => $notification
-        ], 201);
-    }
+    $user = \App\Models\User::findOrFail($child->user_id);
+
+    $notification = Notification::create([
+        'child_id' => $child->child_id,
+        'parent' => $user->user_fullname,
+        'phone' => $user->mobile_number,
+        'message' => $request->message,
+        'status' => 'Pending',
+    ]);
+
+    return response()->json([
+        'message' => 'Notification created successfully.',
+        'notification' => $notification
+    ], 201);
+}
 
     // Send notification to all parents
     public function broadcast(Request $request)
