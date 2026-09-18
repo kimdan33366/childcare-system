@@ -1,72 +1,494 @@
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, Helvetica, sans-serif;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 html,
 body,
-#root{
-    width:100%;
-    height:100%;
-}
-.help-dashboard{
-    width:100%;
-    height:100vh;
-    display:grid;
-    grid-template-columns:260px 1fr;
-    overflow:hidden;
+#root {
+  width: 100%;
+  height: 100%;
 }
 
+/* =========================
+   LAYOUT
+========================= */
+
+.help-dashboard {
+  width: 100%;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  overflow: hidden;
+}
 
 .help-container {
-  flex: 1;
-  padding: 15px;
-}
-
-.help-card {
-  background: #cde5f3;
-  border: 2px solid #555;
-  border-radius: 12px;
-  padding: 20px;
-  height: calc(100vh - 30px);
+  width: 100%;
+  height: 100vh;
+  padding: 35px 45px;
+  background: #ffffff;
   overflow-y: auto;
 }
 
+/* =========================
+   PAGE HEADER
+========================= */
 
-.help-card h1 {
-  text-align: center;
-  margin-bottom: 30px;
-  font-size: 32px;
+.help-page-header {
+  max-width: 1150px;
+  margin: 0 auto 30px;
 }
 
-.help-card h2 {
-  margin-top: 20px;
-  margin-bottom: 10px;
-  color: #222;
+.help-page-header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1f2937;
 }
 
-.help-card p {
-  line-height: 1.6;
-  margin-bottom: 10px;
+.help-page-header p {
+  margin-top: 7px;
+  font-size: 14px;
+  color: #6b7280;
 }
 
-.help-card ul {
-  padding-left: 22px;
-}
+/* =========================
+   HELP CENTER
+========================= */
 
-.help-card li {
-  margin-bottom: 6px;
-}
-
-.help-card::-webkit-scrollbar {
-  width: 8px;
-}
-
-.help-card::-webkit-scrollbar-thumb {
-  background: #1c2b5a;
+.help-center-card {
+  max-width: 1150px;
+  margin: 0 auto 30px;
+  padding: 30px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 10px;
 }
 
+.help-section-header {
+  margin-bottom: 20px;
+}
+
+.help-section-header h2 {
+  font-size: 19px;
+  font-weight: 600;
+  color: #21457b;
+}
+
+.help-section-header p {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* SEARCH */
+
+.help-search {
+  position: relative;
+  width: 100%;
+}
+
+.help-search input {
+  width: 100%;
+  height: 44px;
+  padding: 0 45px 0 14px;
+  border: 1px solid #d9dee5;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 14px;
+  outline: none;
+}
+
+.help-search input::placeholder {
+  color: #9ca3af;
+}
+
+.help-search input:focus {
+  border-color: #21457b;
+}
+
+.help-search span {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 22px;
+  color: #6b7280;
+}
+
+/* =========================
+   FAQ SECTION
+========================= */
+
+.help-faq-section {
+  max-width: 1150px;
+  margin: 0 auto 30px;
+}
+
+.help-section-title {
+  margin-bottom: 16px;
+}
+
+.help-section-title h2 {
+  font-size: 19px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.help-section-title p {
+  margin-top: 5px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* FAQ LIST */
+
+.help-faq-list {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.help-faq-item {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.help-faq-item:last-child {
+  border-bottom: none;
+}
+
+/* QUESTION */
+
+.help-faq-question {
+  width: 100%;
+  min-height: 65px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: #ffffff;
+  border: none;
+  color: #374151;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.help-faq-question:hover {
+  background: #fafbfc;
+}
+
+.help-faq-question > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.help-faq-question small {
+  min-width: 28px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #21457b;
+}
+
+.help-faq-arrow {
+  font-size: 20px;
+  color: #6b7280;
+}
+
+/* ANSWER */
+
+.help-faq-answer {
+  padding: 0 20px 20px 64px;
+}
+
+.help-faq-answer p {
+  max-width: 900px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #6b7280;
+}
+
+/* =========================
+   SUPPORT
+========================= */
+
+.help-support-section {
+  max-width: 1150px;
+  margin: 0 auto;
+}
+
+.help-support-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 25px;
+}
+
+.help-support-card {
+  padding: 30px;
+  min-height: 200px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.help-support-card h3 {
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #21457b;
+}
+
+.help-support-card p {
+  min-height: 55px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #6b7280;
+}
+
+.help-support-card button {
+  height: 38px;
+  padding: 0 17px;
+  background: #21457b;
+  color: #ffffff;
+  border: 1px solid #21457b;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.help-support-card button:hover {
+  background: #18365f;
+}
+
+/* =========================
+   SCROLLBAR
+========================= */
+
+.help-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.help-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.help-container::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 850px) {
+  .help-container {
+    padding: 25px 20px;
+  }
+
+  .help-support-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .help-container {
+    padding: 20px 15px;
+  }
+
+  .help-center-card,
+  .help-support-card {
+    padding: 20px;
+  }
+
+  .help-page-header h1 {
+    font-size: 24px;
+  }
+
+  .help-faq-question {
+    padding: 15px;
+  }
+
+  .help-faq-answer {
+    padding: 0 15px 18px 15px;
+  }
+
+  .help-faq-question > span:first-child {
+    gap: 10px;
+  }
+}
+.help-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.help-modal {
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 25px;
+}
+
+.help-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.help-modal-header h2 {
+  font-size: 19px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.help-modal-header p {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.help-modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.help-modal-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.help-contact-info {
+  padding: 20px 0;
+}
+
+.help-contact-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px 0;
+}
+
+.help-contact-item span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.help-contact-item strong {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.help-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 15px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.help-modal-actions button {
+  height: 38px;
+  padding: 0 17px;
+  background: #21457b;
+  color: #ffffff;
+  border: 1px solid #21457b;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.help-modal-actions button:hover {
+  background: #18365f;
+}
+.help-feedback-form {
+  padding: 20px 0;
+}
+
+.help-form-group {
+  margin-bottom: 18px;
+}
+
+.help-form-group:last-child {
+  margin-bottom: 0;
+}
+
+.help-form-group label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.help-form-group select,
+.help-form-group textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 13px;
+  outline: none;
+}
+
+.help-form-group select {
+  height: 42px;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.help-form-group textarea {
+  min-height: 120px;
+  padding: 12px;
+  resize: vertical;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.5;
+}
+
+.help-form-group select:focus,
+.help-form-group textarea:focus {
+  border-color: #21457b;
+}
+
+.help-form-group textarea::placeholder {
+  color: #9ca3af;
+}
+
+.help-cancel-button {
+  margin-right: 8px;
+  background: #ffffff !important;
+  color: #374151 !important;
+  border-color: #d1d5db !important;
+}
+
+.help-cancel-button:hover {
+  background: #f3f4f6 !important;
+}
 

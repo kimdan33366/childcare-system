@@ -16,7 +16,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PatientViewRecordController;
-
+use App\Http\Controllers\StaffPermissionController;
+use App\Http\Controllers\StaffController;
 
 Route::get('/children', [ChildController::class, 'index']);
 Route::get('/children/{id}', [ChildController::class, 'show']);
@@ -67,6 +68,24 @@ Route::get('/patient-records/{child_id}', [PatientViewRecordController::class, '
 Route::put('/patient-records/{patient_recordID}/status', [PatientViewRecordController::class, 'updateStatus']);
 Route::post('/patient-records', [PatientViewRecordController::class, 'store']); 
 Route::put('/patient-records/{patient_recordID}', [PatientViewRecordController::class, 'update']);
+
+Route::get('/staff', [StaffController::class, 'index']);
+Route::post('/staff', [StaffController::class, 'store']);
+Route::post('/staff/login', [StaffController::class, 'login']);
+Route::get('/staff/{id}', [StaffController::class, 'show']);
+Route::put('/staff/{id}', [StaffController::class, 'update']);
+Route::delete('/staff/{id}', [StaffController::class, 'destroy']);
+
+Route::get(
+    '/staff/{staffId}/permissions',
+    [StaffPermissionController::class, 'index']
+);
+
+Route::put(
+    '/staff/{staffId}/permissions',
+    [StaffPermissionController::class, 'update']
+);
+
 
 Route::get('/test-email', function () {
     Mail::to('arielamit43@gmail.com')->send(new TestMail());

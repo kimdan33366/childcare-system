@@ -24,6 +24,15 @@ body,
 
     overflow: hidden;
 }
+.dashboard-card {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+}
 
 .sidebar {
     width: 260px;

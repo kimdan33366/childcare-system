@@ -160,19 +160,41 @@ const [openMenuId, setOpenMenuId] = useState(null);
     alert("Could not connect to the server.");
   }
 };
-  const deleteVaccine = (id) => {
+  
+const deleteVaccine = async (id) => {
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete this vaccine?"
+  );
 
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this vaccine?"
+  if (!confirmDelete) return;
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/vaccines/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+        },
+      }
     );
 
-    if (!confirmDelete) return;
+    if (!response.ok) {
+      throw new Error("Failed to delete vaccine");
+    }
 
+    // Remove it from the UI only after the database deletion succeeds
     setVaccines((previous) =>
       previous.filter((vaccine) => vaccine.id !== id)
     );
 
-  };
+    alert("Vaccine deleted successfully.");
+
+  } catch (error) {
+    console.error("Delete vaccine error:", error);
+    alert("Failed to delete vaccine. Please try again.");
+  }
+};
 
   const filteredVaccines = vaccines
     .filter((vaccine) =>

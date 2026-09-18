@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import {
   FaChild,
   FaExclamationTriangle,
-  FaClock,
+  FaUserFriends,
   FaShieldAlt,
   FaCalendarCheck,
 } from "react-icons/fa";
@@ -94,37 +94,37 @@ function Dashboard() {
 
       <main className="dashboard-content">
         <div className="dashboard-cards">
-          <div className="dashboard-card">
+          <NavLink to="/patients" className="dashboard-card">
             <div className="dashboard-card-top">
               <FaChild className="dashboard-card-icon" />
             </div>
             <small>Total Children</small>
             <h2>{dashboardData.children}</h2>
-          </div>
+          </NavLink>
 
-          <div className="dashboard-card">
+          <NavLink to="/patients" className="dashboard-card">
             <div className="dashboard-card-top">
               <FaExclamationTriangle className="dashboard-card-icon overdue" />
             </div>
             <small>Overdue</small>
             <h2>{dashboardData.overdue}</h2>
-          </div>
+          </NavLink>
 
-          <div className="dashboard-card">
+          <NavLink to="/user-management" className="dashboard-card">
             <div className="dashboard-card-top">
-              <FaClock className="dashboard-card-icon due" />
+              <FaUserFriends className="dashboard-card-icon due" />
             </div>
-            <small>Due Soon</small>
-            <h2>{dashboardData.due_soon}</h2>
-          </div>
+            <small>Active User</small>
+            <h2>{dashboardData.active_user}</h2>
+          </NavLink>
 
-          <div className="dashboard-card">
+          <NavLink to="/report" className="dashboard-card">
             <div className="dashboard-card-top">
               <FaShieldAlt className="dashboard-card-icon vaccine" />
             </div>
             <small>Doses Given</small>
             <h2>{dashboardData.doses_given}</h2>
-          </div>
+          </NavLink>
         </div>
 
         <div className="dashboard-chart-row">

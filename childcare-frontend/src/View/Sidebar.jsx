@@ -1,6 +1,4 @@
-import { useState,useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { getCurrentUser } from "../Controller/AuthController";
 
 import logo1 from "../images/logo1.png";
 import "../css/Sidebar.css";
@@ -14,28 +12,12 @@ import {
   FaBell,
   FaSignOutAlt,
   FaUserCircle,
-  FaChevronDown,
-  FaChevronUp,
-  FaInfoCircle,
-  FaLock,
-  FaQuestionCircle,
   FaUser,
-  FaCog,
+  FaQuestionCircle,
 } from "react-icons/fa";
 
 function Sidebar() {
-  const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/Admin")
-    .then((response) => response.json())
-    .then((data) => {
-      setCurrentUser(data);
-    })
-  }, []);
-
-  const [showSettings, setShowSettings] = useState(false);
 
   const handleLogout = () => {
     alert("Logged out!");
@@ -44,8 +26,9 @@ function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <div className="logo-section">
 
+      {/* Logo */}
+      <div className="logo-section">
         <div className="logo-container">
           <img
             src={logo1}
@@ -55,111 +38,100 @@ function Sidebar() {
         </div>
 
         <h2>ChildCare</h2>
-
+        <span className="sidebar-subtitle">
+          Management System
+        </span>
       </div>
+
+
+      {/* Navigation */}
       <nav>
 
-        <NavLink to="/dashboard">
-          <FaThLarge />
-          Dashboard
-        </NavLink>
+        {/* MAIN */}
+        <div className="nav-section">
+          <span className="nav-section-title">
+            MAIN
+          </span>
 
-        <NavLink to="/patients">
-          <FaUserFriends />
-          Patients
-        </NavLink>
+          <NavLink to="/dashboard">
+            <FaThLarge />
+            Dashboard
+          </NavLink>
+        </div>
 
-        <NavLink to="/appointments">
-          <FaCalendarAlt />
-          Appointments
-        </NavLink>
 
-        <NavLink to="/vaccines">
-          <FaSyringe />
-          Vaccines
-        </NavLink>
+        {/* PATIENT CARE */}
+        <div className="nav-section">
+          <span className="nav-section-title">
+            PATIENT CARE
+          </span>
 
-        <NavLink to="/report">
-          <FaChartBar />
-          Reports
-        </NavLink>
+          <NavLink to="/patients">
+            <FaUserFriends />
+            Patients
+          </NavLink>
 
-        <NavLink to="/notification">
-          <FaBell />
-          Notifications
-        </NavLink>
-        <div className="settings-menu">
+          <NavLink to="/appointments">
+            <FaCalendarAlt />
+            Appointments
+          </NavLink>
 
-          <div
-            className="settings-btn"
-            onClick={() => setShowSettings(!showSettings)}
-          >
+          <NavLink to="/vaccines">
+            <FaSyringe />
+            Vaccines
+          </NavLink>
+        </div>
 
-            <div className="settings-left">
-              <FaCog />
-              <span>Settings</span>
-            </div>
 
-            {showSettings ? (
-              <FaChevronUp />
-            ) : (
-              <FaChevronDown />
-            )}
+        {/* ADMINISTRATION */}
+        <div className="nav-section">
+          <span className="nav-section-title">
+            ADMINISTRATION
+          </span>
 
-          </div>
+          <NavLink to="/user-management">
+            <FaUser />
+            Users
+          </NavLink>
 
-          {showSettings && (
-            <div className="settings-dropdown">
+          <NavLink to="/role-base-access">
+            <FaUser />
+            Staff & Permissions
+          </NavLink>
 
-              <NavLink to="/profile">
-                <FaUser />
-                Profile
-              </NavLink>
+          <NavLink to="/report">
+            <FaChartBar />
+            Reports
+          </NavLink>
 
-              <NavLink to="/about">
-                <FaInfoCircle />
-                About
-              </NavLink>
-
-              <NavLink to="/privacy">
-                <FaLock />
-                Privacy & Security
-              </NavLink>
-
-              <NavLink to="/help">
-                <FaQuestionCircle />
-                Help
-              </NavLink>
-
-              <NavLink to="/user-management">
-                <FaSignOutAlt/>
-                User management
-              </NavLink>
-
-            </div>
-          )}
-
+          <NavLink to="/notification">
+            <FaBell />
+            Notifications
+          </NavLink>
         </div>
 
       </nav>
-<div className="bottom-menu">
 
-  {/* Administrator */}
-  <div className="administrator">
-    <FaUserCircle className="administrator-icon" />
 
-    <div className="administrator-info">
-      <h3>{currentUser?.Admin_name || "Administrator"}</h3>
-      <p>{currentUser?.Admin_role || "Admin"}</p>
-    </div>
-  </div>
+      {/* Bottom Menu */}
+      <div className="bottom-menu">
 
-  <button onClick={handleLogout}>
-    <FaSignOutAlt />
-    <span>Logout</span>
-  </button>
+        <NavLink to="/profile">
+          <FaUserCircle />
+          Profile
+        </NavLink>
 
-</div>
+        <NavLink to="/help">
+          <FaQuestionCircle />
+          Help & Feedback
+        </NavLink>
+
+        <button onClick={handleLogout}>
+          <FaSignOutAlt />
+          <span>Logout</span>
+        </button>
+
+      </div>
 
     </aside>
   );

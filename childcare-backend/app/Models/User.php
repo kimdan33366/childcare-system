@@ -17,11 +17,14 @@ class User extends Authenticatable
 
     protected $fillable = [
         'user_fullname',
+         'email',
         'date_of_birth',
         'gender',
         'address',
         'mobile_number',
         'password',
+        'status',
+       
     ];
 
     protected $hidden = [
@@ -34,5 +37,13 @@ class User extends Authenticatable
             'date_of_birth' => 'date',
             'password' => 'hashed',
         ];
+    }
+    public function children()
+    {
+        return $this->hasMany(
+            \App\Models\Child::class,
+            'user_id',
+            'user_id'
+        );
     }
 }

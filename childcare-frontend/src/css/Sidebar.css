@@ -1,273 +1,194 @@
 .sidebar {
-    width:260px;
-    height:100vh;
+    width: 260px;
+    height: 100vh;
+    background: #ffffff;
 
-    background:#ffffff;
+    display: flex;
+    flex-direction: column;
 
-    display:flex;
-    flex-direction:column;
+    overflow: hidden;
+    position: relative;
+    z-index: 10;
 
-    overflow:hidden;
-
-    position:relative;
-    z-index:10;
+    border-right: 1px solid #e5e7eb;
 }
+
+/* =========================
+   LOGO
+========================= */
+
 .logo-section {
-    padding: 18px 15px 12px;
+    padding: 18px 15px 14px;
+
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 0;
 }
 
 .logo-container {
-    width: 82px;
-    height: 82px;
-    background: #ffffff;
-    border-radius: 50%;
+    width: 68px;
+    height: 68px;
+
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 0 0 8px;
+
+    margin-bottom: 5px;
 }
 
 .logo {
-    width: 82px;
-    height: 82px;
+    width: 68px;
+    height: 68px;
     object-fit: contain;
 }
 
 .logo-section h2 {
-    color:#21457B;
-    font-size:30px;
+    margin: 0;
+
+    color: #21457B;
+    font-size: 25px;
+    font-weight: 700;
 }
+
+.sidebar-subtitle {
+    margin-top: 2px;
+
+    color: #7a8494;
+    font-size: 11px;
+}
+
+
+/* =========================
+   NAVIGATION
+========================= */
 
 .sidebar nav {
-    display:flex;
-    flex-direction:column;
-    gap:1px;
-    padding:0 15px;
-    margin-top:5px;
+    display: flex;
+    flex-direction: column;
+
+    padding: 0 15px;
+    margin-top: 4px;
+
+    overflow-y: auto;
 }
 
+.nav-section {
+    margin-bottom: 12px;
+}
+
+.nav-section-title {
+    display: block;
+
+    padding: 7px 14px 5px;
+
+    color: #8a94a6;
+    font-size: 10px;
+    font-weight: 600;
+
+    letter-spacing: 0.6px;
+}
+
+
+/* Navigation links */
+
 .sidebar nav a {
-    display:flex;
-    align-items:center;
+    display: flex;
+    align-items: center;
+
     gap: 12px;
-    padding:11px 14px;
-    font-size:14px;
-    border-radius:8px;
-    text-decoration:none;
-    color:black;
-    transition:0.3s ease;
+
+    padding: 9px 14px;
+
+    color: #333333;
+
+    font-size: 14px;
+    text-decoration: none;
+
+    border-radius: 8px;
+
+    transition: 0.2s ease;
 }
 
 .sidebar nav a svg {
-    font-size:15px;
+    width: 15px;
+    font-size: 15px;
+    flex-shrink: 0;
 }
 
 .sidebar nav a:hover {
-    background:#f0f5ff;
-    color:#21457B;
+    background: #f0f5ff;
+    color: #21457B;
 }
 
 .sidebar nav a.active {
-    background:#eaf2ff;
-    color:#21457B;
-    width:100%;
-    border-radius:8px;
+    background: #eaf2ff;
+    color: #21457B;
+    font-weight: 500;
 }
 
-/* Settings */
 
-.settings-menu {
-    position:relative;
-    width:100%;
-}
-
-.settings-btn {
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:11px 14px;
-    cursor:pointer;
-    color:#4a5568;
-    border-radius:8px;
-    font-size:14px;
-    /* font-weight:500; */
-    transition:0.3s;
-}
-
-.settings-btn:hover {
-    background:#f0f5ff;
-    color:#21457B;
-}
-
-.settings-left {
-    display:flex;
-    align-items:center;
-    gap:12px;
-}
-
-.settings-dropdown {
-    position:absolute;
-    top:100%;
-    left:20px;
-    width:80%;
-
-    display:flex;
-    flex-direction:column;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e5e7eb;
-    background:#ffffff;
-    border-radius:8px;
-    padding-top:5px;
-
-    z-index:100;
-}
-
-.settings-dropdown a {
-    display:flex;
-    align-items:center;
-    gap:12px;
-    text-decoration:none;
-    color:#4a5568;
-    padding:9px 14px 8px 42px;
-    font-size:13px;
-    border-radius:8px;
-    transition:0.3s;
-}
-
-.settings-dropdown a svg {
-    font-size:13px;
-}
-
-.settings-dropdown a:hover {
-    background:white;
-}
-
-.settings-dropdown a.active {
-    background:white;
-    font-weight:bold;
-}
-
-/* Bottom */
+/* =========================
+   BOTTOM MENU
+========================= */
 
 .bottom-menu {
-    background:#ffffff;
-    color:#21457B;
-    padding:14px 15px;
-    margin-top:auto;
-    border-top:1px solid #e5e7eb;
+    margin-top: auto;
+
+    padding: 12px 15px 15px;
+
+    border-top: 1px solid #e5e7eb;
+
+    background: #ffffff;
 }
 
-.bottom-menu p {
-    margin-bottom:15px;
-}
 
+/* Bottom links */
+
+.bottom-menu a,
 .bottom-menu button {
-    width:100%;
-    background:transparent;
-    border:none;
-    color:#21457B;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:flex-start;
-    gap:10px;
-    font-size:16px;
-    font-weight:600;
-    padding:8px 0;
-    transition:0.3s;
-   position:relative;
-    z-index:1;
-}
-.bottom-menu::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
     width: 100%;
-    height: 100px;
-    opacity: 1.0;
-    pointer-events: none;
-    background: linear-gradient(to top, #1ad85c, transparent);
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 9px 14px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: transparent;
+
+    color: #333333;
+
+    font-size: 14px;
+    font-family: inherit;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition: 0.2s ease;
+
+    box-sizing: border-box;
 }
 
-.bottom-menu button:hover {
-    color:#dbe9ff;
-}
-
+.bottom-menu a svg,
 .bottom-menu button svg {
-    font-size:20px;
+    width: 15px;
+    font-size: 15px;
+    flex-shrink: 0;
 }
 
-.bottom-menu {
-    background:#ffffff;
-    color:#21457B;
-    padding:15px;
-    margin-top:auto;
-}
-
-.administrator {
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-bottom:18px;
-    position:relative;
-    z-index:1;
-}
-
-.administrator-icon {
-    font-size:34px;
-    color:#21457B;
-    flex-shrink:0;
-}
-
-.administrator-info {
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-}
-
-.administrator-info h3 {
-    margin:3px 0 0;
-    font-size:14px;
-    font-weight:600;
-    color:#21457B;
-}
-
-.administrator-info p {
-    margin:3px 0 0;
-    font-size:13px;
-    color:#21457B;
-}
-
-.bottom-menu button {
-    width:100%;
-    background:transparent;
-    border:none;
-    color:#21457B;
-    cursor:pointer;
-
-    display:flex;
-    align-items:center;
-    justify-content:flex-start;
-
-    gap:10px;
-
-    font-size:15px;
-    font-weight:600;
-
-    padding:8px 0;
-
-    transition:0.3s;
-}
-
+.bottom-menu a:hover,
 .bottom-menu button:hover {
-    color:#dbe9ff;
+    background: #f0f5ff;
+    color: #21457B;
 }
 
-.bottom-menu button svg {
-    font-size:20px;
+.bottom-menu a.active {
+    background: #eaf2ff;
+    color: #21457B;
+    font-weight: 500;
 }
