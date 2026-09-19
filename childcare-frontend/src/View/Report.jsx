@@ -6,6 +6,39 @@ import { useState, useEffect } from "react";
 function Report() {
   const [report, setReport] = useState(null);
 
+  // Logged-in user
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+
+  const isAdmin = currentUser?.user_type === "Admin";
+  const permissions = currentUser?.permissions || [];
+
+  // Permission helper
+  const hasPermission = (permission) => {
+    return (
+      isAdmin ||
+      permissions.includes("all") ||
+      permissions.includes(permission)
+    );
+  };
+
+  // Page access
+  if (!isAdmin && !permissions.includes("view_reports")) {
+    return (
+      <div className="report-dashboard">
+        <Sidebar />
+
+        <main className="report-content">
+          <div style={{ padding: "40px", textAlign: "center" }}>
+            <h2>Access Denied</h2>
+            <p>
+              You do not have permission to access Reports.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   useEffect(() => {
     fetch("http://127.0.0.1:8000/api/reports")
       .then((response) => response.json())
@@ -26,7 +59,6 @@ function Report() {
 
   const graphMax = Math.ceil(maxDose / 10) * 10 || 10;
 
-  
   return (
     <div className="report-dashboard">
       <Sidebar />
@@ -37,24 +69,28 @@ function Report() {
             <h1>Reports</h1>
             <p>Vaccination and clinic performance overview.</p>
           </div>
-
-          
         </div>
 
         <div className="report-summary">
           <div className="report-summary-card">
             <span>Overall Coverage</span>
-            <strong>{report ? `${report.overall_coverage}%` : "..."}</strong>
+            <strong>
+              {report ? `${report.overall_coverage}%` : "..."}
+            </strong>
           </div>
 
           <div className="report-summary-card">
             <span>Complete Series</span>
-            <strong>{report ? report.complete_series : "..."}</strong>
+            <strong>
+              {report ? report.complete_series : "..."}
+            </strong>
           </div>
 
           <div className="report-summary-card">
             <span>Total Doses</span>
-            <strong>{report ? report.total_dose_q2 : "..."}</strong>
+            <strong>
+              {report ? report.total_dose_q2 : "..."}
+            </strong>
           </div>
         </div>
 
@@ -73,18 +109,27 @@ function Report() {
               <div className="report-y-axis">
                 {Array.from({ length: 6 }, (_, index) => (
                   <span key={index}>
-                    {Math.round(graphMax - (graphMax / 5) * index)}
+                    {Math.round(
+                      graphMax - (graphMax / 5) * index
+                    )}
                   </span>
                 ))}
               </div>
 
               <div className="report-bars">
                 {monthlyDoses.map((item) => (
-                  <div className="report-bar-group" key={item.id}>
+                  <div
+                    className="report-bar-group"
+                    key={item.id}
+                  >
                     <div
                       className="report-bar"
                       style={{
-                        height: `${(Number(item.dose_count) / graphMax) * 100}%`,
+                        height: `${
+                          (Number(item.dose_count) /
+                            graphMax) *
+                          100
+                        }%`,
                       }}
                     />
 
@@ -109,21 +154,27 @@ function Report() {
               <div className="report-status-item">
                 <span>Completed</span>
                 <strong>
-                  {report ? (report.vaccination_status.completed ?? 0) : "..."}
+                  {report
+                    ? (report.vaccination_status.completed ?? 0)
+                    : "..."}
                 </strong>
               </div>
 
               <div className="report-status-item">
                 <span>Continuing</span>
                 <strong>
-                  {report ? (report.vaccination_status.continuing ?? 0) : "..."}
+                  {report
+                    ? (report.vaccination_status.continuing ?? 0)
+                    : "..."}
                 </strong>
               </div>
 
               <div className="report-status-item">
                 <span>Missed</span>
                 <strong>
-                  {report ? (report.vaccination_status.missed ?? 0) : "..."}
+                  {report
+                    ? (report.vaccination_status.missed ?? 0)
+                    : "..."}
                 </strong>
               </div>
 
@@ -138,6 +189,7 @@ function Report() {
             </div>
           </div>
         </div>
+
         <div className="report-bottom">
           {/* Vaccine Usage */}
 
@@ -152,9 +204,11 @@ function Report() {
             <div className="report-usage-list">
               {report?.vaccine_usage?.length > 0 ? (
                 report.vaccine_usage.map((item) => (
-                  <div className="report-usage-item" key={item.vaccine_name}>
+                  <div
+                    className="report-usage-item"
+                    key={item.vaccine_name}
+                  >
                     <span>{item.vaccine_name}</span>
-
                     <strong>{item.dose_count} doses</strong>
                   </div>
                 ))
@@ -178,21 +232,30 @@ function Report() {
             </div>
 
             <div className="report-appointment-list">
-              {["Pending", "Confirmed", "Completed", "Missed", "Cancelled"].map(
-                (status) => {
-                  const appointment = report?.appointment_summary?.find(
-                    (item) => item.status === status,
+              {[
+                "Pending",
+                "Confirmed",
+                "Completed",
+                "Missed",
+                "Cancelled",
+              ].map((status) => {
+                const appointment =
+                  report?.appointment_summary?.find(
+                    (item) => item.status === status
                   );
 
-                  return (
-                    <div className="report-appointment-item" key={status}>
-                      <span>{status}</span>
-
-                      <strong>{appointment?.count ?? 0}</strong>
-                    </div>
-                  );
-                },
-              )}
+                return (
+                  <div
+                    className="report-appointment-item"
+                    key={status}
+                  >
+                    <span>{status}</span>
+                    <strong>
+                      {appointment?.count ?? 0}
+                    </strong>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

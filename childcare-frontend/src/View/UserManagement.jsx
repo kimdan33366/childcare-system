@@ -3,6 +3,24 @@ import Sidebar from "./Sidebar";
 import "../css/UserManagement.css";
 
 function UserManagement() {
+  // ==============================
+  // CURRENT USER / PERMISSIONS
+  // ==============================
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const isAdmin = currentUser?.user_type === "Admin";
+  const permissions = currentUser?.permissions || [];
+
+  const hasPermission = (permission) => {
+    return (
+      isAdmin ||
+      permissions.includes("all") ||
+      permissions.includes(permission)
+    );
+  };
+
+  // ==============================
+  // USERS
+  // ==============================
   const [users, setUsers] = useState([]);
 
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -83,6 +101,12 @@ function UserManagement() {
   // ADD USER
   // ==============================
   const handleCreateUser = async () => {
+    // PERMISSION CHECK
+    if (!hasPermission("add_users")) {
+      alert("You do not have permission to add users.");
+      return;
+    }
+
     if (!newUser.name || !newUser.mobile || !newUser.password) {
       alert("Please fill in all required fields.");
       return;
@@ -94,23 +118,20 @@ function UserManagement() {
     }
 
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/users",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            user_fullname: newUser.name,
-            email: newUser.email || null,
-            mobile_number: newUser.mobile,
-            password: newUser.password,
-            status: newUser.status,
-          }),
-        }
-      );
+      const response = await fetch("http://127.0.0.1:8000/api/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          user_fullname: newUser.name,
+          email: newUser.email || null,
+          mobile_number: newUser.mobile,
+          password: newUser.password,
+          status: newUser.status,
+        }),
+      });
 
       const data = await response.json();
 
@@ -143,6 +164,16 @@ function UserManagement() {
   // EDIT USER
   // ==============================
   const handleUpdateUser = async () => {
+    // PERMISSION CHECK
+    if (!hasPermission("edit_users")) {
+      alert("You do not have permission to edit users.");
+      return;
+    }
+
+    if (!editUser) {
+      return;
+    }
+
     if (!editUserForm.name || !editUserForm.mobile) {
       alert("Please fill in all required fields.");
       return;
@@ -163,7 +194,7 @@ function UserManagement() {
             mobile_number: editUserForm.mobile,
             status: editUserForm.status,
           }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -188,6 +219,12 @@ function UserManagement() {
   // OPEN EDIT USER
   // ==============================
   const openEditUser = (user) => {
+    // PERMISSION CHECK
+    if (!hasPermission("edit_users")) {
+      alert("You do not have permission to edit users.");
+      return;
+    }
+
     setEditUser(user);
 
     setEditUserForm({
@@ -241,8 +278,27 @@ function UserManagement() {
   // VIEW USER
   // ==============================
   const openViewUser = (user) => {
+    if (!hasPermission("view_users")) {
+      alert("You do not have permission to view users.");
+      return;
+    }
+
     setSelectedUser(user);
 
+    setOpenActionMenu(null);
+    setActionMenuPosition(null);
+  };
+
+  // ==============================
+  // OPEN RESET PASSWORD
+  // ==============================
+  const openResetPassword = (user) => {
+    if (!hasPermission("edit_users")) {
+      alert("You do not have permission to edit users.");
+      return;
+    }
+
+    setResetPasswordUser(user);
     setOpenActionMenu(null);
     setActionMenuPosition(null);
   };
@@ -251,6 +307,11 @@ function UserManagement() {
   // ACTIVATE / DEACTIVATE
   // ==============================
   const openStatusConfirmation = (user) => {
+    if (!hasPermission("edit_users")) {
+      alert("You do not have permission to edit users.");
+      return;
+    }
+
     setSelectedUser({
       ...user,
       action: user.status === "Active" ? "deactivate" : "activate",
@@ -264,6 +325,11 @@ function UserManagement() {
   // DELETE USER
   // ==============================
   const openDeleteConfirmation = (user) => {
+    if (!hasPermission("delete_users")) {
+      alert("You do not have permission to delete users.");
+      return;
+    }
+
     setSelectedUser({
       ...user,
       action: "delete",
@@ -277,6 +343,16 @@ function UserManagement() {
   // CHANGE USER STATUS
   // ==============================
   const handleStatusChange = async () => {
+    // PERMISSION CHECK
+    if (!hasPermission("edit_users")) {
+      alert("You do not have permission to edit users.");
+      return;
+    }
+
+    if (!selectedUser) {
+      return;
+    }
+
     const newStatus =
       selectedUser.action === "deactivate" ? "Inactive" : "Active";
 
@@ -295,7 +371,7 @@ function UserManagement() {
             mobile_number: selectedUser.mobile,
             status: newStatus,
           }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -312,7 +388,7 @@ function UserManagement() {
       alert(
         newStatus === "Active"
           ? "User activated successfully."
-          : "User deactivated successfully."
+          : "User deactivated successfully.",
       );
     } catch (error) {
       console.error("Error changing user status:", error);
@@ -324,6 +400,16 @@ function UserManagement() {
   // DELETE USER
   // ==============================
   const handleDeleteUser = async () => {
+    // PERMISSION CHECK
+    if (!hasPermission("delete_users")) {
+      alert("You do not have permission to delete users.");
+      return;
+    }
+
+    if (!selectedUser) {
+      return;
+    }
+
     try {
       const response = await fetch(
         `http://127.0.0.1:8000/api/users/${selectedUser.id}`,
@@ -332,7 +418,7 @@ function UserManagement() {
           headers: {
             Accept: "application/json",
           },
-        }
+        },
       );
 
       const data = await response.json();
@@ -353,12 +439,35 @@ function UserManagement() {
     }
   };
 
+  // ==============================
+  // ACCESS CONTROL
+  // ==============================
+  if (!isAdmin && !permissions.includes("view_users")) {
+    return (
+      <div className="user-management-dashboard">
+        <Sidebar />
+
+        <main className="user-management-container">
+          <div
+            style={{
+              padding: "40px",
+              textAlign: "center",
+            }}
+          >
+            <h2>Access Denied</h2>
+
+            <p>You do not have permission to access User Management.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="user-management-dashboard">
       <Sidebar />
 
       <main className="user-management-container">
-
         {/* PAGE HEADER */}
         <div className="user-management-header">
           <div>
@@ -366,17 +475,22 @@ function UserManagement() {
             <p>Manage registered parent accounts and access.</p>
           </div>
 
-          <button
-            className="add-user-button"
-            onClick={() => setShowAddUserModal(true)}
-          >
-            + Add User
-          </button>
+          {hasPermission("add_users") && (
+            <button
+              className="add-user-button"
+              onClick={() => {
+                if (hasPermission("add_users")) {
+                  setShowAddUserModal(true);
+                }
+              }}
+            >
+              + Add User
+            </button>
+          )}
         </div>
 
         {/* SUMMARY CARDS */}
         <div className="user-summary-grid">
-
           <div className="user-summary-card">
             <span>Total Users</span>
             <strong>{users.length}</strong>
@@ -395,12 +509,10 @@ function UserManagement() {
               {users.filter((user) => user.status === "Inactive").length}
             </strong>
           </div>
-
         </div>
 
         {/* SEARCH AND FILTER */}
         <div className="user-management-toolbar">
-
           <input
             type="text"
             placeholder="Search users..."
@@ -416,13 +528,11 @@ function UserManagement() {
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
           </select>
-
         </div>
 
         {/* USER TABLE */}
         <div className="user-table-container">
           <table>
-
             <thead>
               <tr>
                 <th>User</th>
@@ -437,15 +547,10 @@ function UserManagement() {
               {filteredUsers.length > 0 ? (
                 filteredUsers.map((user) => (
                   <tr key={user.id}>
-
                     <td>
-                      <div className="user-name">
-                        {user.name}
-                      </div>
+                      <div className="user-name">{user.name}</div>
 
-                      <div className="user-email">
-                        {user.email}
-                      </div>
+                      <div className="user-email">{user.email}</div>
                     </td>
 
                     <td>{user.mobile}</td>
@@ -462,13 +567,10 @@ function UserManagement() {
 
                     <td>
                       <div className="user-action-wrapper">
-
                         <button
                           type="button"
                           className="user-action-button"
-                          onClick={(e) =>
-                            toggleActionMenu(e, user)
-                          }
+                          onClick={(e) => toggleActionMenu(e, user)}
                         >
                           ⋮
                         </button>
@@ -483,63 +585,81 @@ function UserManagement() {
                                 left: `${actionMenuPosition.left}px`,
                               }}
                             >
+                              {/* VIEW */}
+                              {hasPermission("view_users") && (
+                                <button
+                                  type="button"
+                                  onClick={() => openViewUser(user)}
+                                >
+                                  View User
+                                </button>
+                              )}
 
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openViewUser(user)
-                                }
-                              >
-                                View User
-                              </button>
+                              {/* EDIT */}
+                              {hasPermission("edit_users") && (
+                                <button
+                                  type="button"
+                                  onClick={() => openEditUser(user)}
+                                >
+                                  Edit User
+                                </button>
+                              )}
 
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openEditUser(user)
-                                }
-                              >
-                                Edit User
-                              </button>
+                              {/* RESET PASSWORD */}
+                              {hasPermission("edit_users") && (
+                                <button
+                                  type="button"
+                                  onClick={() => openResetPassword(user)}
+                                >
+                                  Reset Password
+                                </button>
+                              )}
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setResetPasswordUser(user);
-                                  setOpenActionMenu(null);
-                                  setActionMenuPosition(null);
-                                }}
-                              >
-                                Reset Password
-                              </button>
+                              {/* ACTIVATE / DEACTIVATE */}
+                              {hasPermission("edit_users") && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    openStatusConfirmation(user)
+                                  }
+                                >
+                                  {user.status === "Active"
+                                    ? "Deactivate User"
+                                    : "Activate User"}
+                                </button>
+                              )}
 
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openStatusConfirmation(user)
-                                }
-                              >
-                                {user.status === "Active"
-                                  ? "Deactivate User"
-                                  : "Activate User"}
-                              </button>
+                              {/* DELETE */}
+                              {hasPermission("delete_users") && (
+                                <button
+                                  type="button"
+                                  className="delete-action"
+                                  onClick={() =>
+                                    openDeleteConfirmation(user)
+                                  }
+                                >
+                                  Delete User
+                                </button>
+                              )}
 
-                              <button
-                                type="button"
-                                className="delete-action"
-                                onClick={() =>
-                                  openDeleteConfirmation(user)
-                                }
-                              >
-                                Delete User
-                              </button>
-
+                              {/* NO ACTIONS */}
+                              {!hasPermission("edit_users") &&
+                                !hasPermission("delete_users") &&
+                                hasPermission("view_users") && (
+                                  <div
+                                    style={{
+                                      padding: "10px 14px",
+                                      fontSize: "13px",
+                                      color: "#6b7280",
+                                    }}
+                                  >
+                                    View only
+                                  </div>
+                                )}
                             </div>
                           )}
-
                       </div>
                     </td>
-
                   </tr>
                 ))
               ) : (
@@ -557,20 +677,16 @@ function UserManagement() {
                 </tr>
               )}
             </tbody>
-
           </table>
         </div>
 
         {/* ==============================
             ADD USER MODAL
         ============================== */}
-        {showAddUserModal && (
+        {showAddUserModal && hasPermission("add_users") && (
           <div className="user-modal-overlay">
-
             <div className="user-modal">
-
               <div className="user-modal-header">
-
                 <div>
                   <h2>Add User</h2>
                   <p>Create a new parent account.</p>
@@ -579,17 +695,13 @@ function UserManagement() {
                 <button
                   type="button"
                   className="user-modal-close"
-                  onClick={() =>
-                    setShowAddUserModal(false)
-                  }
+                  onClick={() => setShowAddUserModal(false)}
                 >
                   ×
                 </button>
-
               </div>
 
               <div className="user-form">
-
                 <div className="user-form-group">
                   <label>Full Name</label>
 
@@ -639,7 +751,6 @@ function UserManagement() {
                 </div>
 
                 <div className="user-form-row">
-
                   <div className="user-form-group">
                     <label>Password</label>
 
@@ -671,7 +782,6 @@ function UserManagement() {
                       }
                     />
                   </div>
-
                 </div>
 
                 <div className="user-form-group">
@@ -686,26 +796,17 @@ function UserManagement() {
                       })
                     }
                   >
-                    <option value="Active">
-                      Active
-                    </option>
-
-                    <option value="Inactive">
-                      Inactive
-                    </option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
                   </select>
                 </div>
-
               </div>
 
               <div className="user-modal-actions">
-
                 <button
                   type="button"
                   className="user-cancel-button"
-                  onClick={() =>
-                    setShowAddUserModal(false)
-                  }
+                  onClick={() => setShowAddUserModal(false)}
                 >
                   Cancel
                 </button>
@@ -717,147 +818,111 @@ function UserManagement() {
                 >
                   Create User
                 </button>
-
               </div>
-
             </div>
-
           </div>
         )}
 
         {/* ==============================
             VIEW USER MODAL
         ============================== */}
-        {selectedUser && !selectedUser.action && (
-          <div className="user-modal-overlay">
-
-            <div className="user-modal">
-
-              <div className="user-modal-header">
-
-                <div>
-                  <h2>User Details</h2>
-                  <p>
-                    View parent account information.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  className="user-modal-close"
-                  onClick={() =>
-                    setSelectedUser(null)
-                  }
-                >
-                  ×
-                </button>
-
-              </div>
-
-              <div className="user-details">
-
-                <div className="user-details-top">
-
+        {selectedUser &&
+          !selectedUser.action &&
+          hasPermission("view_users") && (
+            <div className="user-modal-overlay">
+              <div className="user-modal">
+                <div className="user-modal-header">
                   <div>
-                    <h3>{selectedUser.name}</h3>
-
-                    <span
-                      className={`user-status ${selectedUser.status.toLowerCase()}`}
-                    >
-                      {selectedUser.status}
-                    </span>
+                    <h2>User Details</h2>
+                    <p>View parent account information.</p>
                   </div>
 
+                  <button
+                    type="button"
+                    className="user-modal-close"
+                    onClick={() => setSelectedUser(null)}
+                  >
+                    ×
+                  </button>
                 </div>
 
-                <div className="user-details-grid">
+                <div className="user-details">
+                  <div className="user-details-top">
+                    <div>
+                      <h3>{selectedUser.name}</h3>
 
-                  <div className="user-detail-item">
-                    <span>Email</span>
-                    <strong>
-                      {selectedUser.email || "Not provided"}
-                    </strong>
-                  </div>
-
-                  <div className="user-detail-item">
-                    <span>Mobile Number</span>
-                    <strong>
-                      {selectedUser.mobile}
-                    </strong>
-                  </div>
-
-                </div>
-
-                <div className="registered-children">
-
-                  <h3>Registered Children</h3>
-
-                  <div className="children-list">
-                    <div className="child-item">
-                      {selectedUser.children > 0
-                        ? `${selectedUser.children} registered child${
-                            selectedUser.children > 1
-                              ? "ren"
-                              : ""
-                          }`
-                        : "No registered children"}
+                      <span
+                        className={`user-status ${selectedUser.status.toLowerCase()}`}
+                      >
+                        {selectedUser.status}
+                      </span>
                     </div>
                   </div>
 
+                  <div className="user-details-grid">
+                    <div className="user-detail-item">
+                      <span>Email</span>
+                      <strong>
+                        {selectedUser.email || "Not provided"}
+                      </strong>
+                    </div>
+
+                    <div className="user-detail-item">
+                      <span>Mobile Number</span>
+                      <strong>{selectedUser.mobile}</strong>
+                    </div>
+                  </div>
+
+                  <div className="registered-children">
+                    <h3>Registered Children</h3>
+
+                    <div className="children-list">
+                      <div className="child-item">
+                        {selectedUser.children > 0
+                          ? `${selectedUser.children} registered child${
+                              selectedUser.children > 1 ? "ren" : ""
+                            }`
+                          : "No registered children"}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
+                <div className="user-modal-actions">
+                  <button
+                    type="button"
+                    className="user-cancel-button"
+                    onClick={() => setSelectedUser(null)}
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
-
-              <div className="user-modal-actions">
-
-                <button
-                  type="button"
-                  className="user-cancel-button"
-                  onClick={() =>
-                    setSelectedUser(null)
-                  }
-                >
-                  Close
-                </button>
-
-              </div>
-
             </div>
-
-          </div>
-        )}
+          )}
 
         {/* ==============================
             EDIT USER MODAL
         ============================== */}
-        {editUser && (
+        {editUser && hasPermission("edit_users") && (
           <div className="user-modal-overlay">
-
             <div className="user-modal">
-
               <div className="user-modal-header">
-
                 <div>
                   <h2>Edit User</h2>
-                  <p>
-                    Update parent account information.
-                  </p>
+                  <p>Update parent account information.</p>
                 </div>
 
                 <button
                   type="button"
                   className="user-modal-close"
-                  onClick={() =>
-                    setEditUser(null)
-                  }
+                  onClick={() => setEditUser(null)}
                 >
                   ×
                 </button>
-
               </div>
 
               <div className="user-form">
-
                 <div className="user-form-group">
                   <label>Full Name</label>
 
@@ -915,26 +980,17 @@ function UserManagement() {
                       })
                     }
                   >
-                    <option value="Active">
-                      Active
-                    </option>
-
-                    <option value="Inactive">
-                      Inactive
-                    </option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
                   </select>
                 </div>
-
               </div>
 
               <div className="user-modal-actions">
-
                 <button
                   type="button"
                   className="user-cancel-button"
-                  onClick={() =>
-                    setEditUser(null)
-                  }
+                  onClick={() => setEditUser(null)}
                 >
                   Cancel
                 </button>
@@ -946,45 +1002,33 @@ function UserManagement() {
                 >
                   Save Changes
                 </button>
-
               </div>
-
             </div>
-
           </div>
         )}
 
         {/* ==============================
             RESET PASSWORD MODAL
         ============================== */}
-        {resetPasswordUser && (
+        {resetPasswordUser && hasPermission("edit_users") && (
           <div className="user-modal-overlay">
-
             <div className="user-modal">
-
               <div className="user-modal-header">
-
                 <div>
                   <h2>Reset Password</h2>
-                  <p>
-                    Set a new password for this user account.
-                  </p>
+                  <p>Set a new password for this user account.</p>
                 </div>
 
                 <button
                   type="button"
                   className="user-modal-close"
-                  onClick={() =>
-                    setResetPasswordUser(null)
-                  }
+                  onClick={() => setResetPasswordUser(null)}
                 >
                   ×
                 </button>
-
               </div>
 
               <div className="user-form">
-
                 <div className="user-form-group">
                   <label>User</label>
 
@@ -1012,17 +1056,13 @@ function UserManagement() {
                     placeholder="Confirm new password"
                   />
                 </div>
-
               </div>
 
               <div className="user-modal-actions">
-
                 <button
                   type="button"
                   className="user-cancel-button"
-                  onClick={() =>
-                    setResetPasswordUser(null)
-                  }
+                  onClick={() => setResetPasswordUser(null)}
                 >
                   Cancel
                 </button>
@@ -1030,17 +1070,19 @@ function UserManagement() {
                 <button
                   type="button"
                   className="user-create-button"
-                  onClick={() =>
-                    setResetPasswordUser(null)
-                  }
+                  onClick={() => {
+                    if (!hasPermission("edit_users")) {
+                      alert("You do not have permission to edit users.");
+                      return;
+                    }
+
+                    setResetPasswordUser(null);
+                  }}
                 >
                   Reset Password
                 </button>
-
               </div>
-
             </div>
-
           </div>
         )}
 
@@ -1048,13 +1090,11 @@ function UserManagement() {
             ACTIVATE / DEACTIVATE MODAL
         ============================== */}
         {selectedUser?.action &&
-          selectedUser.action !== "delete" && (
+          selectedUser.action !== "delete" &&
+          hasPermission("edit_users") && (
             <div className="user-modal-overlay">
-
               <div className="user-modal">
-
                 <div className="user-modal-header">
-
                   <div>
                     <h2>
                       {selectedUser.action === "deactivate"
@@ -1072,22 +1112,16 @@ function UserManagement() {
                   <button
                     type="button"
                     className="user-modal-close"
-                    onClick={() =>
-                      setSelectedUser(null)
-                    }
+                    onClick={() => setSelectedUser(null)}
                   >
                     ×
                   </button>
-
                 </div>
 
                 <div className="user-details">
-
                   <div className="user-detail-item">
                     <span>User</span>
-                    <strong>
-                      {selectedUser.name}
-                    </strong>
+                    <strong>{selectedUser.name}</strong>
                   </div>
 
                   <div
@@ -1102,17 +1136,13 @@ function UserManagement() {
                       {selectedUser.status}
                     </span>
                   </div>
-
                 </div>
 
                 <div className="user-modal-actions">
-
                   <button
                     type="button"
                     className="user-cancel-button"
-                    onClick={() =>
-                      setSelectedUser(null)
-                    }
+                    onClick={() => setSelectedUser(null)}
                   >
                     Cancel
                   </button>
@@ -1126,87 +1156,67 @@ function UserManagement() {
                       ? "Deactivate User"
                       : "Activate User"}
                   </button>
-
                 </div>
-
               </div>
-
             </div>
           )}
 
         {/* ==============================
             DELETE USER MODAL
         ============================== */}
-        {selectedUser?.action === "delete" && (
-          <div className="user-modal-overlay">
+        {selectedUser?.action === "delete" &&
+          hasPermission("delete_users") && (
+            <div className="user-modal-overlay">
+              <div className="user-modal">
+                <div className="user-modal-header">
+                  <div>
+                    <h2>Delete User</h2>
+                    <p>This action cannot be undone.</p>
+                  </div>
 
-            <div className="user-modal">
+                  <button
+                    type="button"
+                    className="user-modal-close"
+                    onClick={() => setSelectedUser(null)}
+                  >
+                    ×
+                  </button>
+                </div>
 
-              <div className="user-modal-header">
-
-                <div>
-                  <h2>Delete User</h2>
-                  <p>
-                    This action cannot be undone.
+                <div className="user-details">
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "13px",
+                      lineHeight: "1.6",
+                      color: "#4b5563",
+                    }}
+                  >
+                    Are you sure you want to delete the account of{" "}
+                    <strong>{selectedUser.name}</strong>?
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  className="user-modal-close"
-                  onClick={() =>
-                    setSelectedUser(null)
-                  }
-                >
-                  ×
-                </button>
+                <div className="user-modal-actions">
+                  <button
+                    type="button"
+                    className="user-cancel-button"
+                    onClick={() => setSelectedUser(null)}
+                  >
+                    Cancel
+                  </button>
 
+                  <button
+                    type="button"
+                    className="delete-action"
+                    onClick={handleDeleteUser}
+                  >
+                    Delete User
+                  </button>
+                </div>
               </div>
-
-              <div className="user-details">
-
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "13px",
-                    lineHeight: "1.6",
-                    color: "#4b5563",
-                  }}
-                >
-                  Are you sure you want to delete the
-                  account of{" "}
-                  <strong>{selectedUser.name}</strong>?
-                </p>
-
-              </div>
-
-              <div className="user-modal-actions">
-
-                <button
-                  type="button"
-                  className="user-cancel-button"
-                  onClick={() =>
-                    setSelectedUser(null)
-                  }
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  className="delete-action"
-                  onClick={handleDeleteUser}
-                >
-                  Delete User
-                </button>
-
-              </div>
-
             </div>
-
-          </div>
-        )}
-
+          )}
       </main>
     </div>
   );

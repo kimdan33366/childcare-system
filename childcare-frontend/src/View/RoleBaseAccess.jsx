@@ -3,8 +3,8 @@ import Sidebar from "./Sidebar";
 import "../css/RoleBaseAccess.css";
 
 function RoleBaseAccess() {
-  const [showActions, setShowActions] = useState(false);
-  const actionButtonRef = useRef(null);
+  const [showActions, setShowActions] = useState(null);
+  const actionButtonRefs = useRef({});
 
   const [showPermissions, setShowPermissions] = useState(false);
   const [showAddStaff, setShowAddStaff] = useState(false);
@@ -16,25 +16,95 @@ function RoleBaseAccess() {
   const [staffList, setStaffList] = useState([]);
   const [loadingStaff, setLoadingStaff] = useState(true);
 
-  // Selected staff member
   const [selectedStaff, setSelectedStaff] = useState(null);
-
   const [permissions, setPermissions] = useState([]);
 
+  // =========================================================
+  // PERMISSIONS
+  // =========================================================
+
   const handlePermissionChange = (permission, checked) => {
-    if (checked) {
-      setPermissions([...permissions, permission]);
-    } else {
-      setPermissions(permissions.filter((item) => item !== permission));
-    }
+    setPermissions((previousPermissions) => {
+      if (checked) {
+        if (previousPermissions.includes(permission)) {
+          return previousPermissions;
+        }
+
+        return [...previousPermissions, permission];
+      }
+
+      const permissionGroups = {
+        patients: [
+          "view_patients",
+          "add_patients",
+          "edit_patients",
+          "delete_patients",
+        ],
+
+        appointments: [
+          "view_appointments",
+          "add_appointments",
+          "edit_appointments",
+          "delete_appointments",
+        ],
+
+        vaccines: [
+          "view_vaccines",
+          "add_vaccines",
+          "edit_vaccines",
+          "delete_vaccines",
+        ],
+        users: ["view_users", "add_users", "edit_users", "delete_users"],
+
+        notifications: ["view_notifications", "send_notifications"],
+      };
+
+      const group = Object.values(permissionGroups).find((permissionsInGroup) =>
+        permissionsInGroup.includes(permission),
+      );
+
+      if (group) {
+        const remainingPermissions = previousPermissions.filter(
+          (item) => item !== permission,
+        );
+
+        const hasAnotherPermission = remainingPermissions.some((item) =>
+          group.includes(item),
+        );
+
+        if (!hasAnotherPermission) {
+          alert(
+            "At least one permission must remain enabled for this section.",
+          );
+
+          return previousPermissions;
+        }
+
+        return remainingPermissions;
+      }
+
+      return previousPermissions.filter((item) => item !== permission);
+    });
   };
+
   const handleManagePermissions = async (staff) => {
+    console.log("Selected staff:", staff);
+    console.log("Selected staff ID:", staff.staff_id);
+
     setSelectedStaff(staff);
-    setShowActions(false);
+    setShowActions(null);
+
+    // Clear old permissions first
+    setPermissions([]);
 
     try {
       const response = await fetch(
         `http://127.0.0.1:8000/api/staff/${staff.staff_id}/permissions`,
+        {
+          headers: {
+            Accept: "application/json",
+          },
+        },
       );
 
       if (!response.ok) {
@@ -43,6 +113,9 @@ function RoleBaseAccess() {
 
       const data = await response.json();
 
+      console.log("Loaded permissions:", data);
+      console.log("Permissions from database:", data.permissions);
+
       setPermissions(data.permissions || []);
       setShowPermissions(true);
     } catch (error) {
@@ -50,6 +123,53 @@ function RoleBaseAccess() {
       alert("Failed to load staff permissions.");
     }
   };
+
+  const handleSavePermissions = async () => {
+    if (!selectedStaff) {
+      alert("No staff member selected.");
+      return;
+    }
+
+    console.log("Saving permissions for:", selectedStaff);
+    console.log("Saving staff ID:", selectedStaff.staff_id);
+    console.log("Permissions being sent:", permissions);
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/staff/${selectedStaff.staff_id}/permissions`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            permissions: permissions,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      console.log("Permission save response:", data);
+
+      if (!response.ok) {
+        console.log("Permission save error:", data);
+        throw new Error("Failed to save permissions.");
+      }
+
+      alert("Permissions saved successfully.");
+
+      setShowPermissions(false);
+    } catch (error) {
+      console.error("Error saving permissions:", error);
+      alert("Failed to save permissions.");
+    }
+  };
+
+  // =========================================================
+  // STAFF FORM
+  // =========================================================
 
   const [staffForm, setStaffForm] = useState({
     staff_name: "",
@@ -83,8 +203,6 @@ function RoleBaseAccess() {
       alert("Passwords do not match.");
       return;
     }
-    console.log("Saving permissions for:", selectedStaff);
-    console.log("Saving staff ID:", selectedStaff.staff_id);
 
     try {
       const response = await fetch("http://127.0.0.1:8000/api/staff", {
@@ -130,6 +248,10 @@ function RoleBaseAccess() {
     }
   };
 
+  // =========================================================
+  // LOAD STAFF
+  // =========================================================
+
   useEffect(() => {
     fetch("http://127.0.0.1:8000/api/staff")
       .then((response) => {
@@ -150,11 +272,29 @@ function RoleBaseAccess() {
       });
   }, []);
 
+  // =========================================================
+  // SUMMARY COUNTS
+  // =========================================================
+
+  const totalStaff = staffList.length;
+
+  const activeStaff = staffList.filter(
+    (staff) => staff.status === "Active",
+  ).length;
+
+  const inactiveStaff = staffList.filter(
+    (staff) => staff.status === "Inactive",
+  ).length;
+
   return (
     <div className="role-base-layout">
       <Sidebar />
 
       <div className="user-management">
+        {/* =====================================================
+            PAGE HEADER
+        ===================================================== */}
+
         <div className="page-header">
           <div>
             <h1>Staff & Permissions</h1>
@@ -169,20 +309,24 @@ function RoleBaseAccess() {
           </button>
         </div>
 
+        {/* =====================================================
+            SUMMARY CARDS
+        ===================================================== */}
+
         <div className="summary-cards">
           <div className="summary-card">
             <span>Total Staff</span>
-            <strong>0</strong>
+            <strong>{totalStaff}</strong>
           </div>
 
           <div className="summary-card">
             <span>Active</span>
-            <strong>0</strong>
+            <strong>{activeStaff}</strong>
           </div>
 
           <div className="summary-card">
             <span>Inactive</span>
-            <strong>0</strong>
+            <strong>{inactiveStaff}</strong>
           </div>
 
           <div className="summary-card">
@@ -190,6 +334,10 @@ function RoleBaseAccess() {
             <strong>0</strong>
           </div>
         </div>
+
+        {/* =====================================================
+            STAFF SECTION
+        ===================================================== */}
 
         <div className="staff-section">
           <div className="section-header">
@@ -245,7 +393,6 @@ function RoleBaseAccess() {
 
                           <div>
                             <strong>{staff.staff_name}</strong>
-
                             <span>{staff.staff_email}</span>
                           </div>
                         </div>
@@ -264,73 +411,86 @@ function RoleBaseAccess() {
                       <td>
                         <div className="action-menu-container">
                           <button
-                            ref={actionButtonRef}
+                            ref={(element) => {
+                              actionButtonRefs.current[staff.staff_id] =
+                                element;
+                            }}
                             className="action-btn"
-                            onClick={() => setShowActions(!showActions)}
+                            onClick={() =>
+                              setShowActions(
+                                showActions === staff.staff_id
+                                  ? null
+                                  : staff.staff_id,
+                              )
+                            }
                           >
                             Manage
                           </button>
 
-                          {showActions && actionButtonRef.current && (
-                            <div
-                              className="action-menu"
-                              style={{
-                                top:
-                                  actionButtonRef.current.getBoundingClientRect()
-                                    .bottom + 6,
-                                left:
-                                  actionButtonRef.current.getBoundingClientRect()
-                                    .right - 180,
-                              }}
-                            >
-                              <button
-                                onClick={() => {
-                                  setShowActions(false);
-                                  setSelectedStaff(staff);
-                                  setShowEditStaff(true);
+                          {showActions === staff.staff_id &&
+                            actionButtonRefs.current[staff.staff_id] && (
+                              <div
+                                className="action-menu"
+                                style={{
+                                  position: "fixed",
+                                  top:
+                                    actionButtonRefs.current[
+                                      staff.staff_id
+                                    ].getBoundingClientRect().bottom + 6,
+                                  left:
+                                    actionButtonRefs.current[
+                                      staff.staff_id
+                                    ].getBoundingClientRect().right - 180,
                                 }}
                               >
-                                Edit Staff
-                              </button>
+                                <button
+                                  onClick={() => {
+                                    setShowActions(null);
+                                    setSelectedStaff(staff);
+                                    setShowEditStaff(true);
+                                  }}
+                                >
+                                  Edit Staff
+                                </button>
 
-                              <button
-                                onClick={() => handleManagePermissions(staff)}
-                              >
-                                Manage Permissions
-                              </button>
+                                <button
+                                  onClick={() => handleManagePermissions(staff)}
+                                >
+                                  Manage Permissions
+                                </button>
 
-                              <button
-                                onClick={() => {
-                                  setShowActions(false);
-                                  setSelectedStaff(staff);
-                                  setShowResetPassword(true);
-                                }}
-                              >
-                                Reset Password
-                              </button>
+                                <button
+                                  onClick={() => {
+                                    setShowActions(null);
+                                    setSelectedStaff(staff);
+                                    setShowResetPassword(true);
+                                  }}
+                                >
+                                  Reset Password
+                                </button>
 
-                              <button
-                                onClick={() => {
-                                  setShowActions(false);
-                                  setSelectedStaff(staff);
-                                  setShowDeactivate(true);
-                                }}
-                              >
-                                Deactivate Staff
-                              </button>
+                                <button
+                                  onClick={() => {
+                                    setShowActions(null);
+                                    setSelectedStaff(staff);
+                                    setShowDeactivate(true);
+                                  }}
+                                >
+                                  Deactivate Staff
+                                </button>
 
-                              <button
-                                className="delete-action"
-                                onClick={() => {
-                                  setShowActions(false);
-                                  setSelectedStaff(staff);
-                                  setShowDeleteStaff(true);
-                                }}
-                              >
-                                Delete Staff
-                              </button>
-                            </div>
-                          )}
+                                <button
+                                  className="delete-action"
+                                  onClick={() => {
+                                    setShowActions(null);
+                                    setSelectedStaff(staff);
+                                    setShowDeleteStaff(true);
+                                  }}
+                                >
+                                  Delete Staff
+                                </button>
+                              </div>
+                            )}
                         </div>
                       </td>
                     </tr>
@@ -341,13 +501,16 @@ function RoleBaseAccess() {
           </div>
         </div>
 
+        {/* =====================================================
+            MANAGE PERMISSIONS DRAWER
+        ===================================================== */}
+
         {showPermissions && (
           <div className="permissions-overlay">
             <div className="permissions-drawer">
               <div className="permissions-header">
                 <div>
                   <h2>Manage Permissions</h2>
-
                   <p>Control what this staff member can access.</p>
                 </div>
 
@@ -372,37 +535,14 @@ function RoleBaseAccess() {
 
                   <div>
                     <strong>{selectedStaff?.staff_name}</strong>
-
                     <span>{selectedStaff?.staff_email}</span>
                   </div>
                 </div>
 
-                {/* Dashboard */}
-                <div className="permission-section">
-                  <h3>Dashboard</h3>
+                {/* =================================================
+                    PATIENTS
+                ================================================= */}
 
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes("view_dashboard")}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setPermissions([...permissions, "view_dashboard"]);
-                        } else {
-                          setPermissions(
-                            permissions.filter(
-                              (permission) => permission !== "view_dashboard",
-                            ),
-                          );
-                        }
-                      }}
-                    />
-
-                    <span>View Dashboard</span>
-                  </label>
-                </div>
-
-                {/* Patients */}
                 <div className="permission-section">
                   <h3>Patients</h3>
 
@@ -463,48 +603,11 @@ function RoleBaseAccess() {
                     <span>Delete Patients</span>
                   </label>
                 </div>
-                <div className="permission-section">
-                  <div className="permission-section-header">
-                    <h4>Users</h4>
-                  </div>
 
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes("view_users")}
-                      onChange={() => handlePermissionChange("view_users")}
-                    />
-                    <span>View Users</span>
-                  </label>
+                {/* =================================================
+                    APPOINTMENTS
+                ================================================= */}
 
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes("add_users")}
-                      onChange={() => handlePermissionChange("add_users")}
-                    />
-                    <span>Add Users</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes("edit_users")}
-                      onChange={() => handlePermissionChange("edit_users")}
-                    />
-                    <span>Edit Users</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes("delete_users")}
-                      onChange={() => handlePermissionChange("delete_users")}
-                    />
-                    <span>Delete Users</span>
-                  </label>
-                </div>
-                {/* Appointments */}
                 <div className="permission-section">
                   <h3>Appointments</h3>
 
@@ -569,7 +672,10 @@ function RoleBaseAccess() {
                   </label>
                 </div>
 
-                {/* Vaccines */}
+                {/* =================================================
+                    VACCINES
+                ================================================= */}
+
                 <div className="permission-section">
                   <h3>Vaccines</h3>
 
@@ -631,54 +737,66 @@ function RoleBaseAccess() {
                   </label>
                 </div>
 
-                {/* Reports */}
+                {/* =================================================
+    USERS
+================================================= */}
+
                 <div className="permission-section">
-                  <h3>Reports</h3>
+                  <h3>Users</h3>
 
                   <label className="permission-item">
                     <input
                       type="checkbox"
-                      checked={permissions.includes("view_reports")}
+                      checked={permissions.includes("view_users")}
                       onChange={(e) =>
-                        handlePermissionChange("view_reports", e.target.checked)
+                        handlePermissionChange("view_users", e.target.checked)
                       }
                     />
 
-                    <span>View Reports</span>
+                    <span>View Users</span>
                   </label>
 
                   <label className="permission-item">
                     <input
                       type="checkbox"
-                      checked={permissions.includes("generate_reports")}
+                      checked={permissions.includes("add_users")}
                       onChange={(e) =>
-                        handlePermissionChange(
-                          "generate_reports",
-                          e.target.checked,
-                        )
+                        handlePermissionChange("add_users", e.target.checked)
                       }
                     />
 
-                    <span>Generate Reports</span>
+                    <span>Add Users</span>
                   </label>
 
                   <label className="permission-item">
                     <input
                       type="checkbox"
-                      checked={permissions.includes("export_reports")}
+                      checked={permissions.includes("edit_users")}
                       onChange={(e) =>
-                        handlePermissionChange(
-                          "export_reports",
-                          e.target.checked,
-                        )
+                        handlePermissionChange("edit_users", e.target.checked)
                       }
                     />
 
-                    <span>Export Reports</span>
+                    <span>Edit Users</span>
+                  </label>
+
+                  <label className="permission-item">
+                    <input
+                      type="checkbox"
+                      checked={permissions.includes("delete_users")}
+                      onChange={(e) =>
+                        handlePermissionChange("delete_users", e.target.checked)
+                      }
+                    />
+
+                    <span>Delete Users</span>
                   </label>
                 </div>
 
-                {/* Notifications */}
+                {/* =================================================
+                    NOTIFICATIONS
+                ================================================= */}
+
                 <div className="permission-section">
                   <h3>Notifications</h3>
 
@@ -711,23 +829,12 @@ function RoleBaseAccess() {
 
                     <span>Send Notifications</span>
                   </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes("delete_notifications")}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "delete_notifications",
-                          e.target.checked,
-                        )
-                      }
-                    />
-
-                    <span>Delete Notifications</span>
-                  </label>
                 </div>
               </div>
+
+              {/* =================================================
+                  PERMISSION FOOTER
+              ================================================= */}
 
               <div className="permissions-footer">
                 <button
@@ -739,42 +846,7 @@ function RoleBaseAccess() {
 
                 <button
                   className="save-permission"
-                  onClick={async () => {
-                    if (!selectedStaff) return;
-
-                    try {
-                      console.log("Saving permissions for:", selectedStaff);
-                      console.log("Saving staff ID:", selectedStaff.staff_id);
-                      const response = await fetch(
-                        `http://127.0.0.1:8000/api/staff/${selectedStaff.staff_id}/permissions`,
-                        {
-                          method: "PUT",
-                          headers: {
-                            "Content-Type": "application/json",
-                            Accept: "application/json",
-                          },
-                          body: JSON.stringify({
-                            permissions: permissions,
-                          }),
-                        },
-                      );
-
-                      if (!response.ok) {
-                        throw new Error("Failed to save permissions.");
-                      }
-
-                      const data = await response.json();
-
-                      console.log("Saved permissions:", data);
-
-                      alert("Permissions saved successfully.");
-
-                      setShowPermissions(false);
-                    } catch (error) {
-                      console.error("Error saving permissions:", error);
-                      alert("Failed to save permissions.");
-                    }
-                  }}
+                  onClick={handleSavePermissions}
                 >
                   Save Changes
                 </button>
@@ -782,6 +854,10 @@ function RoleBaseAccess() {
             </div>
           </div>
         )}
+
+        {/* =====================================================
+            ADD STAFF
+        ===================================================== */}
 
         {showAddStaff && (
           <div className="permissions-overlay">
@@ -871,7 +947,6 @@ function RoleBaseAccess() {
                       onChange={handleStaffFormChange}
                     >
                       <option value="Active">Active</option>
-
                       <option value="Inactive">Inactive</option>
                     </select>
                   </div>
@@ -893,6 +968,10 @@ function RoleBaseAccess() {
             </div>
           </div>
         )}
+
+        {/* =====================================================
+            EDIT STAFF
+        ===================================================== */}
 
         {showEditStaff && (
           <div className="permissions-overlay">
@@ -948,7 +1027,6 @@ function RoleBaseAccess() {
 
                     <select defaultValue={selectedStaff?.status || "Active"}>
                       <option>Active</option>
-
                       <option>Inactive</option>
                     </select>
                   </div>
@@ -968,6 +1046,10 @@ function RoleBaseAccess() {
             </div>
           </div>
         )}
+
+        {/* =====================================================
+            RESET PASSWORD
+        ===================================================== */}
 
         {showResetPassword && (
           <div className="permissions-overlay">
@@ -999,7 +1081,6 @@ function RoleBaseAccess() {
 
                   <div>
                     <strong>{selectedStaff?.staff_name}</strong>
-
                     <span>{selectedStaff?.staff_email}</span>
                   </div>
                 </div>
@@ -1033,6 +1114,10 @@ function RoleBaseAccess() {
           </div>
         )}
 
+        {/* =====================================================
+            DEACTIVATE STAFF
+        ===================================================== */}
+
         {showDeactivate && (
           <div className="confirmation-overlay">
             <div className="confirmation-modal">
@@ -1059,6 +1144,10 @@ function RoleBaseAccess() {
             </div>
           </div>
         )}
+
+        {/* =====================================================
+            DELETE STAFF
+        ===================================================== */}
 
         {showDeleteStaff && (
           <div className="confirmation-overlay">

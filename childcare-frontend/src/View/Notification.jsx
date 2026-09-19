@@ -36,6 +36,21 @@ function Notification() {
 
   const [childSearch, setChildSearch] = useState("");
 
+  // Logged-in user
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+
+  const isAdmin = currentUser?.user_type === "Admin";
+  const permissions = currentUser?.permissions || [];
+
+  // Permission helper
+  const hasPermission = (permission) => {
+    return (
+      isAdmin ||
+      permissions.includes("all") ||
+      permissions.includes(permission)
+    );
+  };
+
   const showToast = (title, message) => {
     setToast({
       show: true,
@@ -53,6 +68,11 @@ function Notification() {
   };
 
   const handleSendSMS = async () => {
+    if (!hasPermission("send_notifications")) {
+      alert("You do not have permission to send notifications.");
+      return;
+    }
+
     if (selectedChildren.length === 0) {
       alert("Please select at least one child.");
       return;
@@ -85,7 +105,9 @@ function Notification() {
           return;
         }
 
-        const updated = await fetch("http://127.0.0.1:8000/api/notifications");
+        const updated = await fetch(
+          "http://127.0.0.1:8000/api/notifications",
+        );
 
         const updatedData = await updated.json();
 
@@ -110,6 +132,11 @@ function Notification() {
   };
 
   const handleSendAll = async () => {
+    if (!hasPermission("send_notifications")) {
+      alert("You do not have permission to send notifications.");
+      return;
+    }
+
     try {
       const notification = await NotificationController.createBroadcast(
         reminder.message,
@@ -161,6 +188,24 @@ function Notification() {
       });
   }, []);
 
+  // Page access
+  if (!isAdmin && !permissions.includes("view_notifications")) {
+    return (
+      <div className="notification-container">
+        <Sidebar />
+
+        <div className="notification-main-content">
+          <div style={{ padding: "40px", textAlign: "center" }}>
+            <h2>Access Denied</h2>
+            <p>
+              You do not have permission to access Notifications.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="notification-container">
       <Sidebar />
@@ -173,13 +218,15 @@ function Notification() {
             <p>Send reminders and monitor parent notifications.</p>
           </div>
 
-          <button
-            className="notification-compose-btn"
-            onClick={() => setShowModal(true)}
-          >
-            <FaPaperPlane />
-            Compose Notification
-          </button>
+          {hasPermission("send_notifications") && (
+            <button
+              className="notification-compose-btn"
+              onClick={() => setShowModal(true)}
+            >
+              <FaPaperPlane />
+              Compose Notification
+            </button>
+          )}
         </div>
 
         {/* SUMMARY CARDS */}
@@ -191,7 +238,8 @@ function Notification() {
               {
                 notifications.filter(
                   (item) =>
-                    item.status === "Sent" || item.status === "Reminder Sent",
+                    item.status === "Sent" ||
+                    item.status === "Reminder Sent",
                 ).length
               }
             </strong>
@@ -201,7 +249,11 @@ function Notification() {
             <span>Pending</span>
 
             <strong>
-              {notifications.filter((item) => item.status === "Pending").length}
+              {
+                notifications.filter(
+                  (item) => item.status === "Pending",
+                ).length
+              }
             </strong>
           </div>
 
@@ -209,7 +261,11 @@ function Notification() {
             <span>Failed</span>
 
             <strong>
-              {notifications.filter((item) => item.status === "Failed").length}
+              {
+                notifications.filter(
+                  (item) => item.status === "Failed",
+                ).length
+              }
             </strong>
           </div>
         </div>
@@ -248,14 +304,18 @@ function Notification() {
               onChange={(e) => setTypeFilter(e.target.value)}
             >
               <option value="All">All Types</option>
-
-              <option value="Vaccination Reminder">Vaccination Reminder</option>
-
-              <option value="Appointment Reminder">Appointment Reminder</option>
-
-              <option value="Missed Vaccination">Missed Vaccination</option>
-
-              <option value="General Announcement">General Announcement</option>
+              <option value="Vaccination Reminder">
+                Vaccination Reminder
+              </option>
+              <option value="Appointment Reminder">
+                Appointment Reminder
+              </option>
+              <option value="Missed Vaccination">
+                Missed Vaccination
+              </option>
+              <option value="General Announcement">
+                General Announcement
+              </option>
             </select>
           </div>
 
@@ -279,11 +339,15 @@ function Notification() {
                     const searchText = search.toLowerCase();
 
                     const matchesSearch =
-                      (item.parent || "").toLowerCase().includes(searchText) ||
+                      (item.parent || "")
+                        .toLowerCase()
+                        .includes(searchText) ||
                       (item.child_name || "")
                         .toLowerCase()
                         .includes(searchText) ||
-                      (item.message || "").toLowerCase().includes(searchText);
+                      (item.message || "")
+                        .toLowerCase()
+                        .includes(searchText);
 
                     const normalizedStatus =
                       item.status === "Reminder Sent"
@@ -296,22 +360,26 @@ function Notification() {
 
                     const matchesType =
                       typeFilter === "All" ||
-                      (item.type || "General Announcement") === typeFilter;
+                      (item.type || "General Announcement") ===
+                        typeFilter;
 
                     return matchesSearch && matchesStatus && matchesType;
                   })
-
                   .map((item) => (
                     <tr key={item.id}>
                       <td>{item.parent || "Unknown"}</td>
 
                       <td>{item.child_name || "Unknown Child"}</td>
 
-                      <td>{item.type || "General Announcement"}</td>
+                      <td>
+                        {item.type || "General Announcement"}
+                      </td>
 
                       <td>
                         {item.created_at
-                          ? new Date(item.created_at).toLocaleString()
+                          ? new Date(
+                              item.created_at,
+                            ).toLocaleString()
                           : "—"}
                       </td>
 
@@ -324,16 +392,18 @@ function Notification() {
                       </td>
 
                       <td>
-                        <button
-                          type="button"
-                          className="notification-view-btn"
-                          onClick={() => {
-                            setSelectedNotification(item);
-                            setShowViewModal(true);
-                          }}
-                        >
-                          View
-                        </button>
+                        {hasPermission("view_notifications") && (
+                          <button
+                            type="button"
+                            className="notification-view-btn"
+                            onClick={() => {
+                              setSelectedNotification(item);
+                              setShowViewModal(true);
+                            }}
+                          >
+                            View
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -342,11 +412,15 @@ function Notification() {
                   const searchText = search.toLowerCase();
 
                   const matchesSearch =
-                    (item.parent || "").toLowerCase().includes(searchText) ||
+                    (item.parent || "")
+                      .toLowerCase()
+                      .includes(searchText) ||
                     (item.child_name || "")
                       .toLowerCase()
                       .includes(searchText) ||
-                    (item.message || "").toLowerCase().includes(searchText);
+                    (item.message || "")
+                      .toLowerCase()
+                      .includes(searchText);
 
                   const normalizedStatus =
                     item.status === "Reminder Sent"
@@ -354,16 +428,25 @@ function Notification() {
                       : item.status || "Pending";
 
                   const matchesStatus =
-                    statusFilter === "All" || normalizedStatus === statusFilter;
+                    statusFilter === "All" ||
+                    normalizedStatus === statusFilter;
 
                   const matchesType =
                     typeFilter === "All" ||
-                    (item.type || "General Announcement") === typeFilter;
+                    (item.type || "General Announcement") ===
+                      typeFilter;
 
-                  return matchesSearch && matchesStatus && matchesType;
+                  return (
+                    matchesSearch &&
+                    matchesStatus &&
+                    matchesType
+                  );
                 }).length === 0 && (
                   <tr>
-                    <td colSpan="6" className="notification-empty">
+                    <td
+                      colSpan="6"
+                      className="notification-empty"
+                    >
                       No notifications found.
                     </td>
                   </tr>
@@ -375,7 +458,7 @@ function Notification() {
       </div>
 
       {/* COMPOSE NOTIFICATION MODAL */}
-      {showModal && (
+      {showModal && hasPermission("send_notifications") && (
         <div
           className="notification-modal-overlay"
           onClick={() => setShowModal(false)}
@@ -401,12 +484,16 @@ function Notification() {
                 <button
                   type="button"
                   className="notification-child-dropdown"
-                  onClick={() => setShowChildList(!showChildList)}
+                  onClick={() =>
+                    setShowChildList(!showChildList)
+                  }
                 >
                   {selectedChildren.length === 0
                     ? "Select children"
                     : `${selectedChildren.length} child${
-                        selectedChildren.length > 1 ? "ren" : ""
+                        selectedChildren.length > 1
+                          ? "ren"
+                          : ""
                       } selected`}
 
                   <span>▼</span>
@@ -418,14 +505,18 @@ function Notification() {
                       type="text"
                       placeholder="Search child..."
                       value={childSearch}
-                      onChange={(e) => setChildSearch(e.target.value)}
+                      onChange={(e) =>
+                        setChildSearch(e.target.value)
+                      }
                     />
 
                     {children
                       .filter((child) =>
                         (child.child_name || "")
                           .toLowerCase()
-                          .includes(childSearch.toLowerCase()),
+                          .includes(
+                            childSearch.toLowerCase(),
+                          ),
                       )
                       .map((child) => (
                         <label
@@ -434,14 +525,24 @@ function Notification() {
                         >
                           <input
                             type="checkbox"
-                            checked={selectedChildren.includes(child.child_id)}
+                            checked={selectedChildren.includes(
+                              child.child_id,
+                            )}
                             onChange={() => {
-                              setSelectedChildren((previous) =>
-                                previous.includes(child.child_id)
-                                  ? previous.filter(
-                                      (id) => id !== child.child_id,
-                                    )
-                                  : [...previous, child.child_id],
+                              setSelectedChildren(
+                                (previous) =>
+                                  previous.includes(
+                                    child.child_id,
+                                  )
+                                    ? previous.filter(
+                                        (id) =>
+                                          id !==
+                                          child.child_id,
+                                      )
+                                    : [
+                                        ...previous,
+                                        child.child_id,
+                                      ],
                               );
                             }}
                           />
@@ -482,7 +583,10 @@ function Notification() {
                 Send to all
               </button>
 
-              <button className="notification-send-btn" onClick={handleSendSMS}>
+              <button
+                className="notification-send-btn"
+                onClick={handleSendSMS}
+              >
                 <FaPaperPlane />
                 Send SMS
               </button>
@@ -491,17 +595,19 @@ function Notification() {
 
           {toast.show && (
             <div className="notification-toast">
-              <div className="notification-toast-icon">✓</div>
+              <div className="notification-toast-icon">
+                ✓
+              </div>
 
               <div>
                 <h4>{toast.title}</h4>
-
                 <p>{toast.message}</p>
               </div>
             </div>
           )}
         </div>
       )}
+
       {/* VIEW NOTIFICATION MODAL */}
       {showViewModal && selectedNotification && (
         <div
@@ -530,20 +636,24 @@ function Notification() {
             <div className="notification-view-body">
               <div className="notification-detail-row">
                 <span>Recipient</span>
-                <strong>{selectedNotification.parent || "Unknown"}</strong>
+                <strong>
+                  {selectedNotification.parent || "Unknown"}
+                </strong>
               </div>
 
               <div className="notification-detail-row">
                 <span>Child</span>
                 <strong>
-                  {selectedNotification.child_name || "Unknown Child"}
+                  {selectedNotification.child_name ||
+                    "Unknown Child"}
                 </strong>
               </div>
 
               <div className="notification-detail-row">
                 <span>Type</span>
                 <strong>
-                  {selectedNotification.type || "General Announcement"}
+                  {selectedNotification.type ||
+                    "General Announcement"}
                 </strong>
               </div>
 
@@ -551,7 +661,9 @@ function Notification() {
                 <span>Date & Time</span>
                 <strong>
                   {selectedNotification.created_at
-                    ? new Date(selectedNotification.created_at).toLocaleString()
+                    ? new Date(
+                        selectedNotification.created_at,
+                      ).toLocaleString()
                     : "—"}
                 </strong>
               </div>
@@ -559,21 +671,29 @@ function Notification() {
               <div className="notification-detail-row">
                 <span>Status</span>
                 <strong>
-                  {selectedNotification.status === "Reminder Sent"
+                  {selectedNotification.status ===
+                  "Reminder Sent"
                     ? "Sent"
-                    : selectedNotification.status || "Pending"}
+                    : selectedNotification.status ||
+                      "Pending"}
                 </strong>
               </div>
 
               <div className="notification-detail-message">
                 <span>Message</span>
 
-                <p>{selectedNotification.message || "No message available."}</p>
+                <p>
+                  {selectedNotification.message ||
+                    "No message available."}
+                </p>
               </div>
             </div>
 
             <div className="notification-view-footer">
-              <button type="button" onClick={() => setShowViewModal(false)}>
+              <button
+                type="button"
+                onClick={() => setShowViewModal(false)}
+              >
                 Close
               </button>
             </div>

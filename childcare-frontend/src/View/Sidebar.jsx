@@ -19,6 +19,12 @@ import {
 function Sidebar() {
   const navigate = useNavigate();
 
+  // Get current logged-in user
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+
+  // Check if the logged-in user is Admin
+  const isAdmin = currentUser?.user_type === "Admin";
+
   const handleLogout = () => {
     alert("Logged out!");
     navigate("/login");
@@ -38,6 +44,7 @@ function Sidebar() {
         </div>
 
         <h2>ChildCare</h2>
+
         <span className="sidebar-subtitle">
           Management System
         </span>
@@ -68,7 +75,7 @@ function Sidebar() {
 
           <NavLink to="/patients">
             <FaUserFriends />
-            Patients
+            Children
           </NavLink>
 
           <NavLink to="/appointments">
@@ -89,16 +96,23 @@ function Sidebar() {
             ADMINISTRATION
           </span>
 
-          <NavLink to="/user-management">
-            <FaUser />
-            Users
-          </NavLink>
+          {/* Admin only */}
+          
+            <NavLink to="/user-management">
+              <FaUser />
+              Users
+            </NavLink>
+          
 
-          <NavLink to="/role-base-access">
-            <FaUser />
-            Staff & Permissions
-          </NavLink>
+          {/* Admin only */}
+          {isAdmin && (
+            <NavLink to="/role-base-access">
+              <FaUser />
+              Staff & Permissions
+            </NavLink>
+          )}
 
+          {/* Everyone */}
           <NavLink to="/report">
             <FaChartBar />
             Reports

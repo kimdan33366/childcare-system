@@ -20,9 +20,6 @@ function Vaccine() {
 
     editingId,
 
-    openMenuId,
-    setOpenMenuId,
-
     newVaccine,
 
     handleInputChange,
@@ -38,6 +35,35 @@ function Vaccine() {
     deleteVaccine,
   } = VaccineController();
 
+  // Get logged-in user
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+
+  const isAdmin = currentUser?.user_type === "Admin";
+  const permissions = currentUser?.permissions || [];
+
+  // Permission helper
+  const hasPermission = (permission) => {
+    return (
+      isAdmin || permissions.includes("all") || permissions.includes(permission)
+    );
+  };
+
+  // Page access
+  if (!isAdmin && !permissions.includes("view_vaccines")) {
+    return (
+      <div className="vaccine-admin-container">
+        <Sidebar />
+
+        <div className="vaccine-main-content">
+          <div style={{ padding: "40px", textAlign: "center" }}>
+            <h2>Access Denied</h2>
+            <p>You do not have permission to access Vaccines.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="vaccine-admin-container">
       <Sidebar />
@@ -49,11 +75,14 @@ function Vaccine() {
             <p>Manage vaccine inventory and availability.</p>
           </div>
 
-          <button className="vaccine-add-btn" onClick={openAddModal}>
-            <FaPlus />
-            Add Vaccine
-          </button>
+          {hasPermission("add_vaccines") && (
+            <button className="vaccine-add-btn" onClick={openAddModal}>
+              <FaPlus />
+              Add Vaccine
+            </button>
+          )}
         </div>
+
         <div className="vaccine-summary">
           <div className="vaccine-summary-card">
             <span>Total Vaccines</span>
@@ -94,6 +123,7 @@ function Vaccine() {
             </strong>
           </div>
         </div>
+
         <div className="vaccine-toolbar">
           <div className="vaccine-search-box">
             <FaSearch className="vaccine-search-icon" />
@@ -174,19 +204,23 @@ function Vaccine() {
 
                   <td>
                     <div className="vaccine-actions">
-                      <button
-                        className="vaccine-edit-btn"
-                        onClick={() => openEditModal(vaccine)}
-                      >
-                        <FaEdit />
-                      </button>
+                      {hasPermission("edit_vaccines") && (
+                        <button
+                          className="vaccine-edit-btn"
+                          onClick={() => openEditModal(vaccine)}
+                        >
+                          <FaEdit />
+                        </button>
+                      )}
 
-                      <button
-                        className="vaccine-delete-btn"
-                        onClick={() => deleteVaccine(vaccine.id)}
-                      >
-                        <FaTrash />
-                      </button>
+                      {hasPermission("delete_vaccines") && (
+                        <button
+                          className="vaccine-delete-btn"
+                          onClick={() => deleteVaccine(vaccine.id)}
+                        >
+                          <FaTrash />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -196,64 +230,69 @@ function Vaccine() {
         </div>
       </div>
 
-      {showModal && (
-        <div className="vaccine-modal-overlay">
-          <div className="vaccine-modal">
-            <h2>{editingId !== null ? "Edit Vaccine" : "Add Vaccine"}</h2>
-            <p className="vaccine-modal-subtitle">
-              {editingId !== null
-                ? "Update the vaccine information below."
-                : "Enter the vaccine details below."}
-            </p>
-            <div className="vaccine-modal-input">
-              <label>Vaccine Name</label>
+      {showModal &&
+        (editingId === null
+          ? hasPermission("add_vaccines")
+          : hasPermission("edit_vaccines")) && (
+          <div className="vaccine-modal-overlay">
+            <div className="vaccine-modal">
+              <h2>{editingId !== null ? "Edit Vaccine" : "Add Vaccine"}</h2>
 
-              <input
-                type="text"
-                value={newVaccine.name}
-                onChange={(event) =>
-                  handleInputChange("name", event.target.value)
-                }
-              />
-            </div>
+              <p className="vaccine-modal-subtitle">
+                {editingId !== null
+                  ? "Update the vaccine information below."
+                  : "Enter the vaccine details below."}
+              </p>
 
-            <div className="vaccine-modal-input">
-              <label>Expiration Date</label>
+              <div className="vaccine-modal-input">
+                <label>Vaccine Name</label>
 
-              <input
-                type="date"
-                value={newVaccine.expiration}
-                onChange={(event) =>
-                  handleInputChange("expiration", event.target.value)
-                }
-              />
-            </div>
+                <input
+                  type="text"
+                  value={newVaccine.name}
+                  onChange={(event) =>
+                    handleInputChange("name", event.target.value)
+                  }
+                />
+              </div>
 
-            <div className="vaccine-modal-input">
-              <label>Quantity(Vials)</label>
+              <div className="vaccine-modal-input">
+                <label>Expiration Date</label>
 
-              <input
-                type="number"
-                min="0"
-                value={newVaccine.quantity}
-                onChange={(event) =>
-                  handleInputChange("quantity", event.target.value)
-                }
-              />
-            </div>
+                <input
+                  type="date"
+                  value={newVaccine.expiration}
+                  onChange={(event) =>
+                    handleInputChange("expiration", event.target.value)
+                  }
+                />
+              </div>
 
-            <div className="vaccine-modal-buttons">
-              <button className="vaccine-cancel-btn" onClick={closeModal}>
-                Cancel
-              </button>
+              <div className="vaccine-modal-input">
+                <label>Quantity(Vials)</label>
 
-              <button className="vaccine-save-btn" onClick={saveVaccine}>
-                {editingId !== null ? "Update" : "Save"}
-              </button>
+                <input
+                  type="number"
+                  min="0"
+                  value={newVaccine.quantity}
+                  onChange={(event) =>
+                    handleInputChange("quantity", event.target.value)
+                  }
+                />
+              </div>
+
+              <div className="vaccine-modal-buttons">
+                <button className="vaccine-cancel-btn" onClick={closeModal}>
+                  Cancel
+                </button>
+
+                <button className="vaccine-save-btn" onClick={saveVaccine}>
+                  {editingId !== null ? "Update" : "Save"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

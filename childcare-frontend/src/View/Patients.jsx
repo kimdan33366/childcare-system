@@ -25,6 +25,18 @@ function Patients() {
   const navigate = useNavigate();
 
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const isAdmin = currentUser?.user_type === "Admin";
+  const permissions = currentUser?.permissions || [];
+
+  const hasPermission = (permission) => {
+    return (
+      isAdmin || permissions.includes("all") || permissions.includes(permission)
+    );
+  };
+
+  if (!isAdmin && !permissions.includes("view_patients")) {
+    return <div>Access Denied</div>;
+  }
 
   const [patients, setPatients] = useState([]);
 
@@ -56,7 +68,9 @@ function Patients() {
   const [fatherName, setFatherName] = useState("");
 
   const [address, setAddress] = useState("");
+
   const [selectedPatient, setSelectedPatient] = useState(null);
+
   const getPatientStatus = (patient) => {
     const records = patient.patient_records || [];
 
@@ -78,6 +92,7 @@ function Patients() {
 
     return "Continuing";
   };
+
   const filteredPatients = patients.filter((patient) => {
     const searchValue = search.toLowerCase();
 
@@ -91,6 +106,7 @@ function Patients() {
       parentNames.includes(searchValue);
 
     const patientStatus = getPatientStatus(patient);
+
     const matchesStatus =
       statusFilter === "All" || patientStatus === statusFilter;
 
@@ -143,6 +159,7 @@ function Patients() {
       alert("Could not connect to the server.");
     }
   };
+
   const handleEditPatient = async () => {
     if (!selectedPatient) return;
 
@@ -200,6 +217,7 @@ function Patients() {
       alert("Could not connect to the server.");
     }
   };
+
   useEffect(() => {
     fetch("http://127.0.0.1:8000/api/children")
       .then((response) => response.json())
@@ -219,22 +237,23 @@ function Patients() {
       <main className="patients-content">
         <div className="patients-header">
           <div>
-            <h2>Patients</h2>
-
+            <h2>Children</h2>
             <p>Manage registered children and vaccination records.</p>
           </div>
 
-          <button
-            className="patients-add-btn"
-            onClick={() => {
-              setIsEditingPatient(false);
-              setSelectedPatient(null);
-              setShowAddPatient(true);
-            }}
-          >
-            <FaPlus />
-            Add Patient
-          </button>
+          {hasPermission("add_patients") && (
+            <button
+              className="patients-add-btn"
+              onClick={() => {
+                setIsEditingPatient(false);
+                setSelectedPatient(null);
+                setShowAddPatient(true);
+              }}
+            >
+              <FaPlus />
+              Add Patient
+            </button>
+          )}
         </div>
 
         <div className="patients-search-section">
@@ -291,16 +310,13 @@ function Patients() {
                 <tbody>
                   {filteredPatients.map((patient) => (
                     <tr key={patient.child_id}>
-                      {/* Child */}
                       <td>
                         <div className="patient-child-info">
                           <FaUserCircle />
-
                           <span>{patient.child_name}</span>
                         </div>
                       </td>
 
-                      {/* Parent / Guardian */}
                       <td>
                         <span className="patient-parent">
                           {patient.mother_name && patient.father_name
@@ -309,14 +325,12 @@ function Patients() {
                         </span>
                       </td>
 
-                      {/* Age */}
                       <td>
                         {patient.age_months
                           ? `${patient.age_months} months`
                           : "—"}
                       </td>
 
-                      {/* Status */}
                       <td>
                         <span
                           className={`patient-status status-${getPatientStatus(
@@ -329,9 +343,9 @@ function Patients() {
                         </span>
                       </td>
 
-                      {/* Actions */}
                       <td>
                         <div className="patient-actions">
+                          {hasPermission("view_patients") && (
                           <FaEye
                             className="view-action"
                             title="View Record"
@@ -341,78 +355,75 @@ function Patients() {
                               )
                             }
                           />
+                            )}
+                          {hasPermission("edit_patients") && (
+                            <FaEdit
+                              className="edit-action"
+                              title="Edit Patient"
+                              onClick={() => {
+                                setSelectedPatient(patient);
+                                setIsEditingPatient(true);
 
-                          <FaEdit
-                            className="edit-action"
-                            title="Edit Patient"
-                            onClick={() => {
-                              setSelectedPatient(patient);
-                              setIsEditingPatient(true);
+                                setChildName(patient.child_name || "");
+                                setAge(patient.age_months || "");
+                                setBirthdate(patient.birthdate || "");
+                                setSex(patient.gender || "");
+                                setMotherName(patient.mother_name || "");
+                                setFatherName(patient.father_name || "");
+                                setAddress(patient.address || "");
 
-                              setChildName(patient.child_name || "");
+                                setShowAddPatient(true);
+                              }}
+                            />
+                          )}
 
-                              setAge(patient.age_months || "");
+                          {hasPermission("delete_patients") && (
+                            <FaTrash
+                              className="delete-action"
+                              title="Delete Patient"
+                              onClick={async () => {
+                                const confirmed = window.confirm(
+                                  `Are you sure you want to delete ${patient.child_name}?`,
+                                );
 
-                              setBirthdate(patient.birthdate || "");
+                                if (!confirmed) return;
 
-                              setSex(patient.gender || "");
-
-                              setMotherName(patient.mother_name || "");
-
-                              setFatherName(patient.father_name || "");
-
-                              setAddress(patient.address || "");
-
-                              setShowAddPatient(true);
-                            }}
-                          />
-
-                          <FaTrash
-                            className="delete-action"
-                            title="Delete Patient"
-                            onClick={async () => {
-                              const confirmed = window.confirm(
-                                `Are you sure you want to delete ${patient.child_name}?`,
-                              );
-
-                              if (!confirmed) return;
-
-                              try {
-                                const response = await fetch(
-                                  `http://127.0.0.1:8000/api/children/${patient.child_id}`,
-                                  {
-                                    method: "DELETE",
-                                    headers: {
-                                      Accept: "application/json",
+                                try {
+                                  const response = await fetch(
+                                    `http://127.0.0.1:8000/api/children/${patient.child_id}`,
+                                    {
+                                      method: "DELETE",
+                                      headers: {
+                                        Accept: "application/json",
+                                      },
                                     },
-                                  },
-                                );
+                                  );
 
-                                if (!response.ok) {
-                                  const data = await response.json();
+                                  if (!response.ok) {
+                                    const data = await response.json();
+                                    console.error(data);
+                                    alert("Failed to delete patient.");
+                                    return;
+                                  }
 
-                                  console.error(data);
+                                  setPatients((prevPatients) =>
+                                    prevPatients.filter(
+                                      (item) =>
+                                        item.child_id !== patient.child_id,
+                                    ),
+                                  );
 
-                                  alert("Failed to delete patient.");
-
-                                  return;
+                                  alert("Patient deleted successfully!");
+                                } catch (error) {
+                                  console.error(
+                                    "Error deleting patient:",
+                                    error,
+                                  );
+                                  alert("Could not connect to the server.");
                                 }
-
-                                setPatients((prevPatients) =>
-                                  prevPatients.filter(
-                                    (item) =>
-                                      item.child_id !== patient.child_id,
-                                  ),
-                                );
-
-                                alert("Patient deleted successfully!");
-                              } catch (error) {
-                                console.error("Error deleting patient:", error);
-
-                                alert("Could not connect to the server.");
-                              }
-                            }}
-                          />
+                              }}
+                            />
+                          )}
                         </div>
                       </td>
                     </tr>
