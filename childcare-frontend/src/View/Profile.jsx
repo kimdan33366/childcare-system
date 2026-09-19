@@ -1,3 +1,4 @@
+
 import "../css/Profile.css";
 
 import Sidebar from "../View/Sidebar";
@@ -10,21 +11,65 @@ function Profile() {
         Admin_name: "Carolene Ann Oblianda",
         Admin_email: "",
         Admin_role: "System Administrator",
+        user_type: "Admin",
       }
     );
   });
+
+  // Check if the logged-in account is an Admin
+  const isAdmin = currentUser?.user_type === "Admin";
+
+  // Create a unique image key for each account
+  const profileImageKey = isAdmin
+    ? `profileImage_admin_${currentUser?.Admin_id}`
+    : `profileImage_staff_${currentUser?.staff_id}`;
+
+  const [profileImage, setProfileImage] = useState(
+    localStorage.getItem(profileImageKey) || "/profile.jpg",
+  );
+
   const [showEditModal, setShowEditModal] = useState(false);
+
   const [editName, setEditName] = useState(currentUser.Admin_name || "");
   const [editEmail, setEditEmail] = useState(currentUser.Admin_email || "");
   const [editRole, setEditRole] = useState(
     currentUser.Admin_role || "System Administrator",
   );
+
+  // Change profile image
+  const handleImageChange = (event) => {
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    // Make sure the selected file is an image
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file.");
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      const imageData = reader.result;
+
+      // Change image immediately
+      setProfileImage(imageData);
+
+      // Save image for this specific account only
+      localStorage.setItem(profileImageKey, imageData);
+    };
+
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="profile-dashboard">
       <Sidebar />
 
       <main className="profile-main-content">
         <div className="profile-page">
+
           {/* PAGE HEADER */}
           <div className="profile-page-header">
             <div>
@@ -36,12 +81,36 @@ function Profile() {
           {/* PROFILE OVERVIEW */}
           <div className="profile-overview">
             <div className="profile-overview-left">
-              <img src="/profile.jpg" alt="Profile" className="profile-image" />
+
+              {/* PROFILE IMAGE */}
+              <div className="profile-image-container">
+                <img
+                  src={profileImage}
+                  alt="Profile"
+                  className="profile-image"
+                  onClick={() =>
+                    document.getElementById("profileImageInput").click()
+                  }
+                />
+
+                <input
+                  id="profileImageInput"
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleImageChange}
+                />
+              </div>
 
               <div className="profile-overview-info">
-                <h2>{currentUser.Admin_name}</h2>
+                <h2>
+                  {currentUser.Admin_name || currentUser.staff_name}
+                </h2>
 
-                <p>{currentUser.Admin_role}</p>
+                <p>
+                  {currentUser.Admin_role ||
+                    (isAdmin ? "System Administrator" : "Staff")}
+                </p>
 
                 <span className="profile-status">
                   <span className="profile-status-dot"></span>
@@ -67,31 +136,47 @@ function Profile() {
             </div>
 
             <div className="profile-information-grid">
+
+              {/* NAME */}
               <div className="profile-form-group">
                 <label>Full Name</label>
 
                 <input
                   type="text"
-                  value={currentUser.Admin_name || ""}
+                  value={
+                    currentUser.Admin_name ||
+                    currentUser.staff_name ||
+                    ""
+                  }
                   readOnly
                 />
               </div>
 
+              {/* EMAIL */}
               <div className="profile-form-group">
                 <label>Email</label>
 
                 <input
                   type="email"
-                  value={currentUser.Admin_email || ""}
+                  value={
+                    currentUser.Admin_email ||
+                    currentUser.staff_email ||
+                    ""
+                  }
                   readOnly
                 />
               </div>
 
+              {/* ROLE */}
               <div className="profile-form-group">
                 <label>Role</label>
+
                 <input
                   type="text"
-                  value={currentUser.Admin_role || ""}
+                  value={
+                    currentUser.Admin_role ||
+                    (isAdmin ? "System Administrator" : "Staff")
+                  }
                   readOnly
                 />
               </div>
@@ -104,6 +189,7 @@ function Profile() {
               <div className="profile-modal">
                 <h2>Edit Profile</h2>
 
+                {/* NAME */}
                 <div className="profile-form-group">
                   <label>Name</label>
 
@@ -114,6 +200,7 @@ function Profile() {
                   />
                 </div>
 
+                {/* EMAIL */}
                 <div className="profile-form-group">
                   <label>Email</label>
 
@@ -123,21 +210,31 @@ function Profile() {
                     onChange={(e) => setEditEmail(e.target.value)}
                   />
                 </div>
-                <div className="profile-form-group">
-                  <label>Role</label>
-                  <select
-                    value={editRole}
-                    onChange={(e) => setEditRole(e.target.value)}
-                  >
-                    <option value="System Administrator">
-                      System Administrator
-                    </option>
-                    <option value="Staff">Staff</option>
-                  </select>
-                </div>
 
+                {/* ROLE — ADMIN ONLY */}
+                {isAdmin && (
+                  <div className="profile-form-group">
+                    <label>Role</label>
+
+                    <select
+                      value={editRole}
+                      onChange={(e) => setEditRole(e.target.value)}
+                    >
+                      <option value="System Administrator">
+                        System Administrator
+                      </option>
+
+                      <option value="Staff">Staff</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* BUTTONS */}
                 <div className="profile-modal-buttons">
-                  <button type="button" onClick={() => setShowEditModal(false)}>
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                  >
                     Cancel
                   </button>
 
@@ -164,7 +261,8 @@ function Profile() {
 
                         if (!response.ok) {
                           throw new Error(
-                            data.message || "Failed to update profile",
+                            data.message ||
+                              "Failed to update profile",
                           );
                         }
 
@@ -177,15 +275,24 @@ function Profile() {
                           JSON.stringify(updatedUser),
                         );
 
-                        setEditName(updatedUser.Admin_name || "");
-                        setEditEmail(updatedUser.Admin_email || "");
+                        setEditName(
+                          updatedUser.Admin_name || "",
+                        );
+
+                        setEditEmail(
+                          updatedUser.Admin_email || "",
+                        );
+
                         setEditRole(
-                          updatedUser.Admin_role || "System Administrator",
+                          updatedUser.Admin_role ||
+                            "System Administrator",
                         );
 
                         setShowEditModal(false);
 
-                        alert("Profile updated successfully!");
+                        alert(
+                          "Profile updated successfully!",
+                        );
                       } catch (error) {
                         console.error(error);
 

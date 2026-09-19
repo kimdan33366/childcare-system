@@ -347,3 +347,10 @@ body,
 .profile-form-group select:focus {
   border-color: #21457b;
 }
+ .profile-image {
+   cursor: pointer;
+}
+
+ .profile-image:hover {
+  opacity: 0.85;
+ }

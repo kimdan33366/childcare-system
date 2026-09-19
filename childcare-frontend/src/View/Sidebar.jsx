@@ -70,7 +70,7 @@ function Sidebar() {
         {/* PATIENT CARE */}
         <div className="nav-section">
           <span className="nav-section-title">
-            PATIENT CARE
+            CHILD CARE
           </span>
 
           <NavLink to="/patients">

@@ -68,6 +68,7 @@ Route::get('/patient-records/{child_id}', [PatientViewRecordController::class, '
 Route::put('/patient-records/{patient_recordID}/status', [PatientViewRecordController::class, 'updateStatus']);
 Route::post('/patient-records', [PatientViewRecordController::class, 'store']); 
 Route::put('/patient-records/{patient_recordID}', [PatientViewRecordController::class, 'update']);
+Route::delete('/patient-records/{patient_recordID}', [PatientViewRecordController::class, 'destroy']);
 
 Route::get('/staff', [StaffController::class, 'index']);
 Route::post('/staff', [StaffController::class, 'store']);
@@ -75,6 +76,8 @@ Route::post('/staff/login', [StaffController::class, 'login']);
 Route::get('/staff/{id}', [StaffController::class, 'show']);
 Route::put('/staff/{id}', [StaffController::class, 'update']);
 Route::delete('/staff/{id}', [StaffController::class, 'destroy']);
+Route::put('/staff/{id}/password', [StaffController::class, 'resetPassword']);
+Route::put('/staff/{id}/status', [StaffController::class, 'updateStatus']);
 
 Route::get(
     '/staff/{staffId}/permissions',

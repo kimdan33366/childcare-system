@@ -66,6 +66,23 @@ class DashboardController extends Controller
             ->count();
 
 
+
+
+            // ==========================================
+// APPOINTMENT STATUS
+// ==========================================
+
+$pendingAppointments = DB::table('appointments')
+    ->where('status', 'Pending')
+    ->count();
+
+$completedAppointments = DB::table('appointments')
+    ->where('status', 'Completed')
+    ->count();
+
+$missedAppointments = DB::table('appointments')
+    ->where('status', 'Missed')
+    ->count();
         // ==========================================
         // MONTHLY DOSES
         // ==========================================
@@ -134,6 +151,10 @@ class DashboardController extends Controller
             'active_user'=>User::where('status','Active')->count(),
 
             'doses_given' => $dosesGiven,
+
+            'pending_appointments'=>$pendingAppointments,
+            'completed_appointments'=>$completedAppointments,
+            'missed_appointments'=>$missedAppointments,
 
             'monthly_doses' => $monthlyDoses,
 

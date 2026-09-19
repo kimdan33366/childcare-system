@@ -141,4 +141,52 @@ class StaffController extends Controller
         ],
     ]);
 }
+    // Reset staff password
+public function resetPassword(Request $request, $id)
+{
+    $staff = Staff::find($id);
+
+    if (!$staff) {
+        return response()->json([
+            'message' => 'Staff not found.'
+        ], 404);
+    }
+
+    $request->validate([
+        'password' => 'required|string|min:6',
+    ]);
+
+    $staff->update([
+        'staff_password' => Hash::make($request->password),
+    ]);
+
+    return response()->json([
+        'message' => 'Staff password reset successfully.'
+    ]);
+}
+
+// Deactivate staff
+public function updateStatus(Request $request, $id)
+{
+    $staff = Staff::find($id);
+
+    if (!$staff) {
+        return response()->json([
+            'message' => 'Staff not found.'
+        ], 404);
+    }
+
+    $request->validate([
+        'status' => 'required|in:Active,Inactive',
+    ]);
+
+    $staff->update([
+        'status' => $request->status,
+    ]);
+
+    return response()->json([
+        'message' => 'Staff status updated successfully.',
+        'staff' => $staff,
+    ]);
+}
 }

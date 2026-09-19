@@ -9,6 +9,7 @@ import {
   FaUserFriends,
   FaShieldAlt,
   FaCalendarCheck,
+  FaBell,
 } from "react-icons/fa";
 
 import {
@@ -28,9 +29,11 @@ function Dashboard() {
   const [dashboardData, setDashboardData] = useState({
     users: 0,
     children: 0,
-    overdue: 0,
-    due_soon: 0,
+    active_user: 0,
     doses_given: 0,
+    pending_appointments: 0,
+    completed_appointments: 0,
+    missed_appointments: 0,
   });
   const [appointments, setAppointments] = useState([]);
   const [monthlyDoses, setMonthlyDoses] = useState([]);
@@ -102,12 +105,32 @@ function Dashboard() {
             <h2>{dashboardData.children}</h2>
           </NavLink>
 
-          <NavLink to="/patients" className="dashboard-card">
+          <NavLink
+            to="/appointments"
+            className="dashboard-card dashboard-appointment-card"
+          >
             <div className="dashboard-card-top">
-              <FaExclamationTriangle className="dashboard-card-icon overdue" />
+              <span className="dashboard-card-icon">📅</span>
             </div>
-            <small>Overdue</small>
-            <h2>{dashboardData.overdue}</h2>
+
+            <small>Appointments</small>
+
+            <div className="dashboard-appointment-summary">
+              <div className="dashboard-appointment-summary-item">
+                <strong>{dashboardData.pending_appointments}</strong>
+                <span>Pending</span>
+              </div>
+
+              <div className="dashboard-appointment-summary-item">
+                <strong>{dashboardData.completed_appointments}</strong>
+                <span>Completed</span>
+              </div>
+
+              <div className="dashboard-appointment-summary-item">
+                <strong>{dashboardData.missed_appointments}</strong>
+                <span>Missed</span>
+              </div>
+            </div>
           </NavLink>
 
           <NavLink to="/user-management" className="dashboard-card">
@@ -266,22 +289,39 @@ function Dashboard() {
                 <span>Remaining</span>
                 <span>Status</span>
               </div>
-              {vaccines.slice(0, 3).map((vaccine) => (
-                <div
-                  className="dashboard-inventory-item"
-                  key={vaccine.vaccine_ID}
-                >
-                  <span>{vaccine.vaccine_name}</span>
-                  <span>{vaccine.stock_quantity}</span>
-                  <span
-                    className={`inventory-status ${vaccine.status
-                      ?.toLowerCase()
-                      .replace(" ", "-")}`}
-                  >
-                    {vaccine.status}
-                  </span>
-                </div>
-              ))}
+              {vaccines
+                .filter((vaccine) => Number(vaccine.stock_quantity) <= 10)
+                .slice(0, 5)
+                .map((vaccine) => {
+                  const stock = Number(vaccine.stock_quantity || 0);
+
+                  let status = "Available";
+
+                  if (stock === 0) {
+                    status = "Out of Stock";
+                  } else if (stock <= 10) {
+                    status = "Low";
+                  }
+
+                  return (
+                    <div
+                      className="dashboard-inventory-item"
+                      key={vaccine.vaccine_ID}
+                    >
+                      <span>{vaccine.vaccine_name}</span>
+
+                      <span>{stock}</span>
+
+                      <span
+                        className={`inventory-status ${status
+                          .toLowerCase()
+                          .replace(" ", "-")}`}
+                      >
+                        {status}
+                      </span>
+                    </div>
+                  );
+                })}
             </div>
           </div>
         </div>

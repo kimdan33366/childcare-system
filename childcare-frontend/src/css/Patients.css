@@ -1201,6 +1201,9 @@ body,
     border: 1px solid #e5e7eb;
     border-radius: 10px;
     overflow: hidden;
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: auto;
 }
 
 .patients-table {
@@ -1414,4 +1417,273 @@ body,
 .patients-empty-state span {
     font-size: 12px;
     color: #94a3b8;
+}
+/* ==========================================
+   ADD PATIENT - TWO STEP FORM
+========================================== */
+
+.patient-step-one-modal {
+    width: 480px;
+}
+
+.patient-step-two-modal {
+    width: 480px;
+}
+
+.patient-step-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.patient-step-header h2 {
+    margin: 0;
+}
+
+.patient-step-header p {
+    margin: 4px 0 0;
+    color: #777;
+    font-size: 13px;
+}
+
+.patient-step-number {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #2E86DE;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.patient-form-label {
+    display: block;
+    margin: 14px 0 7px;
+    color: #444;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* USER SEARCH */
+
+.patient-user-search {
+    width: 100%;
+    height: 42px;
+    border: 1px solid #d7d7d7;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 12px;
+    background: #fff;
+}
+
+.patient-user-search svg {
+    color: #888;
+    font-size: 14px;
+}
+
+.patient-user-search input {
+    border: none !important;
+    outline: none;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100%;
+    height: 100%;
+}
+
+/* USER LIST */
+
+.patient-user-list {
+    margin-top: 8px;
+    max-height: 180px;
+    overflow-y: auto;
+    border: 1px solid #e2e2e2;
+    border-radius: 8px;
+}
+
+.patient-user-option {
+    width: 100%;
+    border: none;
+    background: white;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    text-align: left;
+    padding: 11px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.patient-user-option:last-child {
+    border-bottom: none;
+}
+
+.patient-user-option:hover {
+    background: #f5f9ff;
+}
+
+.patient-user-option.selected {
+    background: #eef6ff;
+}
+
+.patient-user-option > svg {
+    color: #2E86DE;
+    font-size: 26px;
+}
+
+.patient-user-option div {
+    display: flex;
+    flex-direction: column;
+}
+
+.patient-user-option strong {
+    color: #333;
+    font-size: 13px;
+}
+
+.patient-user-option small {
+    color: #888;
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+.patient-no-users {
+    padding: 18px;
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+}
+
+/* SELECTED USER */
+
+.patient-selected-user {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: #f4f8fd;
+    border: 1px solid #dbe8f7;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.patient-selected-user span {
+    color: #777;
+    font-size: 10px;
+    text-transform: uppercase;
+}
+
+.patient-selected-user strong {
+    color: #21457B;
+    font-size: 13px;
+}
+
+/* RELATIONSHIP */
+
+.patient-relationship-options {
+    display: flex;
+    gap: 12px;
+    margin-top: 5px;
+}
+
+.patient-relationship-options label {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 11px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    background: white;
+    transition: 0.2s ease;
+}
+
+.patient-relationship-options label:hover {
+    border-color: #9bbde5;
+    background: #f7fbff;
+}
+
+.patient-relationship-options label.active {
+    border-color: #2E86DE;
+    background: #eef6ff;
+}
+
+.patient-relationship-options input {
+    margin: 0;
+}
+
+/* CONNECTED USER */
+
+.patient-connected-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin-bottom: 13px;
+    border-radius: 8px;
+    background: #f4f8fd;
+    border: 1px solid #dbe8f7;
+}
+
+.patient-connected-user > svg {
+    color: #2E86DE;
+    font-size: 27px;
+}
+
+.patient-connected-user div {
+    display: flex;
+    flex-direction: column;
+}
+
+.patient-connected-user small {
+    color: #777;
+    font-size: 10px;
+    text-transform: uppercase;
+}
+
+.patient-connected-user strong {
+    color: #21457B;
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+/* PARENT FIELDS */
+
+.patient-parent-field {
+    margin-bottom: 10px;
+}
+
+.patient-parent-field label {
+    display: block;
+    margin-bottom: 5px;
+    color: #555;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.patient-parent-field input {
+    width: 100%;
+}
+
+.patient-parent-field input[readonly] {
+    background: #f3f6f9;
+    color: #555;
+    cursor: not-allowed;
+}
+
+/* NEXT BUTTON */
+
+.patient-next-btn {
+    background: #2E86DE !important;
+    color: white !important;
+}
+
+.patient-next-btn:hover {
+    background: #1f6fbe !important;
 }
