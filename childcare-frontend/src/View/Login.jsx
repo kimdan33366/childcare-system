@@ -90,13 +90,13 @@ function Login() {
               Login
             </button>
 
-            <button
+            {/* <button
               type="button"
               className="login-btn"
               onClick={() => navigate("/register")}
             >
               Register
-            </button>
+            </button> */}
           </form>
         </div>
         <div className="login-right">
