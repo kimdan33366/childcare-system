@@ -20,14 +20,12 @@ class ProfileController extends Controller
         $request->validate([
             'Admin_name' => 'required|string|max:255',
             'Admin_email' => 'required|email|max:255|unique:admin,Admin_email,' . $id . ',Admin_id',
-            'Admin_role' => 'required|string|in:System Administrator,Staff',
         ]);
 
-        $admin->Admin_name = $request->Admin_name;
-        $admin->Admin_email = $request->Admin_email;
-        $admin->Admin_role = $request->Admin_role;
-
-        $admin->save();
+        $admin->update([
+            'Admin_name' => $request->Admin_name,
+            'Admin_email' => $request->Admin_email,
+        ]);
 
         return response()->json([
             'message' => 'Profile updated successfully',
@@ -35,7 +33,7 @@ class ProfileController extends Controller
                 'Admin_id' => $admin->Admin_id,
                 'Admin_name' => $admin->Admin_name,
                 'Admin_email' => $admin->Admin_email,
-                'Admin_role' => $admin->Admin_role
+                'Admin_role' => $admin->Admin_role,
             ]
         ]);
     }

@@ -7,18 +7,28 @@ use Illuminate\Http\Request;
 
 class ChildController extends Controller
 {
-     public function index()
-{
-    return response()->json(
-        Child::with('patientRecords')->get()
-    );
-    
-}
+    // GET /api/children
+    public function index()
+    {
+        $children = Child::with([
+            'user',
+            'patientRecords',
+            'appointments',
+            'growthRecords',
+        ])->get();
+
+        return response()->json($children);
+    }
 
     // GET /api/children/{id}
     public function show($id)
     {
-        $child = Child::findOrFail($id);
+        $child = Child::with([
+            'user',
+            'patientRecords',
+            'appointments',
+            'growthRecords',
+        ])->findOrFail($id);
 
         return response()->json($child);
     }
@@ -26,15 +36,24 @@ class ChildController extends Controller
     // POST /api/children
     public function store(Request $request)
     {
+        $request->validate([
+            'user_id' => 'required|integer|exists:user,user_id',
+            'child_name' => 'required|string|max:2550',
+            'birthdate' => 'required|date',
+            'gender' => 'required|string|max:255',
+            'address' => 'required|string|max:255',
+            'relationship' => 'required|in:Mother,Father,Guardian',
+            'status' => 'nullable|in:Continuing,Completed,Inactive',
+        ]);
+
         $child = Child::create([
             'user_id' => $request->user_id,
             'child_name' => $request->child_name,
-            'age_months' => $request->age_months,
             'birthdate' => $request->birthdate,
             'gender' => $request->gender,
-            'mother_name' => $request->mother_name,
-            'father_name' => $request->father_name,
             'address' => $request->address,
+            'relationship' => $request->relationship,
+            'status' => $request->status ?? 'Continuing',
         ]);
 
         return response()->json($child, 201);
@@ -45,16 +64,25 @@ class ChildController extends Controller
     {
         $child = Child::findOrFail($id);
 
-        $child->update([
-            'user_id' => $request->user_id,
-            'child_name' => $request->child_name,
-            'age_months' => $request->age_months,
-            'birthdate' => $request->birthdate,
-            'gender' => $request->gender,
-            'mother_name' => $request->mother_name,
-            'father_name' => $request->father_name,
-            'address' => $request->address,
+        $request->validate([
+            'user_id' => 'sometimes|integer|exists:user,user_id',
+            'child_name' => 'sometimes|string|max:2550',
+            'birthdate' => 'sometimes|date',
+            'gender' => 'sometimes|string|max:255',
+            'address' => 'sometimes|string|max:255',
+            'relationship' => 'sometimes|in:Mother,Father,Guardian',
+            'status' => 'sometimes|in:Continuing,Completed,Inactive',
         ]);
+
+        $child->update($request->only([
+            'user_id',
+            'child_name',
+            'birthdate',
+            'gender',
+            'address',
+            'relationship',
+            'status',
+        ]));
 
         return response()->json($child);
     }
@@ -64,10 +92,8 @@ class ChildController extends Controller
     {
         $child = Child::findOrFail($id);
 
-        $child->delete();
-
         return response()->json([
-            'message' => 'Child deleted successfully'
-        ]);
+            'message' => 'Children cannot be deleted because vaccination, growth, and appointment history must be preserved.'
+        ], 403);
     }
 }

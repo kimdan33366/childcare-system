@@ -7,7 +7,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController; 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AppointmentController;
-use App\Http\Controllers\RegisterController;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TestMail;
 use App\Http\Controllers\PasswordOtpController;

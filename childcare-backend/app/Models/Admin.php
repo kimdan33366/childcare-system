@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
     'Admin_email',
     'Admin_password',
     'Admin_role',
-    
 ])]
 class Admin extends Model
 {
@@ -19,4 +18,26 @@ class Admin extends Model
     protected $primaryKey = 'Admin_id';
 
     public $timestamps = false;
+
+    protected $hidden = [
+        'Admin_password',
+    ];
+
+    public function appointments()
+    {
+        return $this->hasMany(
+            Appointment::class,
+            'admin_id',
+            'Admin_id'
+        );
+    }
+
+    public function patientRecords()
+    {
+        return $this->hasMany(
+            PatientRecord::class,
+            'admin_id',
+            'Admin_id'
+        );
+    }
 }

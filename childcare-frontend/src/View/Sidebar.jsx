@@ -32,33 +32,22 @@ function Sidebar() {
 
   return (
     <aside className="sidebar">
-
       {/* Logo */}
       <div className="logo-section">
         <div className="logo-container">
-          <img
-            src={logo1}
-            alt="ChildCare Logo"
-            className="logo"
-          />
+          <img src={logo1} alt="ChildCare Logo" className="logo" />
         </div>
 
         <h2>ChildCare</h2>
 
-        <span className="sidebar-subtitle">
-          Management System
-        </span>
+        <span className="sidebar-subtitle">Management System</span>
       </div>
-
 
       {/* Navigation */}
       <nav>
-
         {/* MAIN */}
         <div className="nav-section">
-          <span className="nav-section-title">
-            MAIN
-          </span>
+          <span className="nav-section-title">MAIN</span>
 
           <NavLink to="/dashboard">
             <FaThLarge />
@@ -66,16 +55,13 @@ function Sidebar() {
           </NavLink>
         </div>
 
-
         {/* PATIENT CARE */}
         <div className="nav-section">
-          <span className="nav-section-title">
-            CHILD CARE
-          </span>
+          <span className="nav-section-title">CHILD CARE</span>
 
-          <NavLink to="/patients">
-            <FaUserFriends />
-            Children
+          <NavLink to="/user-management">
+            <FaUser />
+            Users
           </NavLink>
 
           <NavLink to="/appointments">
@@ -89,20 +75,16 @@ function Sidebar() {
           </NavLink>
         </div>
 
-
         {/* ADMINISTRATION */}
         <div className="nav-section">
-          <span className="nav-section-title">
-            ADMINISTRATION
-          </span>
+          <span className="nav-section-title">ADMINISTRATION</span>
 
           {/* Admin only */}
-          
-            <NavLink to="/user-management">
-              <FaUser />
-              Users
-            </NavLink>
-          
+
+          <NavLink to="/patients">
+            <FaUserFriends />
+            Children
+          </NavLink>
 
           {/* Admin only */}
           {isAdmin && (
@@ -123,13 +105,10 @@ function Sidebar() {
             Notifications
           </NavLink>
         </div>
-
       </nav>
-
 
       {/* Bottom Menu */}
       <div className="bottom-menu">
-
         <NavLink to="/profile">
           <FaUserCircle />
           Profile
@@ -144,9 +123,7 @@ function Sidebar() {
           <FaSignOutAlt />
           <span>Logout</span>
         </button>
-
       </div>
-
     </aside>
   );
 }

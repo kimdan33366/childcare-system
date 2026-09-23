@@ -18,8 +18,9 @@ class ReportController extends Controller
         }
 
         $children = DB::table('children')
-            ->select('child_id')
-            ->get();
+         ->where('status', '!=', 'Inactive')
+        ->select('child_id')
+        ->get();
 
         $vaccinationStatus = [
             'completed' => 0,

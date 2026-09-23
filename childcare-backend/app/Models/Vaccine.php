@@ -19,4 +19,22 @@ class Vaccine extends Model
         'stock_quantity',
         'status',
     ];
+
+    public function appointmentVaccines()
+    {
+        return $this->hasMany(
+            AppointmentVaccine::class,
+            'vaccine_id',
+            'vaccine_ID'
+        );
+    }
+
+    public function patientRecords()
+    {
+        return $this->hasMany(
+            PatientRecord::class,
+            'vaccine_id',
+            'vaccine_ID'
+        );
+    }
 }

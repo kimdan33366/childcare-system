@@ -570,3 +570,51 @@
   color: #374151;
   font-size: 13px;
 }
+
+/* ==============================
+   USER ACTION ICONS
+============================== */
+
+.user-action-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.user-action-icon {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #4b5563;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-action-icon:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #2563eb;
+}
+
+.user-action-icon:active {
+  transform: scale(0.95);
+}
+
+/* Deactivate / Activate icon */
+.user-action-icon:last-child {
+  color: #6b7280;
+}
+
+.user-action-icon:last-child:hover {
+  color: #dc2626;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+

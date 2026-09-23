@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notification;
+use App\Models\Child;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
@@ -27,47 +29,61 @@ class NotificationController extends Controller
     }
 
     // Create notification for a specific child
-    
     public function store(Request $request)
-{
-    $request->validate([
-        'child_id' => 'required|exists:children,child_id',
-        'message' => 'required|string',
-    ]);
+    {
+        $request->validate([
+            'child_id' => 'required|exists:children,child_id',
+            'message' => 'required|string',
+        ]);
 
-    $child = \App\Models\Child::findOrFail($request->child_id);
+        $child = Child::findOrFail($request->child_id);
 
-    $user = \App\Models\User::findOrFail($child->user_id);
+        $user = User::findOrFail($child->user_id);
 
-    $notification = Notification::create([
-        'child_id' => $child->child_id,
-        'parent' => $user->user_fullname,
-        'phone' => $user->mobile_number,
-        'message' => $request->message,
-        'status' => 'Pending',
-    ]);
+        if ($user->status !== 'Active') {
+            return response()->json([
+                'message' => 'The parent account is inactive.'
+            ], 400);
+        }
 
-    return response()->json([
-        'message' => 'Notification created successfully.',
-        'notification' => $notification
-    ], 201);
-}
+        $notification = Notification::create([
+            'child_id' => $child->child_id,
+            'parent' => $user->user_fullname,
+            'phone' => $user->mobile_number,
+            'message' => $request->message,
+            'status' => 'Pending',
+        ]);
 
-    // Send notification to all parents
+        return response()->json([
+            'message' => 'Notification created successfully.',
+            'notification' => $notification
+        ], 201);
+    }
+
+    // Send notification to all active parents
     public function broadcast(Request $request)
     {
         $request->validate([
             'message' => 'required|string',
         ]);
 
-        $notification = Notification::create([
-            'child_id' => null,
-            'message' => $request->message,
-        ]);
+        $users = User::where('status', 'Active')->get();
+
+        $notifications = [];
+
+        foreach ($users as $user) {
+            $notifications[] = Notification::create([
+                'child_id' => null,
+                'parent' => $user->user_fullname,
+                'phone' => $user->mobile_number,
+                'message' => $request->message,
+                'status' => 'Pending',
+            ]);
+        }
 
         return response()->json([
-            'message' => 'Broadcast notification sent successfully.',
-            'notification' => $notification
+            'message' => 'Broadcast notification created successfully.',
+            'notifications' => $notifications
         ], 201);
     }
 }

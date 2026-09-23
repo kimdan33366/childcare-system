@@ -30,4 +30,22 @@ class Staff extends Model
             'staff_id'
         );
     }
+
+    public function appointments()
+    {
+        return $this->hasMany(
+            Appointment::class,
+            'staff_id',
+            'staff_id'
+        );
+    }
+
+    public function patientRecords()
+    {
+        return $this->hasMany(
+            PatientRecord::class,
+            'staff_id',
+            'staff_id'
+        );
+    }
 }

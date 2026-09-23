@@ -14,7 +14,7 @@ class DashboardController extends Controller
         // TOTAL CHILDREN
         // ==========================================
 
-        $children = Child::count();
+        $children = Child::where('status', '!=', 'Inactive')->count();
 
 
         // ==========================================
@@ -28,7 +28,9 @@ class DashboardController extends Controller
             'not_started' => 0,
         ];
 
-        $allChildren = Child::select('child_id')->get();
+        $allChildren = Child::where('status', '!=', 'Inactive')
+            ->select('child_id')
+            ->get();
 
         foreach ($allChildren as $child) {
 
@@ -66,23 +68,23 @@ class DashboardController extends Controller
             ->count();
 
 
+        // ==========================================
+        // APPOINTMENT STATUS
+        // ==========================================
+
+        $pendingAppointments = DB::table('appointments')
+            ->where('status', 'Pending')
+            ->count();
+
+        $completedAppointments = DB::table('appointments')
+            ->where('status', 'Completed')
+            ->count();
+
+        $missedAppointments = DB::table('appointments')
+            ->where('status', 'Missed')
+            ->count();
 
 
-            // ==========================================
-// APPOINTMENT STATUS
-// ==========================================
-
-$pendingAppointments = DB::table('appointments')
-    ->where('status', 'Pending')
-    ->count();
-
-$completedAppointments = DB::table('appointments')
-    ->where('status', 'Completed')
-    ->count();
-
-$missedAppointments = DB::table('appointments')
-    ->where('status', 'Missed')
-    ->count();
         // ==========================================
         // MONTHLY DOSES
         // ==========================================
@@ -143,18 +145,21 @@ $missedAppointments = DB::table('appointments')
         // ==========================================
 
         return response()->json([
-            'users' => User::count(),
+            'users' => User::where('status', 'Active')->count(),
 
             'children' => $children,
 
             'overdue' => 0,
-            'active_user'=>User::where('status','Active')->count(),
+
+            'active_user' => User::where('status', 'Active')->count(),
 
             'doses_given' => $dosesGiven,
 
-            'pending_appointments'=>$pendingAppointments,
-            'completed_appointments'=>$completedAppointments,
-            'missed_appointments'=>$missedAppointments,
+            'pending_appointments' => $pendingAppointments,
+
+            'completed_appointments' => $completedAppointments,
+
+            'missed_appointments' => $missedAppointments,
 
             'monthly_doses' => $monthlyDoses,
 

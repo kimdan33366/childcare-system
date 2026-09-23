@@ -10,6 +10,8 @@ class StaffPermission extends Model
 
     protected $primaryKey = 'staff_permission_id';
 
+    public $timestamps = true;
+
     protected $fillable = [
         'staff_id',
         'permission',

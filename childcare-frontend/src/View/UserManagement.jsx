@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { FiEye, FiEdit2, FiKey } from "react-icons/fi";
 import Sidebar from "./Sidebar";
 import "../css/UserManagement.css";
 
@@ -12,9 +13,7 @@ function UserManagement() {
 
   const hasPermission = (permission) => {
     return (
-      isAdmin ||
-      permissions.includes("all") ||
-      permissions.includes(permission)
+      isAdmin || permissions.includes("all") || permissions.includes(permission)
     );
   };
 
@@ -23,33 +22,68 @@ function UserManagement() {
   // ==============================
   const [users, setUsers] = useState([]);
 
+  // ==============================
+  // ADD USER
+  // ==============================
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+
+  const [addUserStep, setAddUserStep] = useState(1);
 
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
     mobile: "",
+    address: "",
     password: "",
     confirmPassword: "",
     status: "Active",
+
+    childName: "",
+    childBirthdate: "",
+    childGender: "",
+    childAddress: "",
+    relationship: "",
   });
 
+  // ==============================
+  // ACTION MENU
+  // ==============================
   const [openActionMenu, setOpenActionMenu] = useState(null);
   const [actionMenuPosition, setActionMenuPosition] = useState(null);
 
+  // ==============================
+  // SELECTED USER
+  // ==============================
   const [selectedUser, setSelectedUser] = useState(null);
 
+  // ==============================
+  // EDIT USER
+  // ==============================
   const [editUser, setEditUser] = useState(null);
 
   const [editUserForm, setEditUserForm] = useState({
     name: "",
     email: "",
     mobile: "",
+    address: "",
+    date_of_birth: "",
+    gender: "",
     status: "Active",
   });
 
+  // ==============================
+  // RESET PASSWORD
+  // ==============================
   const [resetPasswordUser, setResetPasswordUser] = useState(null);
 
+  const [resetPasswordForm, setResetPasswordForm] = useState({
+    password: "",
+    confirmPassword: "",
+  });
+
+  // ==============================
+  // SEARCH / FILTER
+  // ==============================
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
@@ -65,7 +99,13 @@ function UserManagement() {
           name: user.user_fullname,
           email: user.email || "",
           mobile: user.mobile_number || "",
-          children: user.children_count || 0,
+          address: user.address || "",
+          date_of_birth: user.date_of_birth || "",
+          gender: user.gender || "",
+          children: user.children || [],
+          childrenCount:
+            user.children_count ??
+            (Array.isArray(user.children) ? user.children.length : 0),
           status: user.status,
         }));
 
@@ -87,9 +127,9 @@ function UserManagement() {
     const search = searchTerm.toLowerCase();
 
     const matchesSearch =
-      user.name.toLowerCase().includes(search) ||
-      user.email.toLowerCase().includes(search) ||
-      user.mobile.includes(searchTerm);
+      (user.name || "").toLowerCase().includes(search) ||
+      (user.email || "").toLowerCase().includes(search) ||
+      (user.mobile || "").includes(searchTerm);
 
     const matchesStatus =
       statusFilter === "All" || user.status === statusFilter;
@@ -98,17 +138,50 @@ function UserManagement() {
   });
 
   // ==============================
-  // ADD USER
+  // OPEN ADD USER
   // ==============================
-  const handleCreateUser = async () => {
-    // PERMISSION CHECK
+  const openAddUser = () => {
     if (!hasPermission("add_users")) {
       alert("You do not have permission to add users.");
       return;
     }
 
-    if (!newUser.name || !newUser.mobile || !newUser.password) {
-      alert("Please fill in all required fields.");
+    setNewUser({
+      name: "",
+      email: "",
+      mobile: "",
+      address: "",
+      password: "",
+      confirmPassword: "",
+      status: "Active",
+
+      childName: "",
+      childBirthdate: "",
+      childGender: "",
+      childAddress: "",
+      relationship: "",
+    });
+
+    setAddUserStep(1);
+    setShowAddUserModal(true);
+  };
+
+  // ==============================
+  // NEXT TO CHILD INFORMATION
+  // ==============================
+  const handleNextAddUserStep = () => {
+    if (!newUser.name || !newUser.mobile || !newUser.address) {
+      alert("Please fill in all required parent information.");
+      return;
+    }
+
+    if (!newUser.password) {
+      alert("Please enter a password.");
+      return;
+    }
+
+    if (newUser.password.length < 6) {
+      alert("Password must be at least 6 characters.");
       return;
     }
 
@@ -117,54 +190,112 @@ function UserManagement() {
       return;
     }
 
-    try {
-      const response = await fetch("http://127.0.0.1:8000/api/users", {
+    setNewUser((prev) => ({
+      ...prev,
+      childAddress: prev.childAddress || prev.address,
+    }));
+
+    setAddUserStep(2);
+  };
+
+  // ==============================
+  // BACK TO PARENT INFORMATION
+  // ==============================
+  const handleBackAddUserStep = () => {
+    setAddUserStep(1);
+  };
+
+  // ==============================
+  // CREATE USER + FIRST CHILD
+  // ==============================
+ 
+const handleCreateUser = async () => {
+  if (!hasPermission("add_users")) {
+    alert("You do not have permission to add users.");
+    return;
+  }
+
+  if (
+    !newUser.childName ||
+    !newUser.childBirthdate ||
+    !newUser.childGender ||
+    !newUser.childAddress ||
+    !newUser.relationship
+  ) {
+    alert("Please fill in all required child information.");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "http://127.0.0.1:8000/api/users",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
         body: JSON.stringify({
+          // Parent
           user_fullname: newUser.name,
           email: newUser.email || null,
           mobile_number: newUser.mobile,
+          address: newUser.address,
           password: newUser.password,
           status: newUser.status,
+
+          // First child
+          child_name: newUser.childName,
+          child_birthdate: newUser.childBirthdate,
+          child_gender: newUser.childGender,
+          child_address: newUser.childAddress,
+          relationship: newUser.relationship,
         }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || "Failed to create user.");
-        return;
       }
+    );
 
-      setNewUser({
-        name: "",
-        email: "",
-        mobile: "",
-        password: "",
-        confirmPassword: "",
-        status: "Active",
-      });
+    const data = await response.json();
 
-      setShowAddUserModal(false);
-
-      fetchUsers();
-
-      alert("User created successfully.");
-    } catch (error) {
-      console.error("Error creating user:", error);
-      alert("Unable to connect to the server.");
+    if (!response.ok) {
+      alert(data.message || "Failed to create parent account.");
+      return;
     }
-  };
+
+    // Reset form
+    setNewUser({
+      name: "",
+      email: "",
+      mobile: "",
+      address: "",
+      password: "",
+      confirmPassword: "",
+      status: "Active",
+
+      childName: "",
+      childBirthdate: "",
+      childGender: "",
+      childAddress: "",
+      relationship: "",
+    });
+
+    setAddUserStep(1);
+    setShowAddUserModal(false);
+
+    fetchUsers();
+
+    alert("Parent and first child created successfully.");
+  } catch (error) {
+    console.error("Error creating user:", error);
+    alert("Unable to connect to the server.");
+  }
+};
+
+
 
   // ==============================
   // EDIT USER
   // ==============================
   const handleUpdateUser = async () => {
-    // PERMISSION CHECK
     if (!hasPermission("edit_users")) {
       alert("You do not have permission to edit users.");
       return;
@@ -174,7 +305,7 @@ function UserManagement() {
       return;
     }
 
-    if (!editUserForm.name || !editUserForm.mobile) {
+    if (!editUserForm.name || !editUserForm.mobile || !editUserForm.address) {
       alert("Please fill in all required fields.");
       return;
     }
@@ -191,6 +322,9 @@ function UserManagement() {
           body: JSON.stringify({
             user_fullname: editUserForm.name,
             email: editUserForm.email || null,
+            date_of_birth: editUserForm.date_of_birth || null,
+            gender: editUserForm.gender || null,
+            address: editUserForm.address,
             mobile_number: editUserForm.mobile,
             status: editUserForm.status,
           }),
@@ -219,7 +353,6 @@ function UserManagement() {
   // OPEN EDIT USER
   // ==============================
   const openEditUser = (user) => {
-    // PERMISSION CHECK
     if (!hasPermission("edit_users")) {
       alert("You do not have permission to edit users.");
       return;
@@ -228,10 +361,13 @@ function UserManagement() {
     setEditUser(user);
 
     setEditUserForm({
-      name: user.name,
+      name: user.name || "",
       email: user.email || "",
-      mobile: user.mobile,
-      status: user.status,
+      mobile: user.mobile || "",
+      address: user.address || "",
+      date_of_birth: user.date_of_birth || "",
+      gender: user.gender || "",
+      status: user.status || "Active",
     });
 
     setOpenActionMenu(null);
@@ -250,7 +386,7 @@ function UserManagement() {
 
     const rect = e.currentTarget.getBoundingClientRect();
 
-    const menuHeight = 185;
+    const menuHeight = 170;
     const menuWidth = 170;
     const spacing = 6;
 
@@ -299,8 +435,85 @@ function UserManagement() {
     }
 
     setResetPasswordUser(user);
+
+    setResetPasswordForm({
+      password: "",
+      confirmPassword: "",
+    });
+
     setOpenActionMenu(null);
     setActionMenuPosition(null);
+  };
+
+  // ==============================
+  // RESET PASSWORD
+  // ==============================
+  const handleResetPassword = async () => {
+    if (!hasPermission("edit_users")) {
+      alert("You do not have permission to edit users.");
+      return;
+    }
+
+    if (!resetPasswordUser) {
+      return;
+    }
+
+    if (!resetPasswordForm.password) {
+      alert("Please enter a new password.");
+      return;
+    }
+
+    if (resetPasswordForm.password.length < 6) {
+      alert("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (resetPasswordForm.password !== resetPasswordForm.confirmPassword) {
+      alert("Passwords do not match.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/users/${resetPasswordUser.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            user_fullname: resetPasswordUser.name,
+            email: resetPasswordUser.email || null,
+            date_of_birth: resetPasswordUser.date_of_birth || null,
+            gender: resetPasswordUser.gender || null,
+            address: resetPasswordUser.address || "",
+            mobile_number: resetPasswordUser.mobile,
+            password: resetPasswordForm.password,
+            status: resetPasswordUser.status,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "Failed to reset password.");
+        return;
+      }
+
+      setResetPasswordUser(null);
+
+      setResetPasswordForm({
+        password: "",
+        confirmPassword: "",
+      });
+
+      alert("Password reset successfully.");
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      alert("Unable to connect to the server.");
+    }
   };
 
   // ==============================
@@ -322,28 +535,9 @@ function UserManagement() {
   };
 
   // ==============================
-  // DELETE USER
-  // ==============================
-  const openDeleteConfirmation = (user) => {
-    if (!hasPermission("delete_users")) {
-      alert("You do not have permission to delete users.");
-      return;
-    }
-
-    setSelectedUser({
-      ...user,
-      action: "delete",
-    });
-
-    setOpenActionMenu(null);
-    setActionMenuPosition(null);
-  };
-
-  // ==============================
   // CHANGE USER STATUS
   // ==============================
   const handleStatusChange = async () => {
-    // PERMISSION CHECK
     if (!hasPermission("edit_users")) {
       alert("You do not have permission to edit users.");
       return;
@@ -368,6 +562,9 @@ function UserManagement() {
           body: JSON.stringify({
             user_fullname: selectedUser.name,
             email: selectedUser.email || null,
+            date_of_birth: selectedUser.date_of_birth || null,
+            gender: selectedUser.gender || null,
+            address: selectedUser.address || "",
             mobile_number: selectedUser.mobile,
             status: newStatus,
           }),
@@ -392,49 +589,6 @@ function UserManagement() {
       );
     } catch (error) {
       console.error("Error changing user status:", error);
-      alert("Unable to connect to the server.");
-    }
-  };
-
-  // ==============================
-  // DELETE USER
-  // ==============================
-  const handleDeleteUser = async () => {
-    // PERMISSION CHECK
-    if (!hasPermission("delete_users")) {
-      alert("You do not have permission to delete users.");
-      return;
-    }
-
-    if (!selectedUser) {
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/api/users/${selectedUser.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Accept: "application/json",
-          },
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || "Failed to delete user.");
-        return;
-      }
-
-      setSelectedUser(null);
-
-      fetchUsers();
-
-      alert("User deleted successfully.");
-    } catch (error) {
-      console.error("Error deleting user:", error);
       alert("Unable to connect to the server.");
     }
   };
@@ -476,14 +630,7 @@ function UserManagement() {
           </div>
 
           {hasPermission("add_users") && (
-            <button
-              className="add-user-button"
-              onClick={() => {
-                if (hasPermission("add_users")) {
-                  setShowAddUserModal(true);
-                }
-              }}
-            >
+            <button className="add-user-button" onClick={openAddUser}>
               + Add User
             </button>
           )}
@@ -555,11 +702,13 @@ function UserManagement() {
 
                     <td>{user.mobile}</td>
 
-                    <td>{user.children}</td>
+                    <td>{user.childrenCount}</td>
 
                     <td>
                       <span
-                        className={`user-status ${user.status.toLowerCase()}`}
+                        className={`user-status ${(
+                          user.status || ""
+                        ).toLowerCase()}`}
                       >
                         {user.status}
                       </span>
@@ -567,96 +716,70 @@ function UserManagement() {
 
                     <td>
                       <div className="user-action-wrapper">
-                        <button
-                          type="button"
-                          className="user-action-button"
-                          onClick={(e) => toggleActionMenu(e, user)}
-                        >
-                          ⋮
-                        </button>
+                        {/* VIEW USER */}
+                        {hasPermission("view_users") && (
+                          <button
+                            type="button"
+                            className="user-action-icon"
+                            onClick={() => openViewUser(user)}
+                            title="View User"
+                          >
+                            <FiEye size={17} />
+                          </button>
+                        )}
 
-                        {openActionMenu === user.id &&
-                          actionMenuPosition && (
-                            <div
-                              className="user-action-menu"
+                        {/* EDIT USER */}
+                        {hasPermission("edit_users") && (
+                          <button
+                            type="button"
+                            className="user-action-icon"
+                            onClick={() => openEditUser(user)}
+                            title="Edit User"
+                          >
+                            <FiEdit2 size={17} />
+                          </button>
+                        )}
+
+                        {/* RESET PASSWORD */}
+                        {hasPermission("edit_users") && (
+                          <button
+                            type="button"
+                            className="user-action-icon"
+                            onClick={() => openResetPassword(user)}
+                            title="Reset Password"
+                          >
+                            <FiKey size={17} />
+                          </button>
+                        )}
+
+                        {/* ACTIVATE / DEACTIVATE */}
+                        {hasPermission("edit_users") && (
+                          <button
+                            type="button"
+                            className="user-action-icon"
+                            onClick={() => openStatusConfirmation(user)}
+                            title={
+                              user.status === "Active"
+                                ? "Deactivate User"
+                                : "Activate User"
+                            }
+                          >
+                            {user.status === "Active" ? "🚫" : "✓"}
+                          </button>
+                        )}
+
+                        {/* VIEW ONLY */}
+                        {!hasPermission("edit_users") &&
+                          hasPermission("view_users") && (
+                            <span
                               style={{
-                                position: "fixed",
-                                top: `${actionMenuPosition.top}px`,
-                                left: `${actionMenuPosition.left}px`,
+                                fontSize: "12px",
+                                color: "#6b7280",
+                                marginLeft: "6px",
                               }}
                             >
-                              {/* VIEW */}
-                              {hasPermission("view_users") && (
-                                <button
-                                  type="button"
-                                  onClick={() => openViewUser(user)}
-                                >
-                                  View User
-                                </button>
-                              )}
-
-                              {/* EDIT */}
-                              {hasPermission("edit_users") && (
-                                <button
-                                  type="button"
-                                  onClick={() => openEditUser(user)}
-                                >
-                                  Edit User
-                                </button>
-                              )}
-
-                              {/* RESET PASSWORD */}
-                              {hasPermission("edit_users") && (
-                                <button
-                                  type="button"
-                                  onClick={() => openResetPassword(user)}
-                                >
-                                  Reset Password
-                                </button>
-                              )}
-
-                              {/* ACTIVATE / DEACTIVATE */}
-                              {hasPermission("edit_users") && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    openStatusConfirmation(user)
-                                  }
-                                >
-                                  {user.status === "Active"
-                                    ? "Deactivate User"
-                                    : "Activate User"}
-                                </button>
-                              )}
-
-                              {/* DELETE */}
-                              {hasPermission("delete_users") && (
-                                <button
-                                  type="button"
-                                  className="delete-action"
-                                  onClick={() =>
-                                    openDeleteConfirmation(user)
-                                  }
-                                >
-                                  Delete User
-                                </button>
-                              )}
-
-                              {/* NO ACTIONS */}
-                              {!hasPermission("edit_users") &&
-                                !hasPermission("delete_users") &&
-                                hasPermission("view_users") && (
-                                  <div
-                                    style={{
-                                      padding: "10px 14px",
-                                      fontSize: "13px",
-                                      color: "#6b7280",
-                                    }}
-                                  >
-                                    View only
-                                  </div>
-                                )}
-                            </div>
+                              View only
+                            </span>
                           )}
                       </div>
                     </td>
@@ -688,136 +811,328 @@ function UserManagement() {
             <div className="user-modal">
               <div className="user-modal-header">
                 <div>
-                  <h2>Add User</h2>
-                  <p>Create a new parent account.</p>
+                  <h2>
+                    {addUserStep === 1
+                      ? "Parent Information"
+                      : "Child Information"}
+                  </h2>
+
+                  <p>
+                    {addUserStep === 1
+                      ? "Create a new parent account."
+                      : "Register the parent's first child."}
+                  </p>
                 </div>
 
                 <button
                   type="button"
                   className="user-modal-close"
-                  onClick={() => setShowAddUserModal(false)}
+                  onClick={() => {
+                    setShowAddUserModal(false);
+                    setAddUserStep(1);
+                  }}
                 >
                   ×
                 </button>
               </div>
 
-              <div className="user-form">
-                <div className="user-form-group">
-                  <label>Full Name</label>
+              {/* STEP INDICATOR */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  marginBottom: "20px",
+                  fontSize: "13px",
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: addUserStep === 1 ? "600" : "400",
+                    color: addUserStep === 1 ? "#2563eb" : "#6b7280",
+                  }}
+                >
+                  1. Parent
+                </span>
 
-                  <input
-                    type="text"
-                    placeholder="Enter full name"
-                    value={newUser.name}
-                    onChange={(e) =>
-                      setNewUser({
-                        ...newUser,
-                        name: e.target.value,
-                      })
-                    }
-                  />
-                </div>
+                <span style={{ color: "#9ca3af" }}>→</span>
 
-                <div className="user-form-group">
-                  <label>Email</label>
-
-                  <input
-                    type="email"
-                    placeholder="Enter email address"
-                    value={newUser.email}
-                    onChange={(e) =>
-                      setNewUser({
-                        ...newUser,
-                        email: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="user-form-group">
-                  <label>Mobile Number</label>
-
-                  <input
-                    type="text"
-                    placeholder="Enter mobile number"
-                    value={newUser.mobile}
-                    onChange={(e) =>
-                      setNewUser({
-                        ...newUser,
-                        mobile: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="user-form-row">
-                  <div className="user-form-group">
-                    <label>Password</label>
-
-                    <input
-                      type="password"
-                      placeholder="Enter password"
-                      value={newUser.password}
-                      onChange={(e) =>
-                        setNewUser({
-                          ...newUser,
-                          password: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="user-form-group">
-                    <label>Confirm Password</label>
-
-                    <input
-                      type="password"
-                      placeholder="Confirm password"
-                      value={newUser.confirmPassword}
-                      onChange={(e) =>
-                        setNewUser({
-                          ...newUser,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="user-form-group">
-                  <label>Status</label>
-
-                  <select
-                    value={newUser.status}
-                    onChange={(e) =>
-                      setNewUser({
-                        ...newUser,
-                        status: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
+                <span
+                  style={{
+                    fontWeight: addUserStep === 2 ? "600" : "400",
+                    color: addUserStep === 2 ? "#2563eb" : "#6b7280",
+                  }}
+                >
+                  2. Child
+                </span>
               </div>
 
-              <div className="user-modal-actions">
-                <button
-                  type="button"
-                  className="user-cancel-button"
-                  onClick={() => setShowAddUserModal(false)}
-                >
-                  Cancel
-                </button>
+              {/* ==============================
+                    STEP 1
+                ============================== */}
+              {addUserStep === 1 && (
+                <div className="user-form">
+                  <div className="user-form-group">
+                    <label>Full Name *</label>
 
-                <button
-                  type="button"
-                  className="user-create-button"
-                  onClick={handleCreateUser}
-                >
-                  Create User
-                </button>
+                    <input
+                      type="text"
+                      placeholder="Enter full name"
+                      value={newUser.name}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          name: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="user-form-group">
+                    <label>Email</label>
+
+                    <input
+                      type="email"
+                      placeholder="Enter email address"
+                      value={newUser.email}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          email: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="user-form-group">
+                    <label>Mobile Number *</label>
+
+                    <input
+                      type="text"
+                      placeholder="Enter mobile number"
+                      value={newUser.mobile}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          mobile: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="user-form-group">
+                    <label>Address *</label>
+
+                    <input
+                      type="text"
+                      placeholder="Enter address"
+                      value={newUser.address}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          address: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="user-form-row">
+                    <div className="user-form-group">
+                      <label>Password *</label>
+
+                      <input
+                        type="password"
+                        placeholder="Enter password"
+                        value={newUser.password}
+                        onChange={(e) =>
+                          setNewUser({
+                            ...newUser,
+                            password: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="user-form-group">
+                      <label>Confirm Password *</label>
+
+                      <input
+                        type="password"
+                        placeholder="Confirm password"
+                        value={newUser.confirmPassword}
+                        onChange={(e) =>
+                          setNewUser({
+                            ...newUser,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="user-form-group">
+                    <label>Status</label>
+
+                    <select
+                      value={newUser.status}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          status: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* ==============================
+                    STEP 2
+                ============================== */}
+              {addUserStep === 2 && (
+                <div className="user-form">
+                  <div className="user-form-group">
+                    <label>Child Name *</label>
+
+                    <input
+                      type="text"
+                      placeholder="Enter child's full name"
+                      value={newUser.childName}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          childName: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="user-form-group">
+                    <label>Birthdate *</label>
+
+                    <input
+                      type="date"
+                      value={newUser.childBirthdate}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          childBirthdate: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="user-form-group">
+                    <label>Gender *</label>
+
+                    <select
+                      value={newUser.childGender}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          childGender: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Select gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
+
+                  <div className="user-form-group">
+                    <label>Address *</label>
+
+                    <input
+                      type="text"
+                      placeholder="Child's address"
+                      value={newUser.childAddress}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          childAddress: e.target.value,
+                        })
+                      }
+                    />
+
+                    <small
+                      style={{
+                        display: "block",
+                        marginTop: "5px",
+                        color: "#6b7280",
+                      }}
+                    >
+                      Initially copied from the parent's address. You can edit
+                      it separately later.
+                    </small>
+                  </div>
+
+                  <div className="user-form-group">
+                    <label>Relationship to Child *</label>
+
+                    <select
+                      value={newUser.relationship}
+                      onChange={(e) =>
+                        setNewUser({
+                          ...newUser,
+                          relationship: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Select relationship</option>
+                      <option value="Mother">Mother</option>
+                      <option value="Father">Father</option>
+                      <option value="Guardian">Guardian</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* MODAL ACTIONS */}
+              <div className="user-modal-actions">
+                {addUserStep === 1 ? (
+                  <>
+                    <button
+                      type="button"
+                      className="user-cancel-button"
+                      onClick={() => {
+                        setShowAddUserModal(false);
+                        setAddUserStep(1);
+                      }}
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      className="user-create-button"
+                      onClick={handleNextAddUserStep}
+                    >
+                      Next
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="user-cancel-button"
+                      onClick={handleBackAddUserStep}
+                    >
+                      Back
+                    </button>
+
+                    <button
+                      type="button"
+                      className="user-create-button"
+                      onClick={handleCreateUser}
+                    >
+                      Create User
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -852,7 +1167,9 @@ function UserManagement() {
                       <h3>{selectedUser.name}</h3>
 
                       <span
-                        className={`user-status ${selectedUser.status.toLowerCase()}`}
+                        className={`user-status ${(
+                          selectedUser.status || ""
+                        ).toLowerCase()}`}
                       >
                         {selectedUser.status}
                       </span>
@@ -862,14 +1179,17 @@ function UserManagement() {
                   <div className="user-details-grid">
                     <div className="user-detail-item">
                       <span>Email</span>
-                      <strong>
-                        {selectedUser.email || "Not provided"}
-                      </strong>
+                      <strong>{selectedUser.email || "Not provided"}</strong>
                     </div>
 
                     <div className="user-detail-item">
                       <span>Mobile Number</span>
                       <strong>{selectedUser.mobile}</strong>
+                    </div>
+
+                    <div className="user-detail-item">
+                      <span>Address</span>
+                      <strong>{selectedUser.address || "Not provided"}</strong>
                     </div>
                   </div>
 
@@ -877,13 +1197,26 @@ function UserManagement() {
                     <h3>Registered Children</h3>
 
                     <div className="children-list">
-                      <div className="child-item">
-                        {selectedUser.children > 0
-                          ? `${selectedUser.children} registered child${
-                              selectedUser.children > 1 ? "ren" : ""
-                            }`
-                          : "No registered children"}
-                      </div>
+                      {selectedUser.children &&
+                      selectedUser.children.length > 0 ? (
+                        selectedUser.children.map((child) => (
+                          <div className="child-item" key={child.child_id}>
+                            <strong>{child.child_name}</strong>
+
+                            <div
+                              style={{
+                                fontSize: "12px",
+                                color: "#6b7280",
+                                marginTop: "3px",
+                              }}
+                            >
+                              {child.gender || "—"} • {child.status || "—"}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="child-item">No registered children</div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -924,7 +1257,7 @@ function UserManagement() {
 
               <div className="user-form">
                 <div className="user-form-group">
-                  <label>Full Name</label>
+                  <label>Full Name *</label>
 
                   <input
                     type="text"
@@ -954,7 +1287,7 @@ function UserManagement() {
                 </div>
 
                 <div className="user-form-group">
-                  <label>Mobile Number</label>
+                  <label>Mobile Number *</label>
 
                   <input
                     type="text"
@@ -966,6 +1299,56 @@ function UserManagement() {
                       })
                     }
                   />
+                </div>
+
+                <div className="user-form-group">
+                  <label>Address *</label>
+
+                  <input
+                    type="text"
+                    value={editUserForm.address}
+                    onChange={(e) =>
+                      setEditUserForm({
+                        ...editUserForm,
+                        address: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="user-form-row">
+                  <div className="user-form-group">
+                    <label>Date of Birth</label>
+
+                    <input
+                      type="date"
+                      value={editUserForm.date_of_birth}
+                      onChange={(e) =>
+                        setEditUserForm({
+                          ...editUserForm,
+                          date_of_birth: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div className="user-form-group">
+                    <label>Gender</label>
+
+                    <select
+                      value={editUserForm.gender}
+                      onChange={(e) =>
+                        setEditUserForm({
+                          ...editUserForm,
+                          gender: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Select gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="user-form-group">
@@ -1032,28 +1415,38 @@ function UserManagement() {
                 <div className="user-form-group">
                   <label>User</label>
 
-                  <input
-                    type="text"
-                    value={resetPasswordUser.name}
-                    readOnly
-                  />
+                  <input type="text" value={resetPasswordUser.name} readOnly />
                 </div>
 
                 <div className="user-form-group">
-                  <label>New Password</label>
+                  <label>New Password *</label>
 
                   <input
                     type="password"
                     placeholder="Enter new password"
+                    value={resetPasswordForm.password}
+                    onChange={(e) =>
+                      setResetPasswordForm({
+                        ...resetPasswordForm,
+                        password: e.target.value,
+                      })
+                    }
                   />
                 </div>
 
                 <div className="user-form-group">
-                  <label>Confirm Password</label>
+                  <label>Confirm Password *</label>
 
                   <input
                     type="password"
                     placeholder="Confirm new password"
+                    value={resetPasswordForm.confirmPassword}
+                    onChange={(e) =>
+                      setResetPasswordForm({
+                        ...resetPasswordForm,
+                        confirmPassword: e.target.value,
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -1070,14 +1463,7 @@ function UserManagement() {
                 <button
                   type="button"
                   className="user-create-button"
-                  onClick={() => {
-                    if (!hasPermission("edit_users")) {
-                      alert("You do not have permission to edit users.");
-                      return;
-                    }
-
-                    setResetPasswordUser(null);
-                  }}
+                  onClick={handleResetPassword}
                 >
                   Reset Password
                 </button>
@@ -1089,134 +1475,74 @@ function UserManagement() {
         {/* ==============================
             ACTIVATE / DEACTIVATE MODAL
         ============================== */}
-        {selectedUser?.action &&
-          selectedUser.action !== "delete" &&
-          hasPermission("edit_users") && (
-            <div className="user-modal-overlay">
-              <div className="user-modal">
-                <div className="user-modal-header">
-                  <div>
-                    <h2>
-                      {selectedUser.action === "deactivate"
-                        ? "Deactivate User"
-                        : "Activate User"}
-                    </h2>
-
-                    <p>
-                      {selectedUser.action === "deactivate"
-                        ? "This user will no longer be able to access the system."
-                        : "This user will be allowed to access the system again."}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="user-modal-close"
-                    onClick={() => setSelectedUser(null)}
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <div className="user-details">
-                  <div className="user-detail-item">
-                    <span>User</span>
-                    <strong>{selectedUser.name}</strong>
-                  </div>
-
-                  <div
-                    className="user-detail-item"
-                    style={{ marginTop: "15px" }}
-                  >
-                    <span>Current Status</span>
-
-                    <span
-                      className={`user-status ${selectedUser.status.toLowerCase()}`}
-                    >
-                      {selectedUser.status}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="user-modal-actions">
-                  <button
-                    type="button"
-                    className="user-cancel-button"
-                    onClick={() => setSelectedUser(null)}
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="button"
-                    className="user-create-button"
-                    onClick={handleStatusChange}
-                  >
+        {selectedUser?.action && hasPermission("edit_users") && (
+          <div className="user-modal-overlay">
+            <div className="user-modal">
+              <div className="user-modal-header">
+                <div>
+                  <h2>
                     {selectedUser.action === "deactivate"
                       ? "Deactivate User"
                       : "Activate User"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+                  </h2>
 
-        {/* ==============================
-            DELETE USER MODAL
-        ============================== */}
-        {selectedUser?.action === "delete" &&
-          hasPermission("delete_users") && (
-            <div className="user-modal-overlay">
-              <div className="user-modal">
-                <div className="user-modal-header">
-                  <div>
-                    <h2>Delete User</h2>
-                    <p>This action cannot be undone.</p>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="user-modal-close"
-                    onClick={() => setSelectedUser(null)}
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <div className="user-details">
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: "13px",
-                      lineHeight: "1.6",
-                      color: "#4b5563",
-                    }}
-                  >
-                    Are you sure you want to delete the account of{" "}
-                    <strong>{selectedUser.name}</strong>?
+                  <p>
+                    {selectedUser.action === "deactivate"
+                      ? "This user will no longer be able to access the system."
+                      : "This user will be allowed to access the system again."}
                   </p>
                 </div>
 
-                <div className="user-modal-actions">
-                  <button
-                    type="button"
-                    className="user-cancel-button"
-                    onClick={() => setSelectedUser(null)}
-                  >
-                    Cancel
-                  </button>
+                <button
+                  type="button"
+                  className="user-modal-close"
+                  onClick={() => setSelectedUser(null)}
+                >
+                  ×
+                </button>
+              </div>
 
-                  <button
-                    type="button"
-                    className="delete-action"
-                    onClick={handleDeleteUser}
+              <div className="user-details">
+                <div className="user-detail-item">
+                  <span>User</span>
+                  <strong>{selectedUser.name}</strong>
+                </div>
+
+                <div className="user-detail-item" style={{ marginTop: "15px" }}>
+                  <span>Current Status</span>
+
+                  <span
+                    className={`user-status ${(
+                      selectedUser.status || ""
+                    ).toLowerCase()}`}
                   >
-                    Delete User
-                  </button>
+                    {selectedUser.status}
+                  </span>
                 </div>
               </div>
+
+              <div className="user-modal-actions">
+                <button
+                  type="button"
+                  className="user-cancel-button"
+                  onClick={() => setSelectedUser(null)}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  className="user-create-button"
+                  onClick={handleStatusChange}
+                >
+                  {selectedUser.action === "deactivate"
+                    ? "Deactivate User"
+                    : "Activate User"}
+                </button>
+              </div>
             </div>
-          )}
+          </div>
+        )}
       </main>
     </div>
   );

@@ -82,21 +82,19 @@ class StaffController extends Controller
 
     // Delete staff
     public function destroy($id)
-    {
-        $staff = Staff::find($id);
+{
+    $staff = Staff::find($id);
 
-        if (!$staff) {
-            return response()->json([
-                'message' => 'Staff not found.'
-            ], 404);
-        }
-
-        $staff->delete();
-
+    if (!$staff) {
         return response()->json([
-            'message' => 'Staff deleted successfully.'
-        ]);
+            'message' => 'Staff not found.'
+        ], 404);
     }
+
+    return response()->json([
+        'message' => 'Staff accounts cannot be deleted because staff activity history must be preserved. Deactivate the staff account instead.'
+    ], 403);
+}
     public function login(Request $request)
 {
     $request->validate([

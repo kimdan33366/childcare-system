@@ -13,18 +13,17 @@ class User extends Authenticatable
 
     protected $primaryKey = 'user_id';
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'user_fullname',
-         'email',
+        'email',
         'date_of_birth',
         'gender',
         'address',
         'mobile_number',
         'password',
         'status',
-       
     ];
 
     protected $hidden = [
@@ -35,13 +34,14 @@ class User extends Authenticatable
     {
         return [
             'date_of_birth' => 'date',
-            'password' => 'hashed',
+        
         ];
     }
+
     public function children()
     {
         return $this->hasMany(
-            \App\Models\Child::class,
+            Child::class,
             'user_id',
             'user_id'
         );
