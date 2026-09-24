@@ -21,7 +21,7 @@ class PatientViewRecordController extends Controller
             return;
         }
 
-        // If the child is manually inactive, do not override it.
+        // Do not override a manually inactive child.
         if ($child->status === 'Inactive') {
             return;
         }
@@ -33,27 +33,41 @@ class PatientViewRecordController extends Controller
 
         // No vaccination records = Continuing
         if ($records->isEmpty()) {
-            $child->status = 'Continuing';
-            $child->save();
+            $child->update([
+                'status' => 'Continuing'
+            ]);
 
             return;
         }
 
-        // Child is Completed ONLY when ALL vaccination
-        // records are Completed.
+        // Any Missed or Continuing record means
+        // the child's vaccination status is Continuing.
+        $hasIncompleteRecord = $records->contains(function ($record) {
+            return in_array(
+                $record->status,
+                ['Continuing', 'Missed']
+            );
+        });
+
+        if ($hasIncompleteRecord) {
+            $child->update([
+                'status' => 'Continuing'
+            ]);
+
+            return;
+        }
+
+        // If all vaccination records are Completed,
+        // the child is Completed.
         $allCompleted = $records->every(function ($record) {
             return $record->status === 'Completed';
         });
 
-        if ($allCompleted) {
-            $child->status = 'Completed';
-        } else {
-            // Any Continuing or Missed record means
-            // the child is still Continuing.
-            $child->status = 'Continuing';
-        }
-
-        $child->save();
+        $child->update([
+            'status' => $allCompleted
+                ? 'Completed'
+                : 'Continuing'
+        ]);
     }
 
 
@@ -62,14 +76,23 @@ class PatientViewRecordController extends Controller
     // =========================================================
     public function getRecords($child_id)
     {
+        $child = Child::find($child_id);
+
+        if (!$child) {
+            return response()->json([
+                'message' => 'Child not found.'
+            ], 404);
+        }
+
         $records = PatientRecord::with([
             'vaccine',
             'appointment',
             'admin',
             'staff',
         ])
-        ->where('child_id', $child_id)
-        ->get();
+            ->where('child_id', $child_id)
+            ->orderByDesc('date_taken')
+            ->get();
 
         $records->transform(function ($record) {
             return [
@@ -123,20 +146,47 @@ class PatientViewRecordController extends Controller
 
         return DB::transaction(function () use ($request) {
 
+            // ==============================================
+            // CHECK CHILD
+            // ==============================================
+
+            $child = Child::find($request->child_id);
+
+            if (!$child) {
+                return response()->json([
+                    'message' => 'Child not found.'
+                ], 404);
+            }
+
+            if ($child->status === 'Inactive') {
+                return response()->json([
+                    'message' => 'Cannot add a vaccination record to an inactive child.'
+                ], 422);
+            }
+
+
+            // ==============================================
+            // LOCK VACCINE
+            // ==============================================
+
             $vaccine = Vaccine::where(
                 'vaccine_ID',
                 $request->vaccine_id
             )
-            ->lockForUpdate()
-            ->first();
+                ->lockForUpdate()
+                ->first();
 
             if (!$vaccine) {
                 return response()->json([
-                    'message' => 'Vaccine not found'
+                    'message' => 'Vaccine not found.'
                 ], 404);
             }
 
-            // Deduct stock only when vaccination is completed
+
+            // ==============================================
+            // COMPLETE VACCINATION
+            // ==============================================
+
             if ($request->status === 'Completed') {
 
                 if ((int) $vaccine->stock_quantity <= 0) {
@@ -151,6 +201,11 @@ class PatientViewRecordController extends Controller
                 $vaccine->save();
             }
 
+
+            // ==============================================
+            // CREATE RECORD
+            // ==============================================
+
             $record = PatientRecord::create([
                 'child_id' => $request->child_id,
                 'appointment_id' => $request->appointment_id,
@@ -164,8 +219,11 @@ class PatientViewRecordController extends Controller
                 'staff_id' => $request->staff_id,
             ]);
 
-            // IMPORTANT:
-            // Update the child status based on ALL vaccination records.
+
+            // ==============================================
+            // SYNC CHILD STATUS
+            // ==============================================
+
             $this->syncChildStatus($request->child_id);
 
             $record->load([
@@ -175,13 +233,13 @@ class PatientViewRecordController extends Controller
                 'staff',
             ]);
 
-            $child = Child::find($request->child_id);
+            $child->refresh();
 
             return response()
                 ->json([
-                    'message' => 'Vaccination record added successfully',
+                    'message' => 'Vaccination record added successfully.',
                     'record' => $record,
-                    'child_status' => $child?->status,
+                    'child_status' => $child->status,
                 ], 201)
                 ->header('Cache-Control', 'no-store');
         });
@@ -210,34 +268,55 @@ class PatientViewRecordController extends Controller
                 ], 404);
             }
 
+            $child = Child::find($record->child_id);
+
+            if (!$child) {
+                return response()->json([
+                    'message' => 'Child not found.'
+                ], 404);
+            }
+
+            if ($child->status === 'Inactive') {
+                return response()->json([
+                    'message' => 'Cannot update vaccination records for an inactive child.'
+                ], 422);
+            }
+
             $oldStatus = $record->status;
             $newStatus = $request->status;
 
-            // Nothing to change
+            // ==============================================
+            // NOTHING CHANGED
+            // ==============================================
+
             if ($oldStatus === $newStatus) {
 
                 $this->syncChildStatus($record->child_id);
 
                 $record->refresh();
 
-                $child = Child::find($record->child_id);
+                $child->refresh();
 
                 return response()
                     ->json([
                         'message' => 'Status unchanged.',
                         'record' => $record,
-                        'child_status' => $child?->status,
+                        'child_status' => $child->status,
                     ])
                     ->header('Cache-Control', 'no-store');
             }
 
-            // Lock vaccine row while changing stock
+
+            // ==============================================
+            // LOCK VACCINE
+            // ==============================================
+
             $vaccine = Vaccine::where(
                 'vaccine_ID',
                 $record->vaccine_id
             )
-            ->lockForUpdate()
-            ->first();
+                ->lockForUpdate()
+                ->first();
 
             if (!$vaccine) {
                 return response()->json([
@@ -245,9 +324,10 @@ class PatientViewRecordController extends Controller
                 ], 404);
             }
 
-            // =====================================================
+
+            // ==============================================
             // CONTINUING / MISSED -> COMPLETED
-            // =====================================================
+            // ==============================================
 
             if (
                 $oldStatus !== 'Completed' &&
@@ -266,9 +346,10 @@ class PatientViewRecordController extends Controller
                 $vaccine->save();
             }
 
-            // =====================================================
+
+            // ==============================================
             // COMPLETED -> CONTINUING / MISSED
-            // =====================================================
+            // ==============================================
 
             if (
                 $oldStatus === 'Completed' &&
@@ -281,17 +362,18 @@ class PatientViewRecordController extends Controller
                 $vaccine->save();
             }
 
-            // =====================================================
-            // SAVE NEW VACCINATION STATUS
-            // =====================================================
+
+            // ==============================================
+            // SAVE STATUS
+            // ==============================================
 
             $record->status = $newStatus;
             $record->save();
 
-            // =====================================================
-            // IMPORTANT:
-            // RECALCULATE CHILD STATUS
-            // =====================================================
+
+            // ==============================================
+            // SYNC CHILD STATUS
+            // ==============================================
 
             $this->syncChildStatus($record->child_id);
 
@@ -304,13 +386,13 @@ class PatientViewRecordController extends Controller
                 'staff',
             ]);
 
-            $child = Child::find($record->child_id);
+            $child->refresh();
 
             return response()
                 ->json([
                     'message' => 'Status updated successfully.',
                     'record' => $record,
-                    'child_status' => $child?->status,
+                    'child_status' => $child->status,
                 ])
                 ->header(
                     'Cache-Control',
@@ -352,6 +434,20 @@ class PatientViewRecordController extends Controller
                 ], 404);
             }
 
+            $child = Child::find($record->child_id);
+
+            if (!$child) {
+                return response()->json([
+                    'message' => 'Child not found.'
+                ], 404);
+            }
+
+            if ($child->status === 'Inactive') {
+                return response()->json([
+                    'message' => 'Cannot edit vaccination records for an inactive child.'
+                ], 422);
+            }
+
             $oldChildId = $record->child_id;
             $oldVaccineId = $record->vaccine_id;
             $oldStatus = $record->status;
@@ -359,21 +455,25 @@ class PatientViewRecordController extends Controller
             $newVaccineId = $request->vaccine_id;
             $newStatus = $request->status;
 
-            // =====================================================
+
+            // ==============================================
             // VACCINE CHANGED
-            // =====================================================
+            // ==============================================
 
             if ($oldVaccineId != $newVaccineId) {
 
-                // Return old stock if old record was completed
+                // ------------------------------------------
+                // RETURN OLD STOCK
+                // ------------------------------------------
+
                 if ($oldStatus === 'Completed') {
 
                     $oldVaccine = Vaccine::where(
                         'vaccine_ID',
                         $oldVaccineId
                     )
-                    ->lockForUpdate()
-                    ->first();
+                        ->lockForUpdate()
+                        ->first();
 
                     if ($oldVaccine) {
                         $oldVaccine->stock_quantity =
@@ -383,15 +483,19 @@ class PatientViewRecordController extends Controller
                     }
                 }
 
-                // Deduct new stock if new record is completed
+
+                // ------------------------------------------
+                // DEDUCT NEW STOCK
+                // ------------------------------------------
+
                 if ($newStatus === 'Completed') {
 
                     $newVaccine = Vaccine::where(
                         'vaccine_ID',
                         $newVaccineId
                     )
-                    ->lockForUpdate()
-                    ->first();
+                        ->lockForUpdate()
+                        ->first();
 
                     if (!$newVaccine) {
                         return response()->json([
@@ -412,9 +516,10 @@ class PatientViewRecordController extends Controller
                 }
             }
 
-            // =====================================================
-            // SAME VACCINE, STATUS CHANGED
-            // =====================================================
+
+            // ==============================================
+            // SAME VACCINE
+            // ==============================================
 
             else {
 
@@ -422,8 +527,8 @@ class PatientViewRecordController extends Controller
                     'vaccine_ID',
                     $oldVaccineId
                 )
-                ->lockForUpdate()
-                ->first();
+                    ->lockForUpdate()
+                    ->first();
 
                 if (!$vaccine) {
                     return response()->json([
@@ -431,7 +536,11 @@ class PatientViewRecordController extends Controller
                     ], 404);
                 }
 
-                // Continuing / Missed -> Completed
+
+                // ------------------------------------------
+                // CONTINUING / MISSED -> COMPLETED
+                // ------------------------------------------
+
                 if (
                     $oldStatus !== 'Completed' &&
                     $newStatus === 'Completed'
@@ -449,7 +558,11 @@ class PatientViewRecordController extends Controller
                     $vaccine->save();
                 }
 
-                // Completed -> Continuing / Missed
+
+                // ------------------------------------------
+                // COMPLETED -> CONTINUING / MISSED
+                // ------------------------------------------
+
                 elseif (
                     $oldStatus === 'Completed' &&
                     $newStatus !== 'Completed'
@@ -462,9 +575,10 @@ class PatientViewRecordController extends Controller
                 }
             }
 
-            // =====================================================
+
+            // ==============================================
             // SAVE RECORD
-            // =====================================================
+            // ==============================================
 
             $record->update([
                 'appointment_id' => $request->appointment_id,
@@ -478,9 +592,10 @@ class PatientViewRecordController extends Controller
                 'staff_id' => $request->staff_id,
             ]);
 
-            // =====================================================
-            // RECALCULATE CHILD STATUS
-            // =====================================================
+
+            // ==============================================
+            // SYNC CHILD STATUS
+            // ==============================================
 
             $this->syncChildStatus($oldChildId);
 
@@ -493,13 +608,13 @@ class PatientViewRecordController extends Controller
                 'staff',
             ]);
 
-            $child = Child::find($oldChildId);
+            $child->refresh();
 
             return response()
                 ->json([
                     'message' => 'Vaccination record updated successfully.',
                     'record' => $record,
-                    'child_status' => $child?->status,
+                    'child_status' => $child->status,
                 ])
                 ->header('Cache-Control', 'no-store');
         });
@@ -523,15 +638,19 @@ class PatientViewRecordController extends Controller
 
             $childId = $record->child_id;
 
-            // Return stock if completed
+
+            // ==============================================
+            // RETURN STOCK IF COMPLETED
+            // ==============================================
+
             if ($record->status === 'Completed') {
 
                 $vaccine = Vaccine::where(
                     'vaccine_ID',
                     $record->vaccine_id
                 )
-                ->lockForUpdate()
-                ->first();
+                    ->lockForUpdate()
+                    ->first();
 
                 if ($vaccine) {
 
@@ -542,12 +661,18 @@ class PatientViewRecordController extends Controller
                 }
             }
 
+
+            // ==============================================
+            // DELETE RECORD
+            // ==============================================
+
             $record->delete();
 
-            // Recalculate child status after deletion.
-            // If there are remaining records and all are completed,
-            // child becomes Completed.
-            // Otherwise child becomes Continuing.
+
+            // ==============================================
+            // RECALCULATE CHILD STATUS
+            // ==============================================
+
             $this->syncChildStatus($childId);
 
             $child = Child::find($childId);
@@ -557,7 +682,12 @@ class PatientViewRecordController extends Controller
                     'message' => 'Vaccination record deleted successfully.',
                     'child_status' => $child?->status,
                 ])
-                ->header('Cache-Control', 'no-store');
+                ->header(
+                    'Cache-Control',
+                    'no-store, no-cache, must-revalidate, max-age=0'
+                )
+                ->header('Pragma', 'no-cache')
+                ->header('Expires', '0');
         });
     }
 }

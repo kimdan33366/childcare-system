@@ -38,13 +38,22 @@ class ChildController extends Controller
     {
         $request->validate([
             'user_id' => 'required|integer|exists:user,user_id',
-            'child_name' => 'required|string|max:2550',
+            'child_name' => 'required|string|max:255',
             'birthdate' => 'required|date',
             'gender' => 'required|string|max:255',
             'address' => 'required|string|max:255',
             'relationship' => 'required|in:Mother,Father,Guardian',
             'status' => 'nullable|in:Continuing,Completed,Inactive',
         ]);
+
+        // Make sure the selected parent is active.
+        $parent = \App\Models\User::findOrFail($request->user_id);
+
+        if ($parent->status !== 'Active') {
+            return response()->json([
+                'message' => 'Cannot add a child to an inactive parent account.'
+            ], 422);
+        }
 
         $child = Child::create([
             'user_id' => $request->user_id,
@@ -53,10 +62,15 @@ class ChildController extends Controller
             'gender' => $request->gender,
             'address' => $request->address,
             'relationship' => $request->relationship,
-            'status' => $request->status ?? 'Continuing',
+
+            // New children always begin as Continuing.
+            'status' => 'Continuing',
         ]);
 
-        return response()->json($child, 201);
+        return response()->json([
+            'message' => 'Child created successfully.',
+            'child' => $child->load('user'),
+        ], 201);
     }
 
     // PUT /api/children/{id}
@@ -66,13 +80,25 @@ class ChildController extends Controller
 
         $request->validate([
             'user_id' => 'sometimes|integer|exists:user,user_id',
-            'child_name' => 'sometimes|string|max:2550',
+            'child_name' => 'sometimes|string|max:255',
             'birthdate' => 'sometimes|date',
             'gender' => 'sometimes|string|max:255',
             'address' => 'sometimes|string|max:255',
             'relationship' => 'sometimes|in:Mother,Father,Guardian',
             'status' => 'sometimes|in:Continuing,Completed,Inactive',
         ]);
+
+        // If the parent is being changed, make sure the new
+        // parent account is active.
+        if ($request->has('user_id')) {
+            $parent = \App\Models\User::findOrFail($request->user_id);
+
+            if ($parent->status !== 'Active') {
+                return response()->json([
+                    'message' => 'Cannot assign a child to an inactive parent account.'
+                ], 422);
+            }
+        }
 
         $child->update($request->only([
             'user_id',
@@ -84,7 +110,9 @@ class ChildController extends Controller
             'status',
         ]));
 
-        return response()->json($child);
+        return response()->json(
+            $child->fresh()->load('user')
+        );
     }
 
     // DELETE /api/children/{id}
@@ -93,7 +121,7 @@ class ChildController extends Controller
         $child = Child::findOrFail($id);
 
         return response()->json([
-            'message' => 'Children cannot be deleted because vaccination, growth, and appointment history must be preserved.'
+            'message' => 'Children cannot be deleted because vaccination, growth, and appointment history must be preserved. Deactivate the child instead.'
         ], 403);
     }
 }

@@ -5,13 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Child;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function index()
     {
         // ==========================================
-        // TOTAL CHILDREN
+        // TOTAL ACTIVE USERS
+        // ==========================================
+
+        $activeUsers = User::where('status', 'Active')->count();
+
+
+        // ==========================================
+        // TOTAL ACTIVE CHILDREN
         // ==========================================
 
         $children = Child::where('status', '!=', 'Inactive')->count();
@@ -29,31 +37,39 @@ class DashboardController extends Controller
         ];
 
         $allChildren = Child::where('status', '!=', 'Inactive')
-            ->select('child_id')
+            ->with('patientRecords')
             ->get();
 
         foreach ($allChildren as $child) {
 
-            $records = DB::table('patient_records')
-                ->where('child_id', $child->child_id)
-                ->pluck('status');
+            $records = $child->patientRecords;
 
+            // No vaccination records
             if ($records->isEmpty()) {
-
                 $vaccinationStatus['not_started']++;
+                continue;
+            }
 
-            } elseif ($records->contains('Missed')) {
-
+            // Any missed vaccination
+            if ($records->contains(function ($record) {
+                return $record->status === 'Missed';
+            })) {
                 $vaccinationStatus['missed']++;
+                continue;
+            }
 
-            } elseif ($records->contains('Continuing')) {
-
+            // Any continuing vaccination
+            if ($records->contains(function ($record) {
+                return $record->status === 'Continuing';
+            })) {
                 $vaccinationStatus['continuing']++;
+                continue;
+            }
 
-            } elseif ($records->every(
-                fn ($status) => $status === 'Completed'
-            )) {
-
+            // All vaccination records completed
+            if ($records->every(function ($record) {
+                return $record->status === 'Completed';
+            })) {
                 $vaccinationStatus['completed']++;
             }
         }
@@ -82,6 +98,36 @@ class DashboardController extends Controller
 
         $missedAppointments = DB::table('appointments')
             ->where('status', 'Missed')
+            ->count();
+
+
+        // ==========================================
+        // OVERDUE APPOINTMENTS
+        // ==========================================
+        // A pending appointment is considered overdue
+        // when its scheduled date and time have already passed.
+
+        $now = Carbon::now();
+
+        $overdue = DB::table('appointments')
+            ->where('status', 'Pending')
+            ->where(function ($query) use ($now) {
+                $query->whereDate(
+                    'appointment_date',
+                    '<',
+                    $now->toDateString()
+                )->orWhere(function ($query) use ($now) {
+                    $query->whereDate(
+                        'appointment_date',
+                        '=',
+                        $now->toDateString()
+                    )->whereTime(
+                        'appointment_time',
+                        '<',
+                        $now->toTimeString()
+                    );
+                });
+            })
             ->count();
 
 
@@ -145,13 +191,13 @@ class DashboardController extends Controller
         // ==========================================
 
         return response()->json([
-            'users' => User::where('status', 'Active')->count(),
+            'users' => $activeUsers,
 
             'children' => $children,
 
-            'overdue' => 0,
+            'overdue' => $overdue,
 
-            'active_user' => User::where('status', 'Active')->count(),
+            'active_user' => $activeUsers,
 
             'doses_given' => $dosesGiven,
 

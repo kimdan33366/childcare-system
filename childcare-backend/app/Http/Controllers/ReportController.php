@@ -9,18 +9,26 @@ class ReportController extends Controller
 {
     public function index()
     {
+        // ==========================================
+        // LATEST REPORT INFORMATION
+        // ==========================================
+
         $report = Report::latest('report_id')->first();
 
-        if (!$report) {
-            return response()->json([
-                'message' => 'No report found.'
-            ], 404);
-        }
+
+        // ==========================================
+        // ACTIVE CHILDREN
+        // ==========================================
 
         $children = DB::table('children')
-         ->where('status', '!=', 'Inactive')
-        ->select('child_id')
-        ->get();
+            ->where('status', '!=', 'Inactive')
+            ->select('child_id')
+            ->get();
+
+
+        // ==========================================
+        // VACCINATION STATUS
+        // ==========================================
 
         $vaccinationStatus = [
             'completed' => 0,
@@ -35,25 +43,36 @@ class ReportController extends Controller
                 ->where('child_id', $child->child_id)
                 ->pluck('status');
 
+            // No vaccination records
             if ($records->isEmpty()) {
-
                 $vaccinationStatus['not_started']++;
+                continue;
+            }
 
-            } elseif ($records->contains('Missed')) {
-
+            // Any missed vaccination
+            if ($records->contains('Missed')) {
                 $vaccinationStatus['missed']++;
+                continue;
+            }
 
-            } elseif ($records->contains('Continuing')) {
-
+            // Any continuing vaccination
+            if ($records->contains('Continuing')) {
                 $vaccinationStatus['continuing']++;
+                continue;
+            }
 
-            } elseif ($records->every(
-                fn ($status) => $status === 'Completed'
-            )) {
-
+            // All vaccinations completed
+            if ($records->every(function ($status) {
+                return $status === 'Completed';
+            })) {
                 $vaccinationStatus['completed']++;
             }
         }
+
+
+        // ==========================================
+        // VACCINE USAGE
+        // ==========================================
 
         $vaccineUsage = DB::table('patient_records')
             ->join(
@@ -62,10 +81,19 @@ class ReportController extends Controller
                 '=',
                 'vaccine.vaccine_ID'
             )
+            ->join(
+                'children',
+                'patient_records.child_id',
+                '=',
+                'children.child_id'
+            )
             ->where('patient_records.status', 'Completed')
+            ->where('children.status', '!=', 'Inactive')
             ->select(
                 'vaccine.vaccine_name',
-                DB::raw('COUNT(patient_records.patient_recordID) as dose_count')
+                DB::raw(
+                    'COUNT(patient_records.patient_recordID) as dose_count'
+                )
             )
             ->groupBy(
                 'vaccine.vaccine_ID',
@@ -73,6 +101,11 @@ class ReportController extends Controller
             )
             ->orderBy('vaccine.vaccine_name')
             ->get();
+
+
+        // ==========================================
+        // APPOINTMENT SUMMARY
+        // ==========================================
 
         $appointmentSummary = DB::table('appointments')
             ->select(
@@ -82,15 +115,37 @@ class ReportController extends Controller
             ->groupBy('status')
             ->get();
 
+
+        // ==========================================
+        // MONTHLY DOSES
+        // ==========================================
+
+        $monthlyDoses = [];
+
+        if ($report) {
+            $monthlyDoses = $report->monthlyDoses();
+        }
+
+
+        // ==========================================
+        // RESPONSE
+        // ==========================================
+
         return response()->json([
-            'overall_coverage' => $report->overall_coverage,
-            'complete_series' => $report->complete_series,
-            'total_dose_q2' => $report->total_dose_q2,
-            'report_year' => $report->report_year,
-            'monthly_doses' => $report->monthlyDoses(),
+            'overall_coverage' => $report?->overall_coverage ?? 0,
+
+            'complete_series' => $report?->complete_series ?? 0,
+
+            'total_dose_q2' => $report?->total_dose_q2 ?? 0,
+
+            'report_year' => $report?->report_year ?? now()->year,
+
+            'monthly_doses' => $monthlyDoses,
 
             'vaccination_status' => $vaccinationStatus,
+
             'vaccine_usage' => $vaccineUsage,
+
             'appointment_summary' => $appointmentSummary,
         ]);
     }
