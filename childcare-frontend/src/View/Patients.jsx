@@ -11,7 +11,6 @@ import {
   FaUserCircle,
   FaPhoneAlt,
   FaEdit,
-  FaTrash,
   FaChevronDown,
 } from "react-icons/fa";
 
@@ -45,7 +44,7 @@ function Patients() {
   const [isEditingPatient, setIsEditingPatient] = useState(false);
 
   // ==========================================
-  // ADD PATIENT STEP
+  // ADD CHILD STEPS
   // ==========================================
 
   const [addPatientStep, setAddPatientStep] = useState(1);
@@ -54,20 +53,17 @@ function Patients() {
   const [userSearch, setUserSearch] = useState("");
 
   const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedRelationship, setSelectedRelationship] = useState("");
-
-  const [createdChildId, setCreatedChildId] = useState(null);
 
   // ==========================================
-  // PATIENT FORM
+  // CHILD FORM
   // ==========================================
 
   const [childName, setChildName] = useState("");
-  const [age, setAge] = useState("");
   const [birthdate, setBirthdate] = useState("");
   const [sex, setSex] = useState("");
-  const [motherName, setMotherName] = useState("");
-  const [fatherName, setFatherName] = useState("");
+  const [relationship, setRelationship] = useState("");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
   const [address, setAddress] = useState("");
 
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -82,29 +78,90 @@ function Patients() {
   const [message, setMessage] = useState(defaultSMSMessage);
 
   // ==========================================
-  // PATIENT STATUS
+  // CALCULATE AGE
+  // ==========================================
+
+  const calculateAge = (birthdate) => {
+    if (!birthdate) return "—";
+
+    const birth = new Date(birthdate);
+    const today = new Date();
+
+    if (Number.isNaN(birth.getTime())) {
+      return "—";
+    }
+
+    let years = today.getFullYear() - birth.getFullYear();
+    let months = today.getMonth() - birth.getMonth();
+
+    if (today.getDate() < birth.getDate()) {
+      months--;
+    }
+
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+
+    if (years < 0) {
+      return "—";
+    }
+
+    if (years === 0) {
+      return `${months} month${months !== 1 ? "s" : ""}`;
+    }
+
+    if (months === 0) {
+      return `${years} year${years !== 1 ? "s" : ""}`;
+    }
+
+    return `${years}y ${months}m`;
+  };
+
+  // ==========================================
+  // GET LATEST GROWTH RECORD
+  // ==========================================
+
+  const getLatestGrowth = (patient) => {
+    const records = patient?.growthRecords || [];
+
+    if (!records.length) {
+      return null;
+    }
+
+    return [...records].sort((a, b) => {
+      // growth_id is the most reliable way to determine
+      // which record was created most recently.
+      if (
+        a.growth_id != null &&
+        b.growth_id != null &&
+        b.growth_id !== a.growth_id
+      ) {
+        return Number(b.growth_id) - Number(a.growth_id);
+      }
+
+      // Fallback to date if growth_id is unavailable.
+      const dateDifference =
+        new Date(b.date).getTime() - new Date(a.date).getTime();
+
+      if (dateDifference !== 0) {
+        return dateDifference;
+      }
+
+      // Final fallback to created_at.
+      return (
+        new Date(b.created_at || 0).getTime() -
+        new Date(a.created_at || 0).getTime()
+      );
+    })[0];
+  };
+
+  // ==========================================
+  // CHILD STATUS
   // ==========================================
 
   const getPatientStatus = (patient) => {
-    const records = patient.patient_records || [];
-
-    if (records.length === 0) {
-      return "Not Started";
-    }
-
-    if (records.some((record) => record.status === "Missed")) {
-      return "Missed";
-    }
-
-    if (records.some((record) => record.status === "Continuing")) {
-      return "Continuing";
-    }
-
-    if (records.every((record) => record.status === "Completed")) {
-      return "Completed";
-    }
-
-    return "Continuing";
+    return patient.status || "Continuing";
   };
 
   // ==========================================
@@ -114,14 +171,12 @@ function Patients() {
   const filteredPatients = patients.filter((patient) => {
     const searchValue = search.toLowerCase();
 
-    const parentNames = [patient.mother_name, patient.father_name]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
+    const parentName =
+      patient.user?.user_fullname || patient.parent_name || "";
 
     const matchesSearch =
       patient.child_name?.toLowerCase().includes(searchValue) ||
-      parentNames.includes(searchValue);
+      parentName.toLowerCase().includes(searchValue);
 
     const patientStatus = getPatientStatus(patient);
 
@@ -130,6 +185,7 @@ function Patients() {
 
     return matchesSearch && matchesStatus;
   });
+
   // ==========================================
   // GET USERS
   // ==========================================
@@ -152,18 +208,40 @@ function Patients() {
   }, []);
 
   // ==========================================
-  // GET PATIENTS
+  // GET CHILDREN
   // ==========================================
 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/api/children")
       .then((response) => response.json())
       .then((data) => {
-        console.log("Fetched patients:", data);
-        setPatients(data);
+        console.log("Fetched children:", data);
+
+        if (Array.isArray(data)) {
+          /*
+           * Laravel returns the relationship as:
+           *
+           * growth_records
+           *
+           * The React frontend uses:
+           *
+           * growthRecords
+           *
+           * Normalize it here so the rest of the component
+           * can consistently use growthRecords.
+           */
+          const normalizedChildren = data.map((child) => ({
+            ...child,
+            growthRecords: child.growth_records || [],
+          }));
+
+          setPatients(normalizedChildren);
+        } else {
+          setPatients([]);
+        }
       })
       .catch((error) => {
-        console.error("Error fetching patients:", error);
+        console.error("Error fetching children:", error);
       });
   }, []);
 
@@ -184,7 +262,11 @@ function Patients() {
   };
 
   const getUserPhone = (user) => {
-    return user?.phone || "";
+    return user?.mobile_number || user?.phone || "";
+  };
+
+  const getUserAddress = (user) => {
+    return user?.address || "";
   };
 
   const filteredUsers = users.filter((user) => {
@@ -198,7 +280,7 @@ function Patients() {
   });
 
   // ==========================================
-  // RESET ADD PATIENT FORM
+  // RESET ADD CHILD FORM
   // ==========================================
 
   const resetAddPatientForm = () => {
@@ -206,16 +288,13 @@ function Patients() {
 
     setUserSearch("");
     setSelectedUser(null);
-    setSelectedRelationship("");
-
-    setCreatedChildId(null);
 
     setChildName("");
-    setAge("");
     setBirthdate("");
     setSex("");
-    setMotherName("");
-    setFatherName("");
+    setRelationship("");
+    setHeight("");
+    setWeight("");
     setAddress("");
 
     setSelectedPatient(null);
@@ -223,7 +302,7 @@ function Patients() {
   };
 
   // ==========================================
-  // OPEN ADD PATIENT
+  // OPEN ADD CHILD
   // ==========================================
 
   const openAddPatient = () => {
@@ -232,94 +311,37 @@ function Patients() {
   };
 
   // ==========================================
-  // STEP 1 → CREATE CHILD
+  // SELECT PARENT
   // ==========================================
 
-  const handleNextToChildInformation = async () => {
-    if (!selectedUser) {
-      alert("Please select a registered user first.");
-      return;
-    }
+  const handleSelectUser = (user) => {
+    setSelectedUser(user);
 
-    if (!selectedRelationship) {
-      alert("Please select whether this user is the Mother or Father.");
-      return;
-    }
-
-    const userId = getUserId(selectedUser);
-    const userName = getUserName(selectedUser);
-
-    if (!userId) {
-      alert("The selected user does not have a valid user ID.");
-      return;
-    }
-
-    try {
-      const response = await fetch("http://127.0.0.1:8000/api/children", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          user_id: userId,
-
-          child_name: null,
-          age_months: null,
-          birthdate: null,
-          gender: null,
-
-          mother_name: selectedRelationship === "Mother" ? userName : null,
-
-          father_name: selectedRelationship === "Father" ? userName : null,
-
-          address: null,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Create child error:", data);
-        alert(
-          data.message ||
-            "Failed to create the child record. Please check the server.",
-        );
-        return;
-      }
-
-      console.log("Child created:", data);
-
-      setCreatedChildId(data.child_id);
-
-      if (selectedRelationship === "Mother") {
-        setMotherName(userName);
-        setFatherName("");
-      } else {
-        setMotherName("");
-        setFatherName(userName);
-      }
-
-      setChildName("");
-      setAge("");
-      setBirthdate("");
-      setSex("");
-      setAddress("");
-
-      setAddPatientStep(2);
-    } catch (error) {
-      console.error("Error creating child:", error);
-      alert("Could not connect to the server.");
-    }
+    // Child address initially copies parent's address.
+    setAddress(getUserAddress(user));
   };
 
   // ==========================================
-  // STEP 2 → COMPLETE PATIENT
+  // STEP 1 → STEP 2
+  // ==========================================
+
+  const handleNextToChildInformation = () => {
+    if (!selectedUser) {
+      alert("Please select a registered parent or guardian.");
+      return;
+    }
+
+    setAddress(getUserAddress(selectedUser));
+    setAddPatientStep(2);
+  };
+
+  // ==========================================
+  // CREATE CHILD
   // ==========================================
 
   const handleCompleteAddPatient = async () => {
-    if (!createdChildId) {
-      alert("No child record was created.");
+    if (!selectedUser) {
+      alert("Please select a parent or guardian.");
       return;
     }
 
@@ -328,11 +350,45 @@ function Patients() {
       return;
     }
 
+    if (!birthdate) {
+      alert("Please enter the child's birthdate.");
+      return;
+    }
+
+    if (!sex) {
+      alert("Please select the child's gender.");
+      return;
+    }
+
+    if (!relationship) {
+      alert("Please select the relationship to the child.");
+      return;
+    }
+
+    if (!height || Number(height) <= 0) {
+      alert("Please enter the child's height.");
+      return;
+    }
+
+    if (!weight || Number(weight) <= 0) {
+      alert("Please enter the child's weight.");
+      return;
+    }
+
+    if (!address.trim()) {
+      alert("Please enter the child's address.");
+      return;
+    }
+
     try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/api/children/${createdChildId}`,
+      // ==========================================
+      // CREATE CHILD
+      // ==========================================
+
+      const childResponse = await fetch(
+        "http://127.0.0.1:8000/api/children",
         {
-          method: "PUT",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
@@ -340,44 +396,138 @@ function Patients() {
           body: JSON.stringify({
             user_id: getUserId(selectedUser),
             child_name: childName,
-            age_months: age,
             birthdate: birthdate,
             gender: sex,
-            mother_name: motherName,
-            father_name: fatherName,
             address: address,
+            relationship: relationship,
+            status: "Continuing",
           }),
         },
       );
 
-      const data = await response.json();
+      const childData = await childResponse.json();
 
-      if (!response.ok) {
-        console.error("Complete patient error:", data);
-        alert(data.message || "Failed to complete patient.");
+      if (!childResponse.ok) {
+        console.error("Create child error:", childData);
+
+        alert(
+          childData.message ||
+            "Failed to create the child. Please check the server.",
+        );
+
         return;
       }
 
-      setPatients((prevPatients) => [...prevPatients, data]);
+      // ==========================================
+      // CREATE FIRST GROWTH RECORD
+      // ==========================================
 
-      alert("Patient added successfully!");
+      const growthResponse = await fetch(
+        "http://127.0.0.1:8000/api/growth-records",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            child_id: childData.child_id,
+            date: new Date().toISOString().split("T")[0],
+            weight_kg: Number(weight),
+            height_cm: Number(height),
+          }),
+        },
+      );
+
+      const growthData = await growthResponse.json();
+
+      if (!growthResponse.ok) {
+        console.error("Create growth record error:", growthData);
+
+        alert(
+          "The child was created, but the height and weight could not be saved.",
+        );
+
+        return;
+      }
+
+      console.log("First growth record created:", growthData);
+
+      // ==========================================
+      // ADD CHILD TO LOCAL LIST
+      // ==========================================
+
+      const newChild = {
+        ...childData,
+        user: selectedUser,
+        growthRecords: [
+          growthData.growth_record || {
+            date: new Date().toISOString().split("T")[0],
+            weight_kg: Number(weight),
+            height_cm: Number(height),
+          },
+        ],
+      };
+
+      setPatients((prevPatients) => [...prevPatients, newChild]);
+
+      alert("Child added successfully!");
 
       setShowAddPatient(false);
       resetAddPatientForm();
     } catch (error) {
-      console.error("Error completing patient:", error);
+      console.error("Error creating child:", error);
       alert("Could not connect to the server.");
     }
   };
 
   // ==========================================
-  // EDIT PATIENT
+  // EDIT CHILD
   // ==========================================
 
   const handleEditPatient = async () => {
     if (!selectedPatient) return;
 
+    if (!childName.trim()) {
+      alert("Please enter the child's name.");
+      return;
+    }
+
+    if (!birthdate) {
+      alert("Please enter the child's birthdate.");
+      return;
+    }
+
+    if (!sex) {
+      alert("Please select the child's gender.");
+      return;
+    }
+
+    if (!relationship) {
+      alert("Please select the relationship to the child.");
+      return;
+    }
+
+    if (!height || Number(height) <= 0) {
+      alert("Please enter the child's height.");
+      return;
+    }
+
+    if (!weight || Number(weight) <= 0) {
+      alert("Please enter the child's weight.");
+      return;
+    }
+
+    if (!address.trim()) {
+      alert("Please enter the child's address.");
+      return;
+    }
+
     try {
+      // ==========================================
+      // UPDATE CHILD INFORMATION
+      // ==========================================
+
       const response = await fetch(
         `http://127.0.0.1:8000/api/children/${selectedPatient.child_id}`,
         {
@@ -389,12 +539,10 @@ function Patients() {
           body: JSON.stringify({
             user_id: selectedPatient.user_id,
             child_name: childName,
-            age_months: age,
             birthdate: birthdate,
             gender: sex,
-            mother_name: motherName,
-            father_name: fatherName,
             address: address,
+            relationship: relationship,
           }),
         },
       );
@@ -402,23 +550,138 @@ function Patients() {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error(data);
-        alert("Failed to update patient.");
+        console.error("Update child error:", data);
+
+        alert(data.message || "Failed to update the child.");
+
         return;
       }
 
+      // ==========================================
+      // CREATE NEW GROWTH RECORD
+      // ==========================================
+
+      const growthResponse = await fetch(
+        "http://127.0.0.1:8000/api/growth-records",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            child_id: selectedPatient.child_id,
+            date: new Date().toISOString().split("T")[0],
+            weight_kg: Number(weight),
+            height_cm: Number(height),
+          }),
+        },
+      );
+
+      const growthData = await growthResponse.json();
+
+      if (!growthResponse.ok) {
+        console.error("Update growth record error:", growthData);
+
+        alert(
+          "The child information was updated, but the new height and weight could not be saved.",
+        );
+
+        return;
+      }
+
+      console.log("New growth record created:", growthData);
+
+      // ==========================================
+      // UPDATE LOCAL PATIENT DATA
+      // ==========================================
+
       setPatients((prevPatients) =>
         prevPatients.map((patient) =>
-          patient.child_id === data.child_id ? data : patient,
+          patient.child_id === data.child_id
+            ? {
+                ...patient,
+                ...data,
+                user: patient.user,
+                growthRecords: [
+                  ...(patient.growthRecords || []),
+                  growthData.growth_record,
+                ],
+              }
+            : patient,
         ),
       );
 
-      alert("Patient updated successfully!");
+      alert("Child updated successfully!");
 
       setShowAddPatient(false);
       resetAddPatientForm();
     } catch (error) {
-      console.error("Error updating patient:", error);
+      console.error("Error updating child:", error);
+      alert("Could not connect to the server.");
+    }
+  };
+
+  // ==========================================
+  // DEACTIVATE / REACTIVATE CHILD
+  // ==========================================
+
+  const handleToggleChildStatus = async (patient) => {
+    const isInactive = patient.status === "Inactive";
+
+    const confirmed = window.confirm(
+      isInactive
+        ? `Are you sure you want to reactivate ${patient.child_name}?`
+        : `Are you sure you want to deactivate ${patient.child_name}?`,
+    );
+
+    if (!confirmed) return;
+
+    const newStatus = isInactive ? "Continuing" : "Inactive";
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/children/${patient.child_id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            status: newStatus,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Status update error:", data);
+
+        alert(data.message || "Failed to update the child's status.");
+
+        return;
+      }
+
+      setPatients((prevPatients) =>
+        prevPatients.map((item) =>
+          item.child_id === patient.child_id
+            ? {
+                ...item,
+                ...data,
+              }
+            : item,
+        ),
+      );
+
+      alert(
+        isInactive
+          ? "Child reactivated successfully!"
+          : "Child deactivated successfully!",
+      );
+    } catch (error) {
+      console.error("Error updating child status:", error);
       alert("Could not connect to the server.");
     }
   };
@@ -428,10 +691,14 @@ function Patients() {
       <Sidebar />
 
       <main className="patients-content">
+        {/* ==========================================
+            HEADER
+        ========================================== */}
+
         <div className="patients-header">
           <div>
             <h2>Children</h2>
-            <p>Manage registered children and vaccination records.</p>
+            <p>Manage registered children and their vaccination records.</p>
           </div>
 
           {hasPermission("add_patients") && (
@@ -441,6 +708,10 @@ function Patients() {
             </button>
           )}
         </div>
+
+        {/* ==========================================
+            SEARCH + FILTER
+        ========================================== */}
 
         <div className="patients-search-section">
           <div className="patients-search-bar">
@@ -460,23 +731,26 @@ function Patients() {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="All">All Status</option>
-              <option value="Not Started">Not Started</option>
               <option value="Continuing">Continuing</option>
               <option value="Completed">Completed</option>
-              <option value="Missed">Missed</option>
+              <option value="Inactive">Inactive</option>
             </select>
 
             <FaChevronDown />
           </div>
         </div>
 
+        {/* ==========================================
+            CHILD LIST
+        ========================================== */}
+
         <div className="patient-list">
           <div className="patient-list-header">
-            <h3>Registered Child</h3>
+            <h3>Registered Children</h3>
 
             <span>
               {filteredPatients.length}
-              {filteredPatients.length === 1 ? " Patient" : " Patients"}
+              {filteredPatients.length === 1 ? " Child" : " Children"}
             </span>
           </div>
 
@@ -487,134 +761,138 @@ function Patients() {
                   <tr>
                     <th>Child</th>
                     <th>Parent / Guardian</th>
+                    <th>Relationship</th>
                     <th>Age</th>
+                    <th>Height</th>
+                    <th>Weight</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {filteredPatients.map((patient) => (
-                    <tr key={patient.child_id}>
-                      <td>
-                        <div className="patient-child-info">
-                          <FaUserCircle />
-                          <span>{patient.child_name}</span>
-                        </div>
-                      </td>
+                  {filteredPatients.map((patient) => {
+                    const parentName =
+                      patient.user?.user_fullname || patient.parent_name || "—";
 
-                      <td>
-                        <span className="patient-parent">
-                          {patient.mother_name && patient.father_name
-                            ? `${patient.mother_name} / ${patient.father_name}`
-                            : patient.mother_name || patient.father_name || "—"}
-                        </span>
-                      </td>
+                    const latestGrowth = getLatestGrowth(patient);
 
-                      <td>
-                        {patient.age_months
-                          ? `${patient.age_months} months`
-                          : "—"}
-                      </td>
+                    return (
+                      <tr key={patient.child_id}>
+                        <td>
+                          <div className="patient-child-info">
+                            <FaUserCircle />
+                            <span>{patient.child_name}</span>
+                          </div>
+                        </td>
 
-                      <td>
-                        <span
-                          className={`patient-status status-${getPatientStatus(
-                            patient,
-                          )
-                            .toLowerCase()
-                            .replace(" ", "-")}`}
-                        >
-                          {getPatientStatus(patient)}
-                        </span>
-                      </td>
+                        <td>
+                          <span className="patient-parent">
+                            {parentName}
+                          </span>
+                        </td>
 
-                      <td>
-                        <div className="patient-actions">
-                          {hasPermission("view_patients") && (
-                            <FaEye
-                              className="view-action"
-                              title="View Record"
-                              onClick={() =>
-                                navigate(
-                                  `/patient_viewrecord/${patient.child_id}`,
-                                )
-                              }
-                            />
-                          )}
+                        <td>
+                          <span>{patient.relationship || "—"}</span>
+                        </td>
 
-                          {hasPermission("edit_patients") && (
-                            <FaEdit
-                              className="edit-action"
-                              title="Edit Patient"
-                              onClick={() => {
-                                setSelectedPatient(patient);
-                                setIsEditingPatient(true);
+                        <td>{calculateAge(patient.birthdate)}</td>
 
-                                setChildName(patient.child_name || "");
-                                setAge(patient.age_months || "");
-                                setBirthdate(patient.birthdate || "");
-                                setSex(patient.gender || "");
-                                setMotherName(patient.mother_name || "");
-                                setFatherName(patient.father_name || "");
-                                setAddress(patient.address || "");
+                        <td>
+                          {latestGrowth?.height_cm != null
+                            ? `${latestGrowth.height_cm} cm`
+                            : "-"}
+                        </td>
 
-                                setShowAddPatient(true);
-                              }}
-                            />
-                          )}
+                        <td>
+                          {latestGrowth?.weight_kg != null
+                            ? `${latestGrowth.weight_kg} kg`
+                            : "-"}
+                        </td>
 
-                          {hasPermission("delete_patients") && (
-                            <FaTrash
-                              className="delete-action"
-                              title="Delete Patient"
-                              onClick={async () => {
-                                const confirmed = window.confirm(
-                                  `Are you sure you want to delete ${patient.child_name}?`,
-                                );
+                        <td>
+                          <span
+                            className={`patient-status ${patient.status?.toLowerCase()}`}
+                          >
+                            {patient.status}
+                          </span>
+                        </td>
 
-                                if (!confirmed) return;
-
-                                try {
-                                  const response = await fetch(
-                                    `http://127.0.0.1:8000/api/children/${patient.child_id}`,
-                                    {
-                                      method: "DELETE",
-                                      headers: {
-                                        Accept: "application/json",
-                                      },
-                                    },
-                                  );
-
-                                  if (!response.ok) {
-                                    const data = await response.json();
-                                    console.error(data);
-                                    alert("Failed to delete patient.");
-                                    return;
-                                  }
-
-                                  setPatients((prevPatients) =>
-                                    prevPatients.filter(
-                                      (item) =>
-                                        item.child_id !== patient.child_id,
-                                    ),
-                                  );
-
-                                  alert("Patient deleted successfully!");
-                                } catch (error) {
-                                  console.error(
-                                    "Error deleting patient:",
-                                    error,
-                                  );
-                                  alert("Could not connect to the server.");
+                        <td>
+                          <div className="patient-actions">
+                            {/* VIEW */}
+                            {hasPermission("view_patients") && (
+                              <FaEye
+                                className="view-action"
+                                title="View Child"
+                                onClick={() =>
+                                  navigate(
+                                    `/patient_viewrecord/${patient.child_id}`,
+                                  )
                                 }
-                              }}
-                            />
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                              />
+                            )}
+
+                            {/* EDIT */}
+                            {hasPermission("edit_patients") && (
+                              <FaEdit
+                                className="edit-action"
+                                title="Edit Child"
+                                onClick={() => {
+                                  setSelectedPatient(patient);
+                                  setIsEditingPatient(true);
+
+                                  setChildName(patient.child_name || "");
+                                  setBirthdate(patient.birthdate || "");
+                                  setSex(patient.gender || "");
+                                  setRelationship(
+                                    patient.relationship || "",
+                                  );
+
+                                  const latestGrowth =
+                                    getLatestGrowth(patient);
+
+                                  setHeight(
+                                    latestGrowth?.height_cm != null
+                                      ? String(latestGrowth.height_cm)
+                                      : "",
+                                  );
+
+                                  setWeight(
+                                    latestGrowth?.weight_kg != null
+                                      ? String(latestGrowth.weight_kg)
+                                      : "",
+                                  );
+
+                                  setAddress(patient.address || "");
+
+                                  setShowAddPatient(true);
+                                }}
+                              />
+                            )}
+
+                            {/* DEACTIVATE / REACTIVATE */}
+                            {hasPermission("edit_patients") && (
+                              <button
+                                type="button"
+                                className="patient-status-action"
+                                title={
+                                  patient.status === "Inactive"
+                                    ? "Reactivate Child"
+                                    : "Deactivate Child"
+                                }
+                                onClick={() =>
+                                  handleToggleChildStatus(patient)
+                                }
+                              >
+                                {patient.status === "Inactive" ? "✓" : "🚫"}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -639,11 +917,13 @@ function Patients() {
           <div className="patients-sms-modal">
             <h2>Send SMS</h2>
 
-            <p>Child: {selectedPatient?.child_name || "Child's Name"}</p>
+            <p>
+              Child: {selectedPatient?.child_name || "Child's Name"}
+            </p>
 
             <p>
-              Parent:
-              {selectedPatient?.parent_name || "Parent's Name"}
+              Parent:{" "}
+              {selectedPatient?.user?.user_fullname || "Parent's Name"}
             </p>
 
             <div className="patients-send-all-container">
@@ -717,25 +997,53 @@ function Patients() {
       )}
 
       {/* ==========================================
-          ADD / EDIT PATIENT
+          ADD / EDIT CHILD
       ========================================== */}
 
       {showAddPatient && (
         <div className="patients-add-overlay">
           <div
             className={`patients-add-modal ${
-              !isEditingPatient && addPatientStep === 1
-                ? "patient-step-one-modal"
-                : "patient-step-two-modal"
+              isEditingPatient
+                ? "patient-edit-modal"
+                : addPatientStep === 1
+                  ? "patient-step-one-modal"
+                  : "patient-step-two-modal"
             }`}
           >
             {/* ==========================================
-                EDIT PATIENT
+                EDIT CHILD
             ========================================== */}
 
             {isEditingPatient ? (
               <>
-                <h2>Edit Child</h2>
+                <div className="patient-step-header">
+                  <span className="patient-step-number">✎</span>
+
+                  <div>
+                    <h2>Edit Child</h2>
+
+                    <p>Update the child's information.</p>
+                  </div>
+                </div>
+
+                <div className="patient-connected-user">
+                  <FaUserCircle />
+
+                  <div>
+                    <small>Parent / Guardian</small>
+
+                    <strong>
+                      {selectedPatient?.user?.user_fullname ||
+                        selectedPatient?.parent_name ||
+                        "—"}
+                    </strong>
+                  </div>
+                </div>
+
+                <label className="patient-form-label">
+                  Child's Name
+                </label>
 
                 <input
                   type="text"
@@ -744,12 +1052,9 @@ function Patients() {
                   onChange={(e) => setChildName(e.target.value)}
                 />
 
-                <input
-                  type="text"
-                  placeholder="Age (months)"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
-                />
+                <label className="patient-form-label">
+                  Birthdate
+                </label>
 
                 <input
                   type="date"
@@ -757,30 +1062,79 @@ function Patients() {
                   onChange={(e) => setBirthdate(e.target.value)}
                 />
 
-                <input
-                  type="text"
-                  placeholder="Sex"
+                {birthdate && (
+                  <div className="patient-selected-user">
+                    <span>Calculated Age</span>
+
+                    <strong>{calculateAge(birthdate)}</strong>
+                  </div>
+                )}
+
+                <label className="patient-form-label">
+                  Gender
+                </label>
+
+                <select
                   value={sex}
                   onChange={(e) => setSex(e.target.value)}
+                >
+                  <option value="">Select Gender</option>
+
+                  <option value="Male">Male</option>
+
+                  <option value="Female">Female</option>
+                </select>
+
+                <label className="patient-form-label">
+                  Relationship to Child
+                </label>
+
+                <select
+                  value={relationship}
+                  onChange={(e) => setRelationship(e.target.value)}
+                >
+                  <option value="">Select Relationship</option>
+
+                  <option value="Mother">Mother</option>
+
+                  <option value="Father">Father</option>
+
+                  <option value="Guardian">Guardian</option>
+                </select>
+
+                <label className="patient-form-label">
+                  Height (cm)
+                </label>
+
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="e.g. 85.5"
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value)}
                 />
+
+                <label className="patient-form-label">
+                  Weight (kg)
+                </label>
+
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="e.g. 12.5"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                />
+
+                <label className="patient-form-label">
+                  Address
+                </label>
 
                 <input
                   type="text"
-                  placeholder="Mother's Name"
-                  value={motherName}
-                  onChange={(e) => setMotherName(e.target.value)}
-                />
-
-                <input
-                  type="text"
-                  placeholder="Father's Name"
-                  value={fatherName}
-                  onChange={(e) => setFatherName(e.target.value)}
-                />
-
-                <input
-                  type="text"
-                  placeholder="Address"
+                  placeholder="Child's Address"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                 />
@@ -796,7 +1150,10 @@ function Patients() {
                     Cancel
                   </button>
 
-                  <button type="button" onClick={handleEditPatient}>
+                  <button
+                    type="button"
+                    onClick={handleEditPatient}
+                  >
                     Update Child
                   </button>
                 </div>
@@ -804,7 +1161,7 @@ function Patients() {
             ) : (
               <>
                 {/* ==========================================
-                    STEP 1
+                    STEP 1 — SELECT PARENT
                 ========================================== */}
 
                 {addPatientStep === 1 && (
@@ -813,15 +1170,17 @@ function Patients() {
                       <span className="patient-step-number">1</span>
 
                       <div>
-                        <h2>Identify Parent</h2>
+                        <h2>Select Parent / Guardian</h2>
+
                         <p>
-                          Select the registered user who is adding this child.
+                          Select the registered parent or guardian for this
+                          child.
                         </p>
                       </div>
                     </div>
 
                     <label className="patient-form-label">
-                      Registered User
+                      Registered Parent / Guardian
                     </label>
 
                     <div className="patient-user-search">
@@ -849,7 +1208,7 @@ function Patients() {
                               className={`patient-user-option ${
                                 isSelected ? "selected" : ""
                               }`}
-                              onClick={() => setSelectedUser(user)}
+                              onClick={() => handleSelectUser(user)}
                             >
                               <FaUserCircle />
 
@@ -858,6 +1217,10 @@ function Patients() {
 
                                 {getUserEmail(user) && (
                                   <small>{getUserEmail(user)}</small>
+                                )}
+
+                                {getUserPhone(user) && (
+                                  <small>{getUserPhone(user)}</small>
                                 )}
                               </div>
                             </button>
@@ -872,53 +1235,11 @@ function Patients() {
 
                     {selectedUser && (
                       <div className="patient-selected-user">
-                        <span>Selected User</span>
+                        <span>Selected Parent / Guardian</span>
 
                         <strong>{getUserName(selectedUser)}</strong>
                       </div>
                     )}
-
-                    <label className="patient-form-label">
-                      Relationship to Child
-                    </label>
-
-                    <div className="patient-relationship-options">
-                      <label
-                        className={
-                          selectedRelationship === "Mother" ? "active" : ""
-                        }
-                      >
-                        <input
-                          type="radio"
-                          name="relationship"
-                          value="Mother"
-                          checked={selectedRelationship === "Mother"}
-                          onChange={(e) =>
-                            setSelectedRelationship(e.target.value)
-                          }
-                        />
-
-                        <span>Mother</span>
-                      </label>
-
-                      <label
-                        className={
-                          selectedRelationship === "Father" ? "active" : ""
-                        }
-                      >
-                        <input
-                          type="radio"
-                          name="relationship"
-                          value="Father"
-                          checked={selectedRelationship === "Father"}
-                          onChange={(e) =>
-                            setSelectedRelationship(e.target.value)
-                          }
-                        />
-
-                        <span>Father</span>
-                      </label>
-                    </div>
 
                     <div className="patients-add-buttons">
                       <button
@@ -943,7 +1264,7 @@ function Patients() {
                 )}
 
                 {/* ==========================================
-                    STEP 2
+                    STEP 2 — CHILD INFORMATION
                 ========================================== */}
 
                 {addPatientStep === 2 && (
@@ -953,7 +1274,10 @@ function Patients() {
 
                       <div>
                         <h2>Child Information</h2>
-                        <p>Complete the information for the child.</p>
+
+                        <p>
+                          Complete the information for the child.
+                        </p>
                       </div>
                     </div>
 
@@ -961,53 +1285,15 @@ function Patients() {
                       <FaUserCircle />
 
                       <div>
-                        <small>{selectedRelationship} Account</small>
+                        <small>Parent / Guardian</small>
 
                         <strong>{getUserName(selectedUser)}</strong>
                       </div>
                     </div>
 
-                    {/* MOTHER */}
-
-                    {selectedRelationship === "Mother" ? (
-                      <div className="patient-parent-field">
-                        <label>Mother's Name</label>
-
-                        <input type="text" value={motherName} readOnly />
-                      </div>
-                    ) : (
-                      <div className="patient-parent-field">
-                        <label>Mother's Name</label>
-
-                        <input
-                          type="text"
-                          placeholder="Mother's Name"
-                          value={motherName}
-                          onChange={(e) => setMotherName(e.target.value)}
-                        />
-                      </div>
-                    )}
-
-                    {/* FATHER */}
-
-                    {selectedRelationship === "Father" ? (
-                      <div className="patient-parent-field">
-                        <label>Father's Name</label>
-
-                        <input type="text" value={fatherName} readOnly />
-                      </div>
-                    ) : (
-                      <div className="patient-parent-field">
-                        <label>Father's Name</label>
-
-                        <input
-                          type="text"
-                          placeholder="Father's Name"
-                          value={fatherName}
-                          onChange={(e) => setFatherName(e.target.value)}
-                        />
-                      </div>
-                    )}
+                    <label className="patient-form-label">
+                      Child's Name
+                    </label>
 
                     <input
                       type="text"
@@ -1016,12 +1302,9 @@ function Patients() {
                       onChange={(e) => setChildName(e.target.value)}
                     />
 
-                    <input
-                      type="text"
-                      placeholder="Age (months)"
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                    />
+                    <label className="patient-form-label">
+                      Birthdate
+                    </label>
 
                     <input
                       type="date"
@@ -1029,16 +1312,79 @@ function Patients() {
                       onChange={(e) => setBirthdate(e.target.value)}
                     />
 
-                    <input
-                      type="text"
-                      placeholder="Sex"
+                    {birthdate && (
+                      <div className="patient-selected-user">
+                        <span>Calculated Age</span>
+
+                        <strong>{calculateAge(birthdate)}</strong>
+                      </div>
+                    )}
+
+                    <label className="patient-form-label">
+                      Gender
+                    </label>
+
+                    <select
                       value={sex}
                       onChange={(e) => setSex(e.target.value)}
+                    >
+                      <option value="">Select Gender</option>
+
+                      <option value="Male">Male</option>
+
+                      <option value="Female">Female</option>
+                    </select>
+
+                    <label className="patient-form-label">
+                      Relationship to Child
+                    </label>
+
+                    <select
+                      value={relationship}
+                      onChange={(e) => setRelationship(e.target.value)}
+                    >
+                      <option value="">Select Relationship</option>
+
+                      <option value="Mother">Mother</option>
+
+                      <option value="Father">Father</option>
+
+                      <option value="Guardian">Guardian</option>
+                    </select>
+
+                    <label className="patient-form-label">
+                      Height (cm)
+                    </label>
+
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="e.g. 85.5"
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
                     />
+
+                    <label className="patient-form-label">
+                      Weight (kg)
+                    </label>
+
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="e.g. 12.5"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                    />
+
+                    <label className="patient-form-label">
+                      Address
+                    </label>
 
                     <input
                       type="text"
-                      placeholder="Address"
+                      placeholder="Child's Address"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                     />
@@ -1053,8 +1399,11 @@ function Patients() {
                         Back
                       </button>
 
-                      <button type="button" onClick={handleCompleteAddPatient}>
-                        Save Patient
+                      <button
+                        type="button"
+                        onClick={handleCompleteAddPatient}
+                      >
+                        Save Child
                       </button>
                     </div>
                   </>

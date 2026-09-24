@@ -6,10 +6,60 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\PatientRecord;
 use App\Models\Vaccine;
+use App\Models\Child;
 
 class PatientViewRecordController extends Controller
 {
-    // GET vaccination records for a child
+    // =========================================================
+    // SYNC CHILD STATUS FROM VACCINATION RECORDS
+    // =========================================================
+    private function syncChildStatus($child_id)
+    {
+        $child = Child::find($child_id);
+
+        if (!$child) {
+            return;
+        }
+
+        // If the child is manually inactive, do not override it.
+        if ($child->status === 'Inactive') {
+            return;
+        }
+
+        $records = PatientRecord::where(
+            'child_id',
+            $child_id
+        )->get();
+
+        // No vaccination records = Continuing
+        if ($records->isEmpty()) {
+            $child->status = 'Continuing';
+            $child->save();
+
+            return;
+        }
+
+        // Child is Completed ONLY when ALL vaccination
+        // records are Completed.
+        $allCompleted = $records->every(function ($record) {
+            return $record->status === 'Completed';
+        });
+
+        if ($allCompleted) {
+            $child->status = 'Completed';
+        } else {
+            // Any Continuing or Missed record means
+            // the child is still Continuing.
+            $child->status = 'Continuing';
+        }
+
+        $child->save();
+    }
+
+
+    // =========================================================
+    // GET VACCINATION RECORDS FOR A CHILD
+    // =========================================================
     public function getRecords($child_id)
     {
         $records = PatientRecord::with([
@@ -27,9 +77,11 @@ class PatientViewRecordController extends Controller
                 'child_id' => $record->child_id,
                 'appointment_id' => $record->appointment_id,
                 'vaccine_id' => $record->vaccine_id,
+
                 'vaccine' => $record->vaccine
                     ? $record->vaccine->vaccine_name
                     : 'Unknown Vaccine',
+
                 'dose' => $record->dose_number,
                 'date' => $record->date_taken,
                 'status' => $record->status,
@@ -40,11 +92,20 @@ class PatientViewRecordController extends Controller
             ];
         });
 
-        return response()->json($records);
+        return response()
+            ->json($records)
+            ->header(
+                'Cache-Control',
+                'no-store, no-cache, must-revalidate, max-age=0'
+            )
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
 
+    // =========================================================
     // ADD VACCINATION
+    // =========================================================
     public function store(Request $request)
     {
         $request->validate([
@@ -65,7 +126,9 @@ class PatientViewRecordController extends Controller
             $vaccine = Vaccine::where(
                 'vaccine_ID',
                 $request->vaccine_id
-            )->lockForUpdate()->first();
+            )
+            ->lockForUpdate()
+            ->first();
 
             if (!$vaccine) {
                 return response()->json([
@@ -73,16 +136,18 @@ class PatientViewRecordController extends Controller
                 ], 404);
             }
 
-            // Deduct one dose only when vaccination is completed
+            // Deduct stock only when vaccination is completed
             if ($request->status === 'Completed') {
 
-                if ($vaccine->stock_quantity <= 0) {
+                if ((int) $vaccine->stock_quantity <= 0) {
                     return response()->json([
                         'message' => 'This vaccine is out of stock.'
                     ], 400);
                 }
 
-                $vaccine->stock_quantity -= 1;
+                $vaccine->stock_quantity =
+                    (int) $vaccine->stock_quantity - 1;
+
                 $vaccine->save();
             }
 
@@ -99,20 +164,33 @@ class PatientViewRecordController extends Controller
                 'staff_id' => $request->staff_id,
             ]);
 
-            return response()->json([
-                'message' => 'Vaccination record added successfully',
-                'record' => $record->load([
-                    'vaccine',
-                    'appointment',
-                    'admin',
-                    'staff',
-                ])
-            ], 201);
+            // IMPORTANT:
+            // Update the child status based on ALL vaccination records.
+            $this->syncChildStatus($request->child_id);
+
+            $record->load([
+                'vaccine',
+                'appointment',
+                'admin',
+                'staff',
+            ]);
+
+            $child = Child::find($request->child_id);
+
+            return response()
+                ->json([
+                    'message' => 'Vaccination record added successfully',
+                    'record' => $record,
+                    'child_status' => $child?->status,
+                ], 201)
+                ->header('Cache-Control', 'no-store');
         });
     }
 
 
+    // =========================================================
     // UPDATE STATUS ONLY
+    // =========================================================
     public function updateStatus($patient_recordID, Request $request)
     {
         $request->validate([
@@ -128,69 +206,125 @@ class PatientViewRecordController extends Controller
 
             if (!$record) {
                 return response()->json([
-                    'message' => 'Patient record not found'
+                    'message' => 'Patient record not found.'
                 ], 404);
             }
 
             $oldStatus = $record->status;
             $newStatus = $request->status;
 
+            // Nothing to change
             if ($oldStatus === $newStatus) {
-                return response()->json([
-                    'message' => 'Status unchanged',
-                    'record' => $record
-                ]);
+
+                $this->syncChildStatus($record->child_id);
+
+                $record->refresh();
+
+                $child = Child::find($record->child_id);
+
+                return response()
+                    ->json([
+                        'message' => 'Status unchanged.',
+                        'record' => $record,
+                        'child_status' => $child?->status,
+                    ])
+                    ->header('Cache-Control', 'no-store');
             }
 
+            // Lock vaccine row while changing stock
             $vaccine = Vaccine::where(
                 'vaccine_ID',
                 $record->vaccine_id
-            )->lockForUpdate()->first();
+            )
+            ->lockForUpdate()
+            ->first();
 
             if (!$vaccine) {
                 return response()->json([
-                    'message' => 'Vaccine not found'
+                    'message' => 'Vaccine not found.'
                 ], 404);
             }
 
-            // Continuing/Missed -> Completed
+            // =====================================================
+            // CONTINUING / MISSED -> COMPLETED
+            // =====================================================
+
             if (
                 $oldStatus !== 'Completed' &&
                 $newStatus === 'Completed'
             ) {
 
-                if ($vaccine->stock_quantity <= 0) {
+                if ((int) $vaccine->stock_quantity <= 0) {
                     return response()->json([
                         'message' => 'This vaccine is out of stock.'
                     ], 400);
                 }
 
-                $vaccine->stock_quantity -= 1;
+                $vaccine->stock_quantity =
+                    (int) $vaccine->stock_quantity - 1;
+
                 $vaccine->save();
             }
 
-            // Completed -> Continuing/Missed
-            elseif (
+            // =====================================================
+            // COMPLETED -> CONTINUING / MISSED
+            // =====================================================
+
+            if (
                 $oldStatus === 'Completed' &&
                 $newStatus !== 'Completed'
             ) {
 
-                $vaccine->stock_quantity += 1;
+                $vaccine->stock_quantity =
+                    (int) $vaccine->stock_quantity + 1;
+
                 $vaccine->save();
             }
+
+            // =====================================================
+            // SAVE NEW VACCINATION STATUS
+            // =====================================================
 
             $record->status = $newStatus;
             $record->save();
 
-            return response()->json([
-                'message' => 'Status updated successfully',
-                'record' => $record
+            // =====================================================
+            // IMPORTANT:
+            // RECALCULATE CHILD STATUS
+            // =====================================================
+
+            $this->syncChildStatus($record->child_id);
+
+            $record->refresh();
+
+            $record->load([
+                'vaccine',
+                'appointment',
+                'admin',
+                'staff',
             ]);
+
+            $child = Child::find($record->child_id);
+
+            return response()
+                ->json([
+                    'message' => 'Status updated successfully.',
+                    'record' => $record,
+                    'child_status' => $child?->status,
+                ])
+                ->header(
+                    'Cache-Control',
+                    'no-store, no-cache, must-revalidate, max-age=0'
+                )
+                ->header('Pragma', 'no-cache')
+                ->header('Expires', '0');
         });
     }
 
 
-    // EDIT VACCINATION
+    // =========================================================
+    // EDIT FULL VACCINATION RECORD
+    // =========================================================
     public function update($patient_recordID, Request $request)
     {
         $request->validate([
@@ -214,98 +348,123 @@ class PatientViewRecordController extends Controller
 
             if (!$record) {
                 return response()->json([
-                    'message' => 'Patient record not found'
+                    'message' => 'Patient record not found.'
                 ], 404);
             }
 
+            $oldChildId = $record->child_id;
             $oldVaccineId = $record->vaccine_id;
             $oldStatus = $record->status;
 
             $newVaccineId = $request->vaccine_id;
             $newStatus = $request->status;
 
-            // Vaccine changed
+            // =====================================================
+            // VACCINE CHANGED
+            // =====================================================
+
             if ($oldVaccineId != $newVaccineId) {
 
-                // Return old dose if old record was completed
+                // Return old stock if old record was completed
                 if ($oldStatus === 'Completed') {
 
                     $oldVaccine = Vaccine::where(
                         'vaccine_ID',
                         $oldVaccineId
-                    )->lockForUpdate()->first();
+                    )
+                    ->lockForUpdate()
+                    ->first();
 
                     if ($oldVaccine) {
-                        $oldVaccine->stock_quantity += 1;
+                        $oldVaccine->stock_quantity =
+                            (int) $oldVaccine->stock_quantity + 1;
+
                         $oldVaccine->save();
                     }
                 }
 
-                // Deduct new vaccine if new record is completed
+                // Deduct new stock if new record is completed
                 if ($newStatus === 'Completed') {
 
                     $newVaccine = Vaccine::where(
                         'vaccine_ID',
                         $newVaccineId
-                    )->lockForUpdate()->first();
+                    )
+                    ->lockForUpdate()
+                    ->first();
 
                     if (!$newVaccine) {
                         return response()->json([
-                            'message' => 'New vaccine not found'
+                            'message' => 'New vaccine not found.'
                         ], 404);
                     }
 
-                    if ($newVaccine->stock_quantity <= 0) {
+                    if ((int) $newVaccine->stock_quantity <= 0) {
                         return response()->json([
                             'message' => 'The new vaccine is out of stock.'
                         ], 400);
                     }
 
-                    $newVaccine->stock_quantity -= 1;
+                    $newVaccine->stock_quantity =
+                        (int) $newVaccine->stock_quantity - 1;
+
                     $newVaccine->save();
                 }
             }
 
-            // Same vaccine, status changed
+            // =====================================================
+            // SAME VACCINE, STATUS CHANGED
+            // =====================================================
+
             else {
 
                 $vaccine = Vaccine::where(
                     'vaccine_ID',
                     $oldVaccineId
-                )->lockForUpdate()->first();
+                )
+                ->lockForUpdate()
+                ->first();
 
                 if (!$vaccine) {
                     return response()->json([
-                        'message' => 'Vaccine not found'
+                        'message' => 'Vaccine not found.'
                     ], 404);
                 }
 
-                // Continuing/Missed -> Completed
+                // Continuing / Missed -> Completed
                 if (
                     $oldStatus !== 'Completed' &&
                     $newStatus === 'Completed'
                 ) {
 
-                    if ($vaccine->stock_quantity <= 0) {
+                    if ((int) $vaccine->stock_quantity <= 0) {
                         return response()->json([
                             'message' => 'This vaccine is out of stock.'
                         ], 400);
                     }
 
-                    $vaccine->stock_quantity -= 1;
+                    $vaccine->stock_quantity =
+                        (int) $vaccine->stock_quantity - 1;
+
                     $vaccine->save();
                 }
 
-                // Completed -> Continuing/Missed
+                // Completed -> Continuing / Missed
                 elseif (
                     $oldStatus === 'Completed' &&
                     $newStatus !== 'Completed'
                 ) {
 
-                    $vaccine->stock_quantity += 1;
+                    $vaccine->stock_quantity =
+                        (int) $vaccine->stock_quantity + 1;
+
                     $vaccine->save();
                 }
             }
+
+            // =====================================================
+            // SAVE RECORD
+            // =====================================================
 
             $record->update([
                 'appointment_id' => $request->appointment_id,
@@ -319,20 +478,37 @@ class PatientViewRecordController extends Controller
                 'staff_id' => $request->staff_id,
             ]);
 
-            return response()->json([
-                'message' => 'Vaccination record updated successfully',
-                'record' => $record->load([
-                    'vaccine',
-                    'appointment',
-                    'admin',
-                    'staff',
-                ])
+            // =====================================================
+            // RECALCULATE CHILD STATUS
+            // =====================================================
+
+            $this->syncChildStatus($oldChildId);
+
+            $record->refresh();
+
+            $record->load([
+                'vaccine',
+                'appointment',
+                'admin',
+                'staff',
             ]);
+
+            $child = Child::find($oldChildId);
+
+            return response()
+                ->json([
+                    'message' => 'Vaccination record updated successfully.',
+                    'record' => $record,
+                    'child_status' => $child?->status,
+                ])
+                ->header('Cache-Control', 'no-store');
         });
     }
 
 
+    // =========================================================
     // DELETE VACCINATION RECORD
+    // =========================================================
     public function destroy($patient_recordID)
     {
         return DB::transaction(function () use ($patient_recordID) {
@@ -341,9 +517,11 @@ class PatientViewRecordController extends Controller
 
             if (!$record) {
                 return response()->json([
-                    'message' => 'Patient record not found'
+                    'message' => 'Patient record not found.'
                 ], 404);
             }
+
+            $childId = $record->child_id;
 
             // Return stock if completed
             if ($record->status === 'Completed') {
@@ -351,19 +529,35 @@ class PatientViewRecordController extends Controller
                 $vaccine = Vaccine::where(
                     'vaccine_ID',
                     $record->vaccine_id
-                )->lockForUpdate()->first();
+                )
+                ->lockForUpdate()
+                ->first();
 
                 if ($vaccine) {
-                    $vaccine->stock_quantity += 1;
+
+                    $vaccine->stock_quantity =
+                        (int) $vaccine->stock_quantity + 1;
+
                     $vaccine->save();
                 }
             }
 
             $record->delete();
 
-            return response()->json([
-                'message' => 'Vaccination record deleted successfully'
-            ]);
+            // Recalculate child status after deletion.
+            // If there are remaining records and all are completed,
+            // child becomes Completed.
+            // Otherwise child becomes Continuing.
+            $this->syncChildStatus($childId);
+
+            $child = Child::find($childId);
+
+            return response()
+                ->json([
+                    'message' => 'Vaccination record deleted successfully.',
+                    'child_status' => $child?->status,
+                ])
+                ->header('Cache-Control', 'no-store');
         });
     }
 }

@@ -17,6 +17,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PatientViewRecordController;
 use App\Http\Controllers\StaffPermissionController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\GrowthRecordController;
 
 Route::get('/children', [ChildController::class, 'index']);
 Route::get('/children/{id}', [ChildController::class, 'show']);
@@ -28,7 +29,8 @@ Route::get('/users', [UserController::class, 'index']);
 Route::get('/users/{id}', [UserController::class, 'show']);
 Route::post('/users', [UserController::class, 'store']);
 Route::put('/users/{id}', [UserController::class, 'update']);
-Route::delete('/users/{id}', [UserController::class, 'destroy']);   
+Route::delete('/users/{id}', [UserController::class, 'destroy']);  
+Route::post('/users/login',[UserController::class,'login']);
 
 Route::get('/admins', [AdminController::class, 'index']);
 Route::post('/admins', [AdminController::class, 'store']);
@@ -77,6 +79,12 @@ Route::put('/staff/{id}', [StaffController::class, 'update']);
 Route::delete('/staff/{id}', [StaffController::class, 'destroy']);
 Route::put('/staff/{id}/password', [StaffController::class, 'resetPassword']);
 Route::put('/staff/{id}/status', [StaffController::class, 'updateStatus']);
+
+Route::get('/growth-records/{child_id}', [GrowthRecordController::class, 'index']);
+Route::post('/growth-records', [GrowthRecordController::class, 'store']);
+Route::get('/growth-record/{id}', [GrowthRecordController::class, 'show']);
+Route::put('/growth-record/{id}', [GrowthRecordController::class, 'update']);
+Route::delete('/growth-record/{id}', [GrowthRecordController::class, 'destroy']);
 
 Route::get(
     '/staff/{staffId}/permissions',
