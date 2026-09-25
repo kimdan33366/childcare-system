@@ -534,3 +534,102 @@
     min-width: 0;
     overflow-x: hidden;
 }
+/* =========================
+   STAFF ACTION ICONS
+   ========================= */
+
+.action-icons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.action-icon {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.action-icon:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* Edit */
+.edit-icon {
+  background: #eaf3ff;
+  color: #2e86de;
+}
+
+.edit-icon:hover {
+  background: #2e86de;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(46, 134, 222, 0.2);
+}
+
+/* Manage Permissions */
+.permission-icon {
+  background: #f0ebff;
+  color: #7b61ff;
+}
+
+.permission-icon:hover {
+  background: #7b61ff;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(123, 97, 255, 0.2);
+}
+
+/* Reset Password */
+.password-icon {
+  background: #fff5df;
+  color: #e6a23c;
+}
+
+.password-icon:hover {
+  background: #e6a23c;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(230, 162, 60, 0.2);
+}
+
+/* Deactivate */
+.deactivate-icon {
+  background: #fff0f0;
+  color: #e05252;
+}
+
+.deactivate-icon:hover:not(:disabled) {
+  background: #e05252;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(224, 82, 82, 0.2);
+}
+
+/* Delete */
+.delete-icon {
+  background: #ffeaea;
+  color: #d93636;
+}
+
+.delete-icon:hover {
+  background: #d93636;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(217, 54, 54, 0.2);
+}
+
+/* Disabled Deactivate Button */
+.action-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}

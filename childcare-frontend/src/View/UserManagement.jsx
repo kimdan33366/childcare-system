@@ -1,9 +1,15 @@
 import { useState, useEffect } from "react";
 import { FiEye, FiEdit2, FiKey } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import "../css/UserManagement.css";
 
 function UserManagement() {
+  // ==============================
+  // NAVIGATION
+  // ==============================
+  const navigate = useNavigate();
+
   // ==============================
   // CURRENT USER / PERMISSIONS
   // ==============================
@@ -13,7 +19,9 @@ function UserManagement() {
 
   const hasPermission = (permission) => {
     return (
-      isAdmin || permissions.includes("all") || permissions.includes(permission)
+      isAdmin ||
+      permissions.includes("all") ||
+      permissions.includes(permission)
     );
   };
 
@@ -53,6 +61,7 @@ function UserManagement() {
 
   // ==============================
   // SELECTED USER
+  // Used for Activate / Deactivate
   // ==============================
   const [selectedUser, setSelectedUser] = useState(null);
 
@@ -208,28 +217,25 @@ function UserManagement() {
   // ==============================
   // CREATE USER + FIRST CHILD
   // ==============================
- 
-const handleCreateUser = async () => {
-  if (!hasPermission("add_users")) {
-    alert("You do not have permission to add users.");
-    return;
-  }
+  const handleCreateUser = async () => {
+    if (!hasPermission("add_users")) {
+      alert("You do not have permission to add users.");
+      return;
+    }
 
-  if (
-    !newUser.childName ||
-    !newUser.childBirthdate ||
-    !newUser.childGender ||
-    !newUser.childAddress ||
-    !newUser.relationship
-  ) {
-    alert("Please fill in all required child information.");
-    return;
-  }
+    if (
+      !newUser.childName ||
+      !newUser.childBirthdate ||
+      !newUser.childGender ||
+      !newUser.childAddress ||
+      !newUser.relationship
+    ) {
+      alert("Please fill in all required child information.");
+      return;
+    }
 
-  try {
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/users",
-      {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -251,46 +257,42 @@ const handleCreateUser = async () => {
           child_address: newUser.childAddress,
           relationship: newUser.relationship,
         }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "Failed to create parent account.");
+        return;
       }
-    );
 
-    const data = await response.json();
+      setNewUser({
+        name: "",
+        email: "",
+        mobile: "",
+        address: "",
+        password: "",
+        confirmPassword: "",
+        status: "Active",
 
-    if (!response.ok) {
-      alert(data.message || "Failed to create parent account.");
-      return;
+        childName: "",
+        childBirthdate: "",
+        childGender: "",
+        childAddress: "",
+        relationship: "",
+      });
+
+      setAddUserStep(1);
+      setShowAddUserModal(false);
+
+      fetchUsers();
+
+      alert("Parent and first child created successfully.");
+    } catch (error) {
+      console.error("Error creating user:", error);
+      alert("Unable to connect to the server.");
     }
-
-    // Reset form
-    setNewUser({
-      name: "",
-      email: "",
-      mobile: "",
-      address: "",
-      password: "",
-      confirmPassword: "",
-      status: "Active",
-
-      childName: "",
-      childBirthdate: "",
-      childGender: "",
-      childAddress: "",
-      relationship: "",
-    });
-
-    setAddUserStep(1);
-    setShowAddUserModal(false);
-
-    fetchUsers();
-
-    alert("Parent and first child created successfully.");
-  } catch (error) {
-    console.error("Error creating user:", error);
-    alert("Unable to connect to the server.");
-  }
-};
-
-
+  };
 
   // ==============================
   // EDIT USER
@@ -328,7 +330,7 @@ const handleCreateUser = async () => {
             mobile_number: editUserForm.mobile,
             status: editUserForm.status,
           }),
-        },
+        }
       );
 
       const data = await response.json();
@@ -411,7 +413,7 @@ const handleCreateUser = async () => {
   };
 
   // ==============================
-  // VIEW USER
+  // VIEW USER / PARENT PROFILE
   // ==============================
   const openViewUser = (user) => {
     if (!hasPermission("view_users")) {
@@ -419,10 +421,10 @@ const handleCreateUser = async () => {
       return;
     }
 
-    setSelectedUser(user);
-
     setOpenActionMenu(null);
     setActionMenuPosition(null);
+
+    navigate(`/parent-profile/${user.id}`);
   };
 
   // ==============================
@@ -492,7 +494,7 @@ const handleCreateUser = async () => {
             password: resetPasswordForm.password,
             status: resetPasswordUser.status,
           }),
-        },
+        }
       );
 
       const data = await response.json();
@@ -568,7 +570,7 @@ const handleCreateUser = async () => {
             mobile_number: selectedUser.mobile,
             status: newStatus,
           }),
-        },
+        }
       );
 
       const data = await response.json();
@@ -585,7 +587,7 @@ const handleCreateUser = async () => {
       alert(
         newStatus === "Active"
           ? "User activated successfully."
-          : "User deactivated successfully.",
+          : "User deactivated successfully."
       );
     } catch (error) {
       console.error("Error changing user status:", error);
@@ -716,13 +718,13 @@ const handleCreateUser = async () => {
 
                     <td>
                       <div className="user-action-wrapper">
-                        {/* VIEW USER */}
+                        {/* VIEW USER / PARENT PROFILE */}
                         {hasPermission("view_users") && (
                           <button
                             type="button"
                             className="user-action-icon"
                             onClick={() => openViewUser(user)}
-                            title="View User"
+                            title="View Parent"
                           >
                             <FiEye size={17} />
                           </button>
@@ -867,9 +869,7 @@ const handleCreateUser = async () => {
                 </span>
               </div>
 
-              {/* ==============================
-                    STEP 1
-                ============================== */}
+              {/* STEP 1 */}
               {addUserStep === 1 && (
                 <div className="user-form">
                   <div className="user-form-group">
@@ -989,9 +989,7 @@ const handleCreateUser = async () => {
                 </div>
               )}
 
-              {/* ==============================
-                    STEP 2
-                ============================== */}
+              {/* STEP 2 */}
               {addUserStep === 2 && (
                 <div className="user-form">
                   <div className="user-form-group">
@@ -1137,102 +1135,6 @@ const handleCreateUser = async () => {
             </div>
           </div>
         )}
-
-        {/* ==============================
-            VIEW USER MODAL
-        ============================== */}
-        {selectedUser &&
-          !selectedUser.action &&
-          hasPermission("view_users") && (
-            <div className="user-modal-overlay">
-              <div className="user-modal">
-                <div className="user-modal-header">
-                  <div>
-                    <h2>User Details</h2>
-                    <p>View parent account information.</p>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="user-modal-close"
-                    onClick={() => setSelectedUser(null)}
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <div className="user-details">
-                  <div className="user-details-top">
-                    <div>
-                      <h3>{selectedUser.name}</h3>
-
-                      <span
-                        className={`user-status ${(
-                          selectedUser.status || ""
-                        ).toLowerCase()}`}
-                      >
-                        {selectedUser.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="user-details-grid">
-                    <div className="user-detail-item">
-                      <span>Email</span>
-                      <strong>{selectedUser.email || "Not provided"}</strong>
-                    </div>
-
-                    <div className="user-detail-item">
-                      <span>Mobile Number</span>
-                      <strong>{selectedUser.mobile}</strong>
-                    </div>
-
-                    <div className="user-detail-item">
-                      <span>Address</span>
-                      <strong>{selectedUser.address || "Not provided"}</strong>
-                    </div>
-                  </div>
-
-                  <div className="registered-children">
-                    <h3>Registered Children</h3>
-
-                    <div className="children-list">
-                      {selectedUser.children &&
-                      selectedUser.children.length > 0 ? (
-                        selectedUser.children.map((child) => (
-                          <div className="child-item" key={child.child_id}>
-                            <strong>{child.child_name}</strong>
-
-                            <div
-                              style={{
-                                fontSize: "12px",
-                                color: "#6b7280",
-                                marginTop: "3px",
-                              }}
-                            >
-                              {child.gender || "—"} • {child.status || "—"}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="child-item">No registered children</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="user-modal-actions">
-                  <button
-                    type="button"
-                    className="user-cancel-button"
-                    onClick={() => setSelectedUser(null)}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
         {/* ==============================
             EDIT USER MODAL
@@ -1415,7 +1317,11 @@ const handleCreateUser = async () => {
                 <div className="user-form-group">
                   <label>User</label>
 
-                  <input type="text" value={resetPasswordUser.name} readOnly />
+                  <input
+                    type="text"
+                    value={resetPasswordUser.name}
+                    readOnly
+                  />
                 </div>
 
                 <div className="user-form-group">
@@ -1508,7 +1414,10 @@ const handleCreateUser = async () => {
                   <strong>{selectedUser.name}</strong>
                 </div>
 
-                <div className="user-detail-item" style={{ marginTop: "15px" }}>
+                <div
+                  className="user-detail-item"
+                  style={{ marginTop: "15px" }}
+                >
                   <span>Current Status</span>
 
                   <span

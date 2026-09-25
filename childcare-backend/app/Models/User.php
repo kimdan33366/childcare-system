@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Child;
 
 class User extends Authenticatable
 {
@@ -34,7 +35,6 @@ class User extends Authenticatable
     {
         return [
             'date_of_birth' => 'date',
-        
         ];
     }
 

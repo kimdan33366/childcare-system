@@ -10,9 +10,9 @@ class VaccineController extends Controller
     // GET /api/vaccines
     public function index()
     {
-        return response()->json(
-            Vaccine::orderBy('vaccine_name')->get()
-        );
+        $vaccines = Vaccine::orderBy('vaccine_name')->get();
+
+        return response()->json($vaccines);
     }
 
     // GET /api/vaccines/{id}
@@ -32,28 +32,24 @@ class VaccineController extends Controller
     // POST /api/vaccines
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'vaccine_name' => 'required|string|max:255',
             'date_stored' => 'required|date',
             'expiration_date' => 'required|date|after_or_equal:date_stored',
             'stock_quantity' => 'required|integer|min:0',
-            'status' => 'nullable|in:Available,Out of Stock,Expired',
         ]);
 
-        $status = $this->calculateStatus(
-            $request->expiration_date,
-            $request->stock_quantity
+        $validated['status'] = $this->calculateStatus(
+            $validated['expiration_date'],
+            $validated['stock_quantity']
         );
 
-        $vaccine = Vaccine::create([
-            'vaccine_name' => $request->vaccine_name,
-            'date_stored' => $request->date_stored,
-            'expiration_date' => $request->expiration_date,
-            'stock_quantity' => $request->stock_quantity,
-            'status' => $status,
-        ]);
+        $vaccine = Vaccine::create($validated);
 
-        return response()->json($vaccine, 201);
+        return response()->json([
+            'message' => 'Vaccine added successfully.',
+            'vaccine' => $vaccine
+        ], 201);
     }
 
     // PUT /api/vaccines/{id}
@@ -67,27 +63,24 @@ class VaccineController extends Controller
             ], 404);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'vaccine_name' => 'required|string|max:255',
             'date_stored' => 'required|date',
             'expiration_date' => 'required|date|after_or_equal:date_stored',
             'stock_quantity' => 'required|integer|min:0',
         ]);
 
-        $status = $this->calculateStatus(
-            $request->expiration_date,
-            $request->stock_quantity
+        $validated['status'] = $this->calculateStatus(
+            $validated['expiration_date'],
+            $validated['stock_quantity']
         );
 
-        $vaccine->update([
-            'vaccine_name' => $request->vaccine_name,
-            'date_stored' => $request->date_stored,
-            'expiration_date' => $request->expiration_date,
-            'stock_quantity' => $request->stock_quantity,
-            'status' => $status,
-        ]);
+        $vaccine->update($validated);
 
-        return response()->json($vaccine);
+        return response()->json([
+            'message' => 'Vaccine updated successfully.',
+            'vaccine' => $vaccine->fresh()
+        ]);
     }
 
     // DELETE /api/vaccines/{id}
@@ -109,6 +102,7 @@ class VaccineController extends Controller
     // Automatically determine vaccine status
     private function calculateStatus($expirationDate, $stockQuantity)
     {
+        // Expired vaccines take priority over stock status.
         if (strtotime($expirationDate) < strtotime(date('Y-m-d'))) {
             return 'Expired';
         }

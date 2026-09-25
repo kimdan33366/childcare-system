@@ -5,8 +5,8 @@ import logo1 from "../images/logo1.png";
 import { registerUser } from "../Controller/RegisterController";
 
 import {
-  FaEye,  
-  FaEyeSlash
+  FaEye,
+  FaEyeSlash,
 } from "react-icons/fa";
 
 function Register() {
@@ -14,28 +14,30 @@ function Register() {
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
   const handleRegister = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const result = await registerUser(
-    username,
-    email,
-    password,
-    role
-  );
+    if (!username.trim() || !email.trim() || !password) {
+      alert("Please fill in all fields.");
+      return;
+    }
 
-  if (result.success) {
-    alert("Registration successful!");
-    navigate("/login");
-  } else {
-    alert(result.message);
-  }
-};
+    const result = await registerUser(
+      username,
+      email,
+      password
+    );
+
+    if (result.success) {
+      alert("Registration successful!");
+      navigate("/login");
+    } else {
+      alert(result.message);
+    }
+  };
 
   return (
     <div className="login-page">
@@ -55,16 +57,16 @@ function Register() {
         </div>
 
 
-        {/* ================= RIGHT SIDE - LOGIN ================= */}
+        {/* ================= RIGHT SIDE - REGISTER ================= */}
 
         <div className="login-right">
 
           <div className="login-content">
 
-           <div className="brand">
-  <h1>childcare</h1>
-  <h2>Register</h2>
-</div>
+            <div className="brand">
+              <h1>childcare</h1>
+              <h2>Register</h2>
+            </div>
 
             <form onSubmit={handleRegister}>
 
@@ -77,7 +79,11 @@ function Register() {
                 placeholder="Enter username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                required
               />
+
+
+              {/* EMAIL */}
 
               <label>Email</label>
 
@@ -86,8 +92,10 @@ function Register() {
                 placeholder="Enter email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
               />
-              
+
+
               {/* PASSWORD */}
 
               <label>Password</label>
@@ -99,6 +107,7 @@ function Register() {
                   placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
 
                 <span
@@ -111,37 +120,23 @@ function Register() {
               </div>
 
 
-              {/* ROLE */}
+              {/* LOGIN LINK */}
 
-              <label>Role</label>
-
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
+              <div
+                className="account-message"
+                onClick={() => navigate("/login")}
               >
-                <option value="">Select Role</option>
-                <option value="admin">Admin</option>
-                <option value="teacher">Staff</option>
-              </select>
+                Already have an account?
+              </div>
 
 
-             {/* ACCOUNT MESSAGE */}
-
-<div className="account-message"
-onClick={() => navigate("/login")}
-
->
-  Already have an account?
-</div>
-
-
-              {/* LOGIN BUTTON */}
+              {/* REGISTER BUTTON */}
 
               <button
                 className="login-btn"
                 type="submit"
               >
-                LOGIN
+                REGISTER
               </button>
 
             </form>

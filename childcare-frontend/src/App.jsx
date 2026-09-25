@@ -16,6 +16,7 @@ import Register from "./View/Register";
 import ForgotPassword from "./View/forgotpassword";
 import UserManagement from "./View/UserManagement";
 import RoleBaseAccess from "./View/RoleBaseAccess";
+import ParentProfile from "./View/ParentProfile";
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/user-management" element={<UserManagement />} />
       <Route path="/role-base-access" element={<RoleBaseAccess />} />
+      <Route path="/parent-profile/:userId" element={<ParentProfile />} />
     </Routes>
   );
 }

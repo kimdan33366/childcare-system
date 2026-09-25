@@ -1,11 +1,15 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
+import {
+  FaEdit,
+  FaUserShield,
+  FaKey,
+  FaUserSlash,
+  FaTrash,
+} from "react-icons/fa";
 import Sidebar from "./Sidebar";
 import "../css/RoleBaseAccess.css";
 
 function RoleBaseAccess() {
-  const [showActions, setShowActions] = useState(null);
-  const actionButtonRefs = useRef({});
-
   const [showPermissions, setShowPermissions] = useState(false);
   const [showAddStaff, setShowAddStaff] = useState(false);
   const [showEditStaff, setShowEditStaff] = useState(false);
@@ -39,6 +43,159 @@ function RoleBaseAccess() {
   });
 
   // =========================================================
+  // STAFF FORM
+  // =========================================================
+
+  const [staffForm, setStaffForm] = useState({
+    staff_name: "",
+    staff_email: "",
+    staff_phone: "",
+    staff_password: "",
+    confirm_password: "",
+    status: "Active",
+  });
+
+  // =========================================================
+  // PERMISSION DEFINITIONS
+  // =========================================================
+
+  const permissionSections = [
+    {
+      key: "dashboard",
+      title: "Dashboard",
+      permissions: [
+        {
+          key: "view_dashboard",
+          label: "View Dashboard",
+        },
+      ],
+    },
+
+    {
+      key: "children",
+      title: "Children",
+      permissions: [
+        {
+          key: "view_patients",
+          label: "View Children",
+        },
+        {
+          key: "add_patients",
+          label: "Add Children",
+        },
+        {
+          key: "edit_patients",
+          label: "Edit Children",
+        },
+      ],
+    },
+
+    {
+      key: "appointments",
+      title: "Appointments",
+      permissions: [
+        {
+          key: "view_appointments",
+          label: "View Appointments",
+        },
+        {
+          key: "add_appointments",
+          label: "Add Appointments",
+        },
+        {
+          key: "edit_appointments",
+          label: "Edit Appointments",
+        },
+      ],
+    },
+
+    {
+      key: "vaccines",
+      title: "Vaccines",
+      permissions: [
+        {
+          key: "view_vaccines",
+          label: "View Vaccines",
+        },
+        {
+          key: "add_vaccines",
+          label: "Add Vaccines",
+        },
+        {
+          key: "edit_vaccines",
+          label: "Edit Vaccines",
+        },
+      ],
+    },
+
+    {
+      key: "users",
+      title: "Users",
+      permissions: [
+        {
+          key: "view_users",
+          label: "View Users",
+        },
+        {
+          key: "add_users",
+          label: "Add Users",
+        },
+        {
+          key: "edit_users",
+          label: "Edit Users",
+        },
+        {
+          key: "delete_users",
+          label: "Delete Users",
+        },
+      ],
+    },
+
+    {
+      key: "reports",
+      title: "Reports",
+      permissions: [
+        {
+          key: "view_reports",
+          label: "View Reports",
+        },
+        {
+          key: "generate_reports",
+          label: "Generate Reports",
+        },
+        {
+          key: "export_reports",
+          label: "Export Reports",
+        },
+      ],
+    },
+
+    {
+      key: "notifications",
+      title: "Notifications",
+      permissions: [
+        {
+          key: "view_notifications",
+          label: "View Notifications",
+        },
+        {
+          key: "send_notifications",
+          label: "Send Notifications",
+        },
+        {
+          key: "delete_notifications",
+          label: "Delete Notifications",
+        },
+      ],
+    },
+  ];
+
+  const availablePermissionCount = permissionSections.reduce(
+    (total, section) => total + section.permissions.length,
+    0,
+  );
+
+  // =========================================================
   // PERMISSIONS
   // =========================================================
 
@@ -50,66 +207,6 @@ function RoleBaseAccess() {
         }
 
         return [...previousPermissions, permission];
-      }
-
-      const permissionGroups = {
-        patients: [
-          "view_patients",
-          "add_patients",
-          "edit_patients",
-          "delete_patients",
-        ],
-
-        appointments: [
-          "view_appointments",
-          "add_appointments",
-          "edit_appointments",
-          "delete_appointments",
-        ],
-
-        vaccines: [
-          "view_vaccines",
-          "add_vaccines",
-          "edit_vaccines",
-          "delete_vaccines",
-        ],
-
-        users: [
-          "view_users",
-          "add_users",
-          "edit_users",
-          "delete_users",
-        ],
-
-        notifications: [
-          "view_notifications",
-          "send_notifications",
-        ],
-      };
-
-      const group = Object.values(permissionGroups).find(
-        (permissionsInGroup) =>
-          permissionsInGroup.includes(permission),
-      );
-
-      if (group) {
-        const remainingPermissions = previousPermissions.filter(
-          (item) => item !== permission,
-        );
-
-        const hasAnotherPermission = remainingPermissions.some(
-          (item) => group.includes(item),
-        );
-
-        if (!hasAnotherPermission) {
-          alert(
-            "At least one permission must remain enabled for this section.",
-          );
-
-          return previousPermissions;
-        }
-
-        return remainingPermissions;
       }
 
       return previousPermissions.filter(
@@ -124,7 +221,6 @@ function RoleBaseAccess() {
 
   const handleManagePermissions = async (staff) => {
     setSelectedStaff(staff);
-    setShowActions(null);
     setPermissions([]);
 
     try {
@@ -149,7 +245,11 @@ function RoleBaseAccess() {
       setShowPermissions(true);
     } catch (error) {
       console.error("Error loading permissions:", error);
-      alert(error.message || "Failed to load staff permissions.");
+
+      alert(
+        error.message ||
+          "Failed to load staff permissions.",
+      );
     }
   };
 
@@ -183,25 +283,21 @@ function RoleBaseAccess() {
       }
 
       alert("Permissions saved successfully.");
+
       setShowPermissions(false);
     } catch (error) {
       console.error("Error saving permissions:", error);
-      alert(error.message || "Failed to save permissions.");
+
+      alert(
+        error.message ||
+          "Failed to save permissions.",
+      );
     }
   };
 
   // =========================================================
-  // STAFF FORM
+  // STAFF FORM CHANGE
   // =========================================================
-
-  const [staffForm, setStaffForm] = useState({
-    staff_name: "",
-    staff_email: "",
-    staff_phone: "",
-    staff_password: "",
-    confirm_password: "",
-    status: "Active",
-  });
 
   const handleStaffFormChange = (e) => {
     const { name, value } = e.target;
@@ -226,7 +322,10 @@ function RoleBaseAccess() {
       return;
     }
 
-    if (staffForm.staff_password !== staffForm.confirm_password) {
+    if (
+      staffForm.staff_password !==
+      staffForm.confirm_password
+    ) {
       alert("Passwords do not match.");
       return;
     }
@@ -254,13 +353,21 @@ function RoleBaseAccess() {
 
       if (!response.ok) {
         console.error("Add staff error:", data);
+
         alert(
-          data.message || "Failed to create staff account.",
+          data.message ||
+            "Failed to create staff account.",
         );
+
         return;
       }
 
-      setStaffList((previous) => [...previous, data]);
+      const newStaff = data.staff || data;
+
+      setStaffList((previous) => [
+        ...previous,
+        newStaff,
+      ]);
 
       setStaffForm({
         staff_name: "",
@@ -276,6 +383,7 @@ function RoleBaseAccess() {
       alert("Staff account created successfully.");
     } catch (error) {
       console.error("Add staff error:", error);
+
       alert("Unable to connect to the server.");
     }
   };
@@ -285,7 +393,6 @@ function RoleBaseAccess() {
   // =========================================================
 
   const handleOpenEditStaff = (staff) => {
-    setShowActions(null);
     setSelectedStaff(staff);
 
     setEditStaffForm({
@@ -367,10 +474,16 @@ function RoleBaseAccess() {
 
       setShowEditStaff(false);
 
-      alert("Staff information updated successfully.");
+      alert(
+        "Staff information updated successfully.",
+      );
     } catch (error) {
       console.error("Edit staff error:", error);
-      alert(error.message || "Failed to update staff.");
+
+      alert(
+        error.message ||
+          "Failed to update staff.",
+      );
     }
   };
 
@@ -379,7 +492,6 @@ function RoleBaseAccess() {
   // =========================================================
 
   const handleOpenResetPassword = (staff) => {
-    setShowActions(null);
     setSelectedStaff(staff);
 
     setResetPasswordForm({
@@ -440,7 +552,8 @@ function RoleBaseAccess() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to reset password.",
+          data.message ||
+            "Failed to reset password.",
         );
       }
 
@@ -453,8 +566,15 @@ function RoleBaseAccess() {
 
       alert("Password reset successfully.");
     } catch (error) {
-      console.error("Reset password error:", error);
-      alert(error.message || "Failed to reset password.");
+      console.error(
+        "Reset password error:",
+        error,
+      );
+
+      alert(
+        error.message ||
+          "Failed to reset password.",
+      );
     }
   };
 
@@ -463,7 +583,6 @@ function RoleBaseAccess() {
   // =========================================================
 
   const handleOpenDeactivate = (staff) => {
-    setShowActions(null);
     setSelectedStaff(staff);
     setShowDeactivate(true);
   };
@@ -493,7 +612,8 @@ function RoleBaseAccess() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to deactivate staff.",
+          data.message ||
+            "Failed to deactivate staff.",
         );
       }
 
@@ -515,10 +635,19 @@ function RoleBaseAccess() {
 
       setShowDeactivate(false);
 
-      alert("Staff member has been deactivated.");
+      alert(
+        "Staff member has been deactivated.",
+      );
     } catch (error) {
-      console.error("Deactivate staff error:", error);
-      alert(error.message || "Failed to deactivate staff.");
+      console.error(
+        "Deactivate staff error:",
+        error,
+      );
+
+      alert(
+        error.message ||
+          "Failed to deactivate staff.",
+      );
     }
   };
 
@@ -527,7 +656,6 @@ function RoleBaseAccess() {
   // =========================================================
 
   const handleOpenDeleteStaff = (staff) => {
-    setShowActions(null);
     setSelectedStaff(staff);
     setShowDeleteStaff(true);
   };
@@ -553,24 +681,35 @@ function RoleBaseAccess() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Failed to delete staff.",
+          data.message ||
+            "Failed to delete staff.",
         );
       }
 
       setStaffList((previous) =>
         previous.filter(
           (staff) =>
-            staff.staff_id !== selectedStaff.staff_id,
+            staff.staff_id !==
+            selectedStaff.staff_id,
         ),
       );
 
       setShowDeleteStaff(false);
       setSelectedStaff(null);
 
-      alert("Staff account deleted successfully.");
+      alert(
+        "Staff account deleted successfully.",
+      );
     } catch (error) {
-      console.error("Delete staff error:", error);
-      alert(error.message || "Failed to delete staff.");
+      console.error(
+        "Delete staff error:",
+        error,
+      );
+
+      alert(
+        error.message ||
+          "Failed to delete staff.",
+      );
     }
   };
 
@@ -579,43 +718,73 @@ function RoleBaseAccess() {
   // =========================================================
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/staff")
-      .then((response) => {
+    const loadStaff = async () => {
+      try {
+        const response = await fetch(
+          "http://127.0.0.1:8000/api/staff",
+          {
+            headers: {
+              Accept: "application/json",
+            },
+          },
+        );
+
         if (!response.ok) {
-          throw new Error("Failed to fetch staff");
+          throw new Error(
+            "Failed to fetch staff.",
+          );
         }
 
-        return response.json();
-      })
-      .then((data) => {
-        setStaffList(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching staff:", error);
-      })
-      .finally(() => {
+        const data = await response.json();
+
+        setStaffList(
+          Array.isArray(data)
+            ? data
+            : data.staff || [],
+        );
+      } catch (error) {
+        console.error(
+          "Error fetching staff:",
+          error,
+        );
+      } finally {
         setLoadingStaff(false);
-      });
+      }
+    };
+
+    loadStaff();
   }, []);
 
   // =========================================================
   // SEARCH + FILTER
   // =========================================================
 
-  const filteredStaff = staffList.filter((staff) => {
-    const search = searchTerm.toLowerCase();
+  const filteredStaff = staffList.filter(
+    (staff) => {
+      const search =
+        searchTerm.toLowerCase();
 
-    const matchesSearch =
-      staff.staff_name?.toLowerCase().includes(search) ||
-      staff.staff_email?.toLowerCase().includes(search) ||
-      staff.staff_phone?.toLowerCase().includes(search);
+      const matchesSearch =
+        staff.staff_name
+          ?.toLowerCase()
+          .includes(search) ||
+        staff.staff_email
+          ?.toLowerCase()
+          .includes(search) ||
+        staff.staff_phone
+          ?.toLowerCase()
+          .includes(search);
 
-    const matchesStatus =
-      statusFilter === "All Status" ||
-      staff.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "All Status" ||
+        staff.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
+      return (
+        matchesSearch &&
+        matchesStatus
+      );
+    },
+  );
 
   // =========================================================
   // SUMMARY COUNTS
@@ -624,11 +793,13 @@ function RoleBaseAccess() {
   const totalStaff = staffList.length;
 
   const activeStaff = staffList.filter(
-    (staff) => staff.status === "Active",
+    (staff) =>
+      staff.status === "Active",
   ).length;
 
   const inactiveStaff = staffList.filter(
-    (staff) => staff.status === "Inactive",
+    (staff) =>
+      staff.status === "Inactive",
   ).length;
 
   // =========================================================
@@ -648,12 +819,17 @@ function RoleBaseAccess() {
         <div className="page-header">
           <div>
             <h1>Staff & Permissions</h1>
-            <p>Manage staff accounts and system access.</p>
+            <p>
+              Manage staff accounts and system
+              access.
+            </p>
           </div>
 
           <button
             className="add-staff-btn"
-            onClick={() => setShowAddStaff(true)}
+            onClick={() =>
+              setShowAddStaff(true)
+            }
           >
             + Add Staff
           </button>
@@ -666,22 +842,30 @@ function RoleBaseAccess() {
         <div className="summary-cards">
           <div className="summary-card">
             <span>Total Staff</span>
-            <strong>{totalStaff}</strong>
+            <strong>
+              {totalStaff}
+            </strong>
           </div>
 
           <div className="summary-card">
             <span>Active</span>
-            <strong>{activeStaff}</strong>
+            <strong>
+              {activeStaff}
+            </strong>
           </div>
 
           <div className="summary-card">
             <span>Inactive</span>
-            <strong>{inactiveStaff}</strong>
+            <strong>
+              {inactiveStaff}
+            </strong>
           </div>
 
           <div className="summary-card">
-            <span>Permissions</span>
-            <strong>0</strong>
+            <span>Available Permissions</span>
+            <strong>
+              {availablePermissionCount}
+            </strong>
           </div>
         </div>
 
@@ -693,7 +877,11 @@ function RoleBaseAccess() {
           <div className="section-header">
             <div>
               <h2>Staff Accounts</h2>
-              <p>Manage staff accounts and their access.</p>
+
+              <p>
+                Manage staff accounts and
+                their access.
+              </p>
             </div>
 
             <div className="staff-filters">
@@ -702,19 +890,31 @@ function RoleBaseAccess() {
                 placeholder="Search staff..."
                 value={searchTerm}
                 onChange={(e) =>
-                  setSearchTerm(e.target.value)
+                  setSearchTerm(
+                    e.target.value,
+                  )
                 }
               />
 
               <select
                 value={statusFilter}
                 onChange={(e) =>
-                  setStatusFilter(e.target.value)
+                  setStatusFilter(
+                    e.target.value,
+                  )
                 }
               >
-                <option>All Status</option>
-                <option>Active</option>
-                <option>Inactive</option>
+                <option>
+                  All Status
+                </option>
+
+                <option>
+                  Active
+                </option>
+
+                <option>
+                  Inactive
+                </option>
               </select>
             </div>
           </div>
@@ -737,164 +937,173 @@ function RoleBaseAccess() {
                       Loading staff...
                     </td>
                   </tr>
-                ) : filteredStaff.length === 0 ? (
+                ) : filteredStaff.length ===
+                  0 ? (
                   <tr>
                     <td colSpan="4">
                       No staff accounts found.
                     </td>
                   </tr>
                 ) : (
-                  filteredStaff.map((staff) => (
-                    <tr key={staff.staff_id}>
-                      <td>
-                        <div className="staff-info">
-                          <div className="staff-avatar">
-                            {staff.staff_name
-                              .split(" ")
-                              .map((name) => name[0])
-                              .join("")
-                              .slice(0, 2)
-                              .toUpperCase()}
+                  filteredStaff.map(
+                    (staff) => (
+                      <tr
+                        key={
+                          staff.staff_id
+                        }
+                      >
+                        <td>
+                          <div className="staff-info">
+                            <div className="staff-avatar">
+                              {staff.staff_name
+                                ?.split(" ")
+                                .map(
+                                  (name) =>
+                                    name[0],
+                                )
+                                .join("")
+                                .slice(
+                                  0,
+                                  2,
+                                )
+                                .toUpperCase()}
+                            </div>
+
+                            <div>
+                              <strong>
+                                {
+                                  staff.staff_name
+                                }
+                              </strong>
+
+                              <span>
+                                {
+                                  staff.staff_email
+                                }
+                              </span>
+                            </div>
                           </div>
+                        </td>
 
-                          <div>
-                            <strong>
-                              {staff.staff_name}
-                            </strong>
+                        <td>
+                          Staff
+                        </td>
 
-                            <span>
-                              {staff.staff_email}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td>Staff</td>
-
-                      <td>
-                        <span
-                          className={`status ${staff.status.toLowerCase()}`}
-                        >
-                          {staff.status}
-                        </span>
-                      </td>
-
-                      <td>
-                        <div className="action-menu-container">
-                          <button
-                            ref={(element) => {
-                              actionButtonRefs.current[
-                                staff.staff_id
-                              ] = element;
-                            }}
-                            className="action-btn"
-                            onClick={() =>
-                              setShowActions(
-                                showActions ===
-                                  staff.staff_id
-                                  ? null
-                                  : staff.staff_id,
-                              )
-                            }
+                        <td>
+                          <span
+                            className={`status ${
+                              staff.status
+                                ?.toLowerCase() ||
+                              ""
+                            }`}
                           >
-                            Manage
-                          </button>
+                            {
+                              staff.status
+                            }
+                          </span>
+                        </td>
 
-                          {showActions === staff.staff_id &&
-                            actionButtonRefs.current[
-                              staff.staff_id
-                            ] && (
-                              <div
-                                className="action-menu"
-                                style={{
-                                  position: "fixed",
-                                  top:
-                                    actionButtonRefs.current[
-                                      staff.staff_id
-                                    ].getBoundingClientRect()
-                                      .bottom + 6,
+                        {/* =================================================
+                            DIRECT ACTION ICONS
+                        ================================================= */}
 
-                                  left:
-                                    actionButtonRefs.current[
-                                      staff.staff_id
-                                    ].getBoundingClientRect()
-                                      .right - 180,
-                                }}
-                              >
+                        <td>
+                          <div className="action-icons">
 
-                                {/* EDIT STAFF */}
+                            {/* EDIT */}
+                            <button
+                              type="button"
+                              className="action-icon edit-icon"
+                              title="Edit Staff"
+                              aria-label={`Edit ${staff.staff_name}`}
+                              onClick={() =>
+                                handleOpenEditStaff(
+                                  staff,
+                                )
+                              }
+                            >
+                              <FaEdit />
+                            </button>
 
-                                <button
-                                  onClick={() =>
-                                    handleOpenEditStaff(
-                                      staff,
-                                    )
-                                  }
-                                >
-                                  Edit Staff
-                                </button>
+                            {/* MANAGE PERMISSIONS */}
+                            <button
+                              type="button"
+                              className="action-icon permission-icon"
+                              title="Manage Permissions"
+                              aria-label={`Manage permissions for ${staff.staff_name}`}
+                              onClick={() =>
+                                handleManagePermissions(
+                                  staff,
+                                )
+                              }
+                            >
+                              <FaUserShield />
+                            </button>
 
-                                {/* MANAGE PERMISSIONS */}
+                            {/* RESET PASSWORD */}
+                            <button
+                              type="button"
+                              className="action-icon password-icon"
+                              title="Reset Password"
+                              aria-label={`Reset password for ${staff.staff_name}`}
+                              onClick={() =>
+                                handleOpenResetPassword(
+                                  staff,
+                                )
+                              }
+                            >
+                              <FaKey />
+                            </button>
 
-                                <button
-                                  onClick={() =>
-                                    handleManagePermissions(
-                                      staff,
-                                    )
-                                  }
-                                >
-                                  Manage Permissions
-                                </button>
+                            {/* DEACTIVATE */}
+                            <button
+                              type="button"
+                              className="action-icon deactivate-icon"
+                              title={
+                                staff.status ===
+                                "Inactive"
+                                  ? "Already Inactive"
+                                  : "Deactivate Staff"
+                              }
+                              aria-label={
+                                staff.status ===
+                                "Inactive"
+                                  ? `${staff.staff_name} is already inactive`
+                                  : `Deactivate ${staff.staff_name}`
+                              }
+                              onClick={() =>
+                                handleOpenDeactivate(
+                                  staff,
+                                )
+                              }
+                              disabled={
+                                staff.status ===
+                                "Inactive"
+                              }
+                            >
+                              <FaUserSlash />
+                            </button>
 
-                                {/* RESET PASSWORD */}
+                            {/* DELETE */}
+                            <button
+                              type="button"
+                              className="action-icon delete-icon"
+                              title="Delete Staff"
+                              aria-label={`Delete ${staff.staff_name}`}
+                              onClick={() =>
+                                handleOpenDeleteStaff(
+                                  staff,
+                                )
+                              }
+                            >
+                              <FaTrash />
+                            </button>
 
-                                <button
-                                  onClick={() =>
-                                    handleOpenResetPassword(
-                                      staff,
-                                    )
-                                  }
-                                >
-                                  Reset Password
-                                </button>
-
-                                {/* DEACTIVATE */}
-
-                                <button
-                                  onClick={() =>
-                                    handleOpenDeactivate(
-                                      staff,
-                                    )
-                                  }
-                                  disabled={
-                                    staff.status ===
-                                    "Inactive"
-                                  }
-                                >
-                                  {staff.status ===
-                                  "Inactive"
-                                    ? "Already Inactive"
-                                    : "Deactivate Staff"}
-                                </button>
-
-                                {/* DELETE */}
-
-                                <button
-                                  className="delete-action"
-                                  onClick={() =>
-                                    handleOpenDeleteStaff(
-                                      staff,
-                                    )
-                                  }
-                                >
-                                  Delete Staff
-                                </button>
-                              </div>
-                            )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                          </div>
+                        </td>
+                      </tr>
+                    ),
+                  )
                 )}
               </tbody>
             </table>
@@ -911,16 +1120,22 @@ function RoleBaseAccess() {
 
               <div className="permissions-header">
                 <div>
-                  <h2>Manage Permissions</h2>
+                  <h2>
+                    Manage Permissions
+                  </h2>
+
                   <p>
-                    Control what this staff member can access.
+                    Control what this staff
+                    member can access.
                   </p>
                 </div>
 
                 <button
                   className="close-permissions"
                   onClick={() =>
-                    setShowPermissions(false)
+                    setShowPermissions(
+                      false,
+                    )
                   }
                 >
                   ×
@@ -933,7 +1148,10 @@ function RoleBaseAccess() {
                   <div className="staff-avatar">
                     {selectedStaff?.staff_name
                       ?.split(" ")
-                      .map((name) => name[0])
+                      .map(
+                        (name) =>
+                          name[0],
+                      )
                       .join("")
                       .slice(0, 2)
                       .toUpperCase()}
@@ -941,339 +1159,77 @@ function RoleBaseAccess() {
 
                   <div>
                     <strong>
-                      {selectedStaff?.staff_name}
+                      {
+                        selectedStaff?.staff_name
+                      }
                     </strong>
 
                     <span>
-                      {selectedStaff?.staff_email}
+                      {
+                        selectedStaff?.staff_email
+                      }
                     </span>
                   </div>
                 </div>
 
-                {/* CHILDREN */}
-
-                <div className="permission-section">
-                  <h3>Children</h3>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "view_patients",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "view_patients",
-                          e.target.checked,
-                        )
+                {permissionSections.map(
+                  (section) => (
+                    <div
+                      className="permission-section"
+                      key={
+                        section.key
                       }
-                    />
-                    <span>View Children</span>
-                  </label>
+                    >
+                      <h3>
+                        {
+                          section.title
+                        }
+                      </h3>
 
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "add_patients",
+                      {section.permissions.map(
+                        (permission) => (
+                          <label
+                            className="permission-item"
+                            key={
+                              permission.key
+                            }
+                          >
+                            <input
+                              type="checkbox"
+                              checked={permissions.includes(
+                                permission.key,
+                              )}
+                              onChange={(
+                                e,
+                              ) =>
+                                handlePermissionChange(
+                                  permission.key,
+                                  e.target
+                                    .checked,
+                                )
+                              }
+                            />
+
+                            <span>
+                              {
+                                permission.label
+                              }
+                            </span>
+                          </label>
+                        ),
                       )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "add_patients",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>Add Children</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "edit_patients",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "edit_patients",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>Edit Children</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "delete_patients",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "delete_patients",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>Delete Children</span>
-                  </label>
-                </div>
-
-                {/* APPOINTMENTS */}
-
-                <div className="permission-section">
-                  <h3>Appointments</h3>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "view_appointments",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "view_appointments",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>View Appointments</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "add_appointments",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "add_appointments",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>Add Appointments</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "edit_appointments",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "edit_appointments",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>Edit Appointments</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "delete_appointments",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "delete_appointments",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>Delete Appointments</span>
-                  </label>
-                </div>
-
-                {/* VACCINES */}
-
-                <div className="permission-section">
-                  <h3>Vaccines</h3>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "view_vaccines",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "view_vaccines",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>View Vaccines</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "add_vaccines",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "add_vaccines",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>Add Vaccines</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "edit_vaccines",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "edit_vaccines",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>Edit Vaccines</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "delete_vaccines",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "delete_vaccines",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>Delete Vaccines</span>
-                  </label>
-                </div>
-
-                {/* USERS */}
-
-                <div className="permission-section">
-                  <h3>Users</h3>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "view_users",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "view_users",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>View Users</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "add_users",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "add_users",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>Add Users</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "edit_users",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "edit_users",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>Edit Users</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "delete_users",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "delete_users",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>Delete Users</span>
-                  </label>
-                </div>
-
-                {/* NOTIFICATIONS */}
-
-                <div className="permission-section">
-                  <h3>Notifications</h3>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "view_notifications",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "view_notifications",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>View Notifications</span>
-                  </label>
-
-                  <label className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(
-                        "send_notifications",
-                      )}
-                      onChange={(e) =>
-                        handlePermissionChange(
-                          "send_notifications",
-                          e.target.checked,
-                        )
-                      }
-                    />
-                    <span>Send Notifications</span>
-                  </label>
-                </div>
+                    </div>
+                  ),
+                )}
               </div>
 
               <div className="permissions-footer">
                 <button
                   className="cancel-permissions"
                   onClick={() =>
-                    setShowPermissions(false)
+                    setShowPermissions(
+                      false,
+                    )
                   }
                 >
                   Cancel
@@ -1281,7 +1237,9 @@ function RoleBaseAccess() {
 
                 <button
                   className="save-permission"
-                  onClick={handleSavePermissions}
+                  onClick={
+                    handleSavePermissions
+                  }
                 >
                   Save Changes
                 </button>
@@ -1301,13 +1259,19 @@ function RoleBaseAccess() {
               <div className="permissions-header">
                 <div>
                   <h2>Add Staff</h2>
-                  <p>Create a new staff account.</p>
+
+                  <p>
+                    Create a new staff
+                    account.
+                  </p>
                 </div>
 
                 <button
                   className="close-permissions"
                   onClick={() =>
-                    setShowAddStaff(false)
+                    setShowAddStaff(
+                      false,
+                    )
                   }
                 >
                   ×
@@ -1318,72 +1282,108 @@ function RoleBaseAccess() {
                 <div className="staff-form">
 
                   <div className="form-group">
-                    <label>Staff Name</label>
+                    <label>
+                      Staff Name
+                    </label>
 
                     <input
                       type="text"
                       name="staff_name"
-                      value={staffForm.staff_name}
-                      onChange={handleStaffFormChange}
+                      value={
+                        staffForm.staff_name
+                      }
+                      onChange={
+                        handleStaffFormChange
+                      }
                       placeholder="Enter staff name"
                     />
                   </div>
 
                   <div className="form-group">
-                    <label>Email</label>
+                    <label>
+                      Email
+                    </label>
 
                     <input
                       type="email"
                       name="staff_email"
-                      value={staffForm.staff_email}
-                      onChange={handleStaffFormChange}
+                      value={
+                        staffForm.staff_email
+                      }
+                      onChange={
+                        handleStaffFormChange
+                      }
                       placeholder="Enter email address"
                     />
                   </div>
 
                   <div className="form-group">
-                    <label>Phone</label>
+                    <label>
+                      Phone
+                    </label>
 
                     <input
                       type="text"
                       name="staff_phone"
-                      value={staffForm.staff_phone}
-                      onChange={handleStaffFormChange}
+                      value={
+                        staffForm.staff_phone
+                      }
+                      onChange={
+                        handleStaffFormChange
+                      }
                       placeholder="Enter phone number"
                     />
                   </div>
 
                   <div className="form-group">
-                    <label>Password</label>
+                    <label>
+                      Password
+                    </label>
 
                     <input
                       type="password"
                       name="staff_password"
-                      value={staffForm.staff_password}
-                      onChange={handleStaffFormChange}
+                      value={
+                        staffForm.staff_password
+                      }
+                      onChange={
+                        handleStaffFormChange
+                      }
                       placeholder="Enter password"
                     />
                   </div>
 
                   <div className="form-group">
-                    <label>Confirm Password</label>
+                    <label>
+                      Confirm Password
+                    </label>
 
                     <input
                       type="password"
                       name="confirm_password"
-                      value={staffForm.confirm_password}
-                      onChange={handleStaffFormChange}
+                      value={
+                        staffForm.confirm_password
+                      }
+                      onChange={
+                        handleStaffFormChange
+                      }
                       placeholder="Confirm password"
                     />
                   </div>
 
                   <div className="form-group">
-                    <label>Status</label>
+                    <label>
+                      Status
+                    </label>
 
                     <select
                       name="status"
-                      value={staffForm.status}
-                      onChange={handleStaffFormChange}
+                      value={
+                        staffForm.status
+                      }
+                      onChange={
+                        handleStaffFormChange
+                      }
                     >
                       <option value="Active">
                         Active
@@ -1394,7 +1394,6 @@ function RoleBaseAccess() {
                       </option>
                     </select>
                   </div>
-
                 </div>
               </div>
 
@@ -1402,7 +1401,9 @@ function RoleBaseAccess() {
                 <button
                   className="cancel-permissions"
                   onClick={() =>
-                    setShowAddStaff(false)
+                    setShowAddStaff(
+                      false,
+                    )
                   }
                 >
                   Cancel
@@ -1410,12 +1411,13 @@ function RoleBaseAccess() {
 
                 <button
                   className="save-permissions"
-                  onClick={handleAddStaff}
+                  onClick={
+                    handleAddStaff
+                  }
                 >
                   Save Staff
                 </button>
               </div>
-
             </div>
           </div>
         )}
@@ -1431,8 +1433,10 @@ function RoleBaseAccess() {
               <div className="permissions-header">
                 <div>
                   <h2>Edit Staff</h2>
+
                   <p>
-                    Update this staff member's account
+                    Update this staff
+                    member's account
                     information.
                   </p>
                 </div>
@@ -1440,7 +1444,9 @@ function RoleBaseAccess() {
                 <button
                   className="close-permissions"
                   onClick={() =>
-                    setShowEditStaff(false)
+                    setShowEditStaff(
+                      false,
+                    )
                   }
                 >
                   ×
@@ -1451,7 +1457,9 @@ function RoleBaseAccess() {
                 <div className="staff-form">
 
                   <div className="form-group">
-                    <label>Staff Name</label>
+                    <label>
+                      Staff Name
+                    </label>
 
                     <input
                       type="text"
@@ -1466,7 +1474,9 @@ function RoleBaseAccess() {
                   </div>
 
                   <div className="form-group">
-                    <label>Email</label>
+                    <label>
+                      Email
+                    </label>
 
                     <input
                       type="email"
@@ -1481,7 +1491,9 @@ function RoleBaseAccess() {
                   </div>
 
                   <div className="form-group">
-                    <label>Phone</label>
+                    <label>
+                      Phone
+                    </label>
 
                     <input
                       type="text"
@@ -1496,11 +1508,15 @@ function RoleBaseAccess() {
                   </div>
 
                   <div className="form-group">
-                    <label>Status</label>
+                    <label>
+                      Status
+                    </label>
 
                     <select
                       name="status"
-                      value={editStaffForm.status}
+                      value={
+                        editStaffForm.status
+                      }
                       onChange={
                         handleEditStaffFormChange
                       }
@@ -1514,16 +1530,16 @@ function RoleBaseAccess() {
                       </option>
                     </select>
                   </div>
-
                 </div>
               </div>
 
               <div className="permissions-footer">
-
                 <button
                   className="cancel-permissions"
                   onClick={() =>
-                    setShowEditStaff(false)
+                    setShowEditStaff(
+                      false,
+                    )
                   }
                 >
                   Cancel
@@ -1531,11 +1547,12 @@ function RoleBaseAccess() {
 
                 <button
                   className="save-permissions"
-                  onClick={handleSaveEditStaff}
+                  onClick={
+                    handleSaveEditStaff
+                  }
                 >
                   Save Changes
                 </button>
-
               </div>
             </div>
           </div>
@@ -1551,9 +1568,13 @@ function RoleBaseAccess() {
 
               <div className="permissions-header">
                 <div>
-                  <h2>Reset Password</h2>
+                  <h2>
+                    Reset Password
+                  </h2>
+
                   <p>
-                    Create a new password for this staff
+                    Create a new password
+                    for this staff
                     member.
                   </p>
                 </div>
@@ -1561,7 +1582,9 @@ function RoleBaseAccess() {
                 <button
                   className="close-permissions"
                   onClick={() =>
-                    setShowResetPassword(false)
+                    setShowResetPassword(
+                      false,
+                    )
                   }
                 >
                   ×
@@ -1574,7 +1597,10 @@ function RoleBaseAccess() {
                   <div className="staff-avatar">
                     {selectedStaff?.staff_name
                       ?.split(" ")
-                      .map((name) => name[0])
+                      .map(
+                        (name) =>
+                          name[0],
+                      )
                       .join("")
                       .slice(0, 2)
                       .toUpperCase()}
@@ -1582,11 +1608,15 @@ function RoleBaseAccess() {
 
                   <div>
                     <strong>
-                      {selectedStaff?.staff_name}
+                      {
+                        selectedStaff?.staff_name
+                      }
                     </strong>
 
                     <span>
-                      {selectedStaff?.staff_email}
+                      {
+                        selectedStaff?.staff_email
+                      }
                     </span>
                   </div>
                 </div>
@@ -1594,7 +1624,9 @@ function RoleBaseAccess() {
                 <div className="staff-form">
 
                   <div className="form-group">
-                    <label>New Password</label>
+                    <label>
+                      New Password
+                    </label>
 
                     <input
                       type="password"
@@ -1610,7 +1642,9 @@ function RoleBaseAccess() {
                   </div>
 
                   <div className="form-group">
-                    <label>Confirm Password</label>
+                    <label>
+                      Confirm Password
+                    </label>
 
                     <input
                       type="password"
@@ -1624,16 +1658,16 @@ function RoleBaseAccess() {
                       placeholder="Confirm new password"
                     />
                   </div>
-
                 </div>
               </div>
 
               <div className="permissions-footer">
-
                 <button
                   className="cancel-permissions"
                   onClick={() =>
-                    setShowResetPassword(false)
+                    setShowResetPassword(
+                      false,
+                    )
                   }
                 >
                   Cancel
@@ -1641,11 +1675,12 @@ function RoleBaseAccess() {
 
                 <button
                   className="save-permissions"
-                  onClick={handleSaveResetPassword}
+                  onClick={
+                    handleSaveResetPassword
+                  }
                 >
                   Reset Password
                 </button>
-
               </div>
             </div>
           </div>
@@ -1663,15 +1698,21 @@ function RoleBaseAccess() {
                 !
               </div>
 
-              <h2>Deactivate Staff?</h2>
+              <h2>
+                Deactivate Staff?
+              </h2>
 
               <p>
-                Are you sure you want to deactivate{" "}
+                Are you sure you want to
+                deactivate{" "}
                 <strong>
-                  {selectedStaff?.staff_name}
+                  {
+                    selectedStaff?.staff_name
+                  }
                 </strong>
-                ? This staff member will no longer be
-                able to access the system.
+                ? This staff member will
+                no longer be able to
+                access the system.
               </p>
 
               <div className="confirmation-actions">
@@ -1679,7 +1720,9 @@ function RoleBaseAccess() {
                 <button
                   className="cancel-confirmation"
                   onClick={() =>
-                    setShowDeactivate(false)
+                    setShowDeactivate(
+                      false,
+                    )
                   }
                 >
                   Cancel
@@ -1687,11 +1730,12 @@ function RoleBaseAccess() {
 
                 <button
                   className="deactivate-confirmation"
-                  onClick={handleDeactivateStaff}
+                  onClick={
+                    handleDeactivateStaff
+                  }
                 >
                   Deactivate
                 </button>
-
               </div>
             </div>
           </div>
@@ -1709,15 +1753,20 @@ function RoleBaseAccess() {
                 !
               </div>
 
-              <h2>Delete Staff?</h2>
+              <h2>
+                Delete Staff?
+              </h2>
 
               <p>
-                Are you sure you want to permanently
-                delete{" "}
+                Are you sure you want to
+                permanently delete{" "}
                 <strong>
-                  {selectedStaff?.staff_name}
+                  {
+                    selectedStaff?.staff_name
+                  }
                 </strong>
-                ? This action cannot be undone.
+                ? This action cannot be
+                undone.
               </p>
 
               <div className="confirmation-actions">
@@ -1725,7 +1774,9 @@ function RoleBaseAccess() {
                 <button
                   className="cancel-confirmation"
                   onClick={() =>
-                    setShowDeleteStaff(false)
+                    setShowDeleteStaff(
+                      false,
+                    )
                   }
                 >
                   Cancel
@@ -1733,11 +1784,12 @@ function RoleBaseAccess() {
 
                 <button
                   className="delete-confirmation"
-                  onClick={handleDeleteStaff}
+                  onClick={
+                    handleDeleteStaff
+                  }
                 >
                   Delete Staff
                 </button>
-
               </div>
             </div>
           </div>

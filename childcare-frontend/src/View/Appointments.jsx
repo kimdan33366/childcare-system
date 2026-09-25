@@ -4,6 +4,8 @@ import {
   FaCalendarAlt,
   FaPen,
   FaTimes,
+  FaEye,
+  FaTrash,
 } from "react-icons/fa";
 import Sidebar from "../View/Sidebar";
 
@@ -38,6 +40,13 @@ function Appointments() {
 
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("All");
+
+  // ==============================
+  // HOVER
+  // ==============================
+
+  const [hoveredAppointment, setHoveredAppointment] =
+    useState(null);
 
   // ==============================
   // POPUP
@@ -157,6 +166,52 @@ function Appointments() {
   };
 
   // ==============================
+  // GET PARENT NAMES
+  // ==============================
+
+  const getAppointmentParentNames = (appointment) => {
+    const appointmentChildren =
+      appointment.children || [];
+
+    return [
+      ...new Set(
+        appointmentChildren
+          .map((child) => {
+            const parent = parents.find(
+              (item) =>
+                Number(item.user_id) ===
+                Number(child.user_id)
+            );
+
+            return parent?.user_fullname || "";
+          })
+          .filter(Boolean)
+      ),
+    ];
+  };
+
+  const getAppointmentTitle = (appointment) => {
+    const parentNames =
+      getAppointmentParentNames(appointment);
+
+    if (parentNames.length === 0) {
+      return "No parent assigned";
+    }
+
+    if (parentNames.length === 1) {
+      return parentNames[0];
+    }
+
+    return `${parentNames[0]} + ${
+      parentNames.length - 1
+    } ${
+      parentNames.length - 1 === 1
+        ? "other"
+        : "others"
+    }`;
+  };
+
+  // ==============================
   // FILTER APPOINTMENTS
   // ==============================
 
@@ -170,24 +225,16 @@ function Appointments() {
         .join(" ")
         .toLowerCase();
 
-      // Find parent names using child.user_id
-      // and the already fetched parents list.
-      const parentNames = appointmentChildren
-        .map((child) => {
-          const parent = parents.find(
-            (item) =>
-              Number(item.user_id) ===
-              Number(child.user_id)
-          );
+      const parentNames =
+        getAppointmentParentNames(appointment)
+          .join(" ")
+          .toLowerCase();
 
-          return parent?.user_fullname || "";
-        })
-        .join(" ")
-        .toLowerCase();
-
-      const searchValue = search.toLowerCase();
+      const searchValue =
+        search.toLowerCase().trim();
 
       const matchesSearch =
+        searchValue === "" ||
         childNames.includes(searchValue) ||
         parentNames.includes(searchValue) ||
         String(
@@ -201,6 +248,44 @@ function Appointments() {
       return matchesSearch && matchesDate;
     }
   );
+
+  // ==============================
+  // SEPARATE APPOINTMENTS
+  // ==============================
+
+  const upcomingAppointments =
+    filteredAppointments.filter(
+      (appointment) =>
+        (appointment.status || "Pending") ===
+        "Pending"
+    );
+
+  const historyAppointments =
+    filteredAppointments.filter((appointment) =>
+      ["Completed", "Missed", "Cancelled"].includes(
+        appointment.status
+      )
+    );
+
+  // ==============================
+  // OVERVIEW COUNTS
+  // ==============================
+
+  const upcomingCount = appointments.filter(
+    (appointment) =>
+      (appointment.status || "Pending") ===
+      "Pending"
+  ).length;
+
+  const completedCount = appointments.filter(
+    (appointment) =>
+      appointment.status === "Completed"
+  ).length;
+
+  const missedCount = appointments.filter(
+    (appointment) =>
+      appointment.status === "Missed"
+  ).length;
 
   // ==============================
   // AVAILABLE CHILDREN
@@ -218,28 +303,31 @@ function Appointments() {
 
   const toggleParent = (parentId) => {
     setSelectedParents((previous) => {
-      if (previous.includes(parentId)) {
-        return previous.filter(
-          (id) => id !== parentId
-        );
-      }
+      const newSelectedParents =
+        previous.includes(parentId)
+          ? previous.filter(
+              (id) => id !== parentId
+            )
+          : [...previous, parentId];
 
-      return [...previous, parentId];
+      setSelectedChildren((currentChildren) =>
+        currentChildren.filter((childId) => {
+          const child = children.find(
+            (item) =>
+              item.child_id === childId
+          );
+
+          return (
+            child &&
+            newSelectedParents.includes(
+              child.user_id
+            )
+          );
+        })
+      );
+
+      return newSelectedParents;
     });
-
-    setSelectedChildren((previous) =>
-      previous.filter((childId) => {
-        const child = children.find(
-          (item) => item.child_id === childId
-        );
-
-        return (
-          child &&
-          selectedParents.includes(child.user_id) &&
-          child.user_id !== parentId
-        );
-      })
-    );
   };
 
   // ==============================
@@ -265,7 +353,8 @@ function Appointments() {
   const toggleVaccine = (vaccineId) => {
     setSelectedVaccines((previous) => {
       const existing = previous.find(
-        (item) => item.vaccine_id === vaccineId
+        (item) =>
+          item.vaccine_id === vaccineId
       );
 
       if (existing) {
@@ -382,11 +471,8 @@ function Appointments() {
         currentUser?.staff_id || null,
 
       appointment_date: date,
-
       appointment_time: time,
-
       address: address,
-
       appointment_type: appointmentType,
 
       status:
@@ -394,14 +480,8 @@ function Appointments() {
         "Pending",
 
       child_ids: selectedChildren,
-
       vaccines: selectedVaccines,
     };
-
-    console.log(
-      "Appointment data being sent:",
-      data
-    );
 
     try {
       let response;
@@ -433,11 +513,6 @@ function Appointments() {
       }
 
       const result = await response.json();
-
-      console.log(
-        "Appointment response:",
-        result
-      );
 
       if (!response.ok) {
         console.error(
@@ -516,6 +591,8 @@ function Appointments() {
         return;
       }
 
+      setHoveredAppointment(null);
+
       await fetchAppointments();
     } catch (error) {
       console.error(
@@ -523,6 +600,36 @@ function Appointments() {
         error
       );
     }
+  };
+
+  // ==============================
+  // CANCEL APPOINTMENT
+  // ==============================
+
+  const cancelAppointment = async (
+    appointment
+  ) => {
+    if (
+      !hasPermission("edit_appointments")
+    ) {
+      alert(
+        "You do not have permission to cancel appointments."
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this appointment?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    await updateAppointmentStatus(
+      appointment.appointment_id,
+      "Cancelled"
+    );
   };
 
   // ==============================
@@ -595,6 +702,7 @@ function Appointments() {
       )
     );
 
+    setHoveredAppointment(null);
     setShowPopup(true);
   };
 
@@ -605,9 +713,11 @@ function Appointments() {
   const clearForm = () => {
     setDate("");
     setTime("");
+
     setAddress(
       "Barangay Health Center"
     );
+
     setAppointmentType(
       "Vaccination"
     );
@@ -618,6 +728,280 @@ function Appointments() {
 
     setEditingId(null);
     setShowPopup(false);
+  };
+
+  // ==============================
+  // STATUS CLASS
+  // ==============================
+
+  const getStatusClass = (status) => {
+    return `status-${(
+      status || "Pending"
+    )
+      .toLowerCase()
+      .replace(" ", "-")}`;
+  };
+
+  // ==============================
+  // APPOINTMENT ITEM
+  // ==============================
+
+  const renderAppointmentItem = (
+    appointment,
+    isHistory = false
+  ) => {
+    const appointmentChildren =
+      appointment.children || [];
+
+    const parentTitle =
+      getAppointmentTitle(appointment);
+
+    const isHovered =
+      hoveredAppointment ===
+      appointment.appointment_id;
+
+    const status =
+      appointment.status || "Pending";
+
+    return (
+      <div
+        className={`appointment-item ${
+          isHovered
+            ? "appointment-item-hovered"
+            : ""
+        }`}
+        key={appointment.appointment_id}
+        onMouseEnter={() =>
+          setHoveredAppointment(
+            appointment.appointment_id
+          )
+        }
+        onMouseLeave={() =>
+          setHoveredAppointment(null)
+        }
+      >
+        {/* COMPACT ROW */}
+        <div className="appointment-item-main">
+          <div className="appointment-item-date">
+            <FaCalendarAlt />
+
+            <span>
+              {appointment.appointment_date}
+            </span>
+          </div>
+
+          <div className="appointment-item-parent">
+            {parentTitle}
+          </div>
+
+          <div
+            className={`appointment-item-status ${getStatusClass(
+              status
+            )}`}
+          >
+            {status}
+          </div>
+        </div>
+
+        {/* HOVER DETAILS */}
+        {isHovered && (
+          <div
+            className={`appointment-hover-card ${
+              isHistory
+                ? "appointment-hover-history"
+                : "appointment-hover-upcoming"
+            }`}
+            onMouseEnter={() =>
+              setHoveredAppointment(
+                appointment.appointment_id
+              )
+            }
+          >
+            <div className="appointment-hover-header">
+              <div>
+                <h4>
+                  {parentTitle}
+                </h4>
+
+                <span>
+                  {appointment.appointment_date}{" "}
+                  •{" "}
+                  {appointment.appointment_time}
+                </span>
+              </div>
+
+              <span
+                className={`appointment-status ${getStatusClass(
+                  status
+                )}`}
+              >
+                {status}
+              </span>
+            </div>
+
+            <div className="appointment-hover-details">
+              <div className="appointment-hover-detail">
+                <span>Children</span>
+
+                <strong>
+                  {appointmentChildren.length >
+                  0
+                    ? appointmentChildren
+                        .map(
+                          (child) =>
+                            child.child_name
+                        )
+                        .join(", ")
+                    : "No children"}
+                </strong>
+              </div>
+
+              <div className="appointment-hover-detail">
+                <span>Appointment Type</span>
+
+                <strong>
+                  {appointment.appointment_type ||
+                    "—"}
+                </strong>
+              </div>
+
+              <div className="appointment-hover-detail">
+                <span>Clinic / Location</span>
+
+                <strong>
+                  {appointment.address ||
+                    "—"}
+                </strong>
+              </div>
+
+              <div className="appointment-hover-detail">
+                <span>Time</span>
+
+                <strong>
+                  {appointment.appointment_time ||
+                    "—"}
+                </strong>
+              </div>
+
+              <div className="appointment-hover-detail appointment-hover-vaccines">
+                <span>Vaccines / Doses</span>
+
+                <strong>
+                  {appointment.vaccines?.length >
+                  0
+                    ? appointment.vaccines
+                        .map(
+                          (item) =>
+                            `${
+                              item.vaccine
+                                ?.vaccine_name ||
+                              "Unknown"
+                            } (Dose ${
+                              item.dose_number
+                            })`
+                        )
+                        .join(", ")
+                    : "No vaccines"}
+                </strong>
+              </div>
+            </div>
+
+            {/* UPCOMING ACTIONS */}
+            {!isHistory && (
+              <div className="appointment-hover-actions">
+                {hasPermission(
+                  "edit_appointments"
+                ) && (
+                  <button
+                    className="appointment-edit-btn"
+                    title="Edit appointment"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEditAppointment(
+                        appointment
+                      );
+                    }}
+                  >
+                    <FaPen />
+                    <span>Edit</span>
+                  </button>
+                )}
+
+                {hasPermission(
+                  "edit_appointments"
+                ) && (
+                  <button
+                    className="appointment-delete-btn"
+                    title="Cancel appointment"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      cancelAppointment(
+                        appointment
+                      );
+                    }}
+                  >
+                    <FaTrash />
+                    <span>Cancel</span>
+                  </button>
+                )}
+
+                {hasPermission(
+                  "edit_appointments"
+                ) && (
+                  <select
+                    className={`appointment-hover-status ${getStatusClass(
+                      status
+                    )}`}
+                    value={status}
+                    onChange={(e) =>
+                      updateAppointmentStatus(
+                        appointment.appointment_id,
+                        e.target.value
+                      )
+                    }
+                    onClick={(e) =>
+                      e.stopPropagation()
+                    }
+                  >
+                    <option value="Pending">
+                      Pending
+                    </option>
+
+                    <option value="Completed">
+                      Completed
+                    </option>
+
+                    <option value="Missed">
+                      Missed
+                    </option>
+
+                    <option value="Cancelled">
+                      Cancelled
+                    </option>
+                  </select>
+                )}
+              </div>
+            )}
+
+            {/* HISTORY ACTION */}
+            {isHistory && (
+              <div className="appointment-hover-actions">
+                <button
+                  className="appointment-view-btn"
+                  title="View appointment"
+                  onClick={(e) =>
+                    e.stopPropagation()
+                  }
+                >
+                  <FaEye />
+                  <span>View</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   // ==============================
@@ -665,7 +1049,50 @@ function Appointments() {
 
         {/* HEADER */}
         <div className="appointment-header">
-          <h3>Appointments</h3>
+          <div>
+            <h3>Appointments</h3>
+
+            <p>
+              Manage upcoming appointments and
+              appointment history.
+            </p>
+          </div>
+        </div>
+
+        {/* OVERVIEW */}
+        <div className="appointment-overview">
+          <div className="appointment-overview-card">
+            <div>
+              <span>Upcoming</span>
+              <strong>
+                {upcomingCount}
+              </strong>
+            </div>
+
+            <FaCalendarAlt />
+          </div>
+
+          <div className="appointment-overview-card">
+            <div>
+              <span>Completed</span>
+              <strong>
+                {completedCount}
+              </strong>
+            </div>
+
+            <FaEye />
+          </div>
+
+          <div className="appointment-overview-card">
+            <div>
+              <span>Missed</span>
+              <strong>
+                {missedCount}
+              </strong>
+            </div>
+
+            <FaTimes />
+          </div>
         </div>
 
         {/* TOOLBAR */}
@@ -725,328 +1152,125 @@ function Appointments() {
           )}
         </div>
 
-        {/* APPOINTMENT LIST */}
-        <div className="appointment-content-container">
+        {/* TWO COLUMN APPOINTMENT AREA */}
+        <div className="appointment-columns">
 
-          {filteredAppointments.length ===
-          0 ? (
-            <div className="appointment-empty-state">
+          {/* ==========================
+              UPCOMING
+          ========================== */}
 
-              <div className="appointment-empty-icon">
-                <FaCalendarAlt />
+          <section className="appointment-section">
+            <div className="appointment-section-header">
+              <div>
+                <h3>
+                  Upcoming Appointments
+                </h3>
+
+                <p>
+                  Pending and scheduled
+                  appointments
+                </p>
               </div>
 
-              <h3>
-                No appointments yet
-              </h3>
+              <span className="appointment-section-count">
+                {upcomingAppointments.length}
+              </span>
+            </div>
 
-              <p>
-                There are currently no
-                appointments scheduled.
-              </p>
+            <div className="appointment-section-list">
 
-              {hasPermission(
-                "add_appointments"
-              ) && (
-                <button
-                  className="appointment-empty-button"
-                  onClick={() => {
-                    clearForm();
-                    setShowPopup(true);
-                  }}
-                >
-                  Add Appointment
-                </button>
+              {upcomingAppointments.length ===
+              0 ? (
+                <div className="appointment-empty-section">
+                  <FaCalendarAlt />
+
+                  <h4>
+                    No upcoming appointments
+                  </h4>
+
+                  <p>
+                    There are no pending
+                    appointments.
+                  </p>
+                </div>
+              ) : (
+                upcomingAppointments.map(
+                  (appointment) =>
+                    renderAppointmentItem(
+                      appointment,
+                      false
+                    )
+                )
               )}
 
             </div>
-          ) : (
-            filteredAppointments.map(
-              (appointment) => {
 
-                const appointmentChildren =
-                  appointment.children || [];
+            {hasPermission(
+              "add_appointments"
+            ) && (
+              <button
+                className="appointment-add-bottom"
+                onClick={() => {
+                  clearForm();
+                  setShowPopup(true);
+                }}
+              >
+                + New Appointment
+              </button>
+            )}
+          </section>
 
-                // ==============================
-                // GET PARENT NAMES
-                // ==============================
+          {/* ==========================
+              HISTORY
+          ========================== */}
 
-                /*
-                 * The appointment's children contain
-                 * user_id, while the parent names come
-                 * from the /api/users request.
-                 *
-                 * So we match:
-                 *
-                 * child.user_id
-                 *       ↓
-                 * parent.user_id
-                 *
-                 * instead of relying on child.user.
-                 */
+          <section className="appointment-section appointment-history-section">
+            <div className="appointment-section-header">
+              <div>
+                <h3>
+                  Appointment History
+                </h3>
 
-                const appointmentParentNames = [
-                  ...new Set(
-                    appointmentChildren
-                      .map((child) => {
-                        const parent =
-                          parents.find(
-                            (item) =>
-                              Number(
-                                item.user_id
-                              ) ===
-                              Number(
-                                child.user_id
-                              )
-                          );
+                <p>
+                  Completed, missed, and
+                  cancelled
+                </p>
+              </div>
 
-                        return (
-                          parent?.user_fullname ||
-                          ""
-                        );
-                      })
-                      .filter(Boolean)
-                  ),
-                ];
+              <span className="appointment-section-count">
+                {historyAppointments.length}
+              </span>
+            </div>
 
-                let appointmentTitle =
-                  "No parent assigned";
+            <div className="appointment-section-list">
 
-                if (
-                  appointmentParentNames.length ===
-                  1
-                ) {
-                  appointmentTitle =
-                    appointmentParentNames[0];
-                } else if (
-                  appointmentParentNames.length > 1
-                ) {
-                  appointmentTitle = `${appointmentParentNames[0]} + ${
-                    appointmentParentNames.length - 1
-                  } ${
-                    appointmentParentNames.length - 1 ===
-                    1
-                      ? "other"
-                      : "others"
-                  }`;
-                }
+              {historyAppointments.length ===
+              0 ? (
+                <div className="appointment-empty-section">
+                  <FaEye />
 
-                return (
-                  <div
-                    className="appointment-content"
-                    key={
-                      appointment.appointment_id
-                    }
-                  >
+                  <h4>
+                    No appointment history
+                  </h4>
 
-                    {/* ICON */}
-                    <div className="appointment-icon-wrapper">
-                      <FaCalendarAlt className="appointment-content-icon" />
-                    </div>
+                  <p>
+                    Completed and missed
+                    appointments will appear
+                    here.
+                  </p>
+                </div>
+              ) : (
+                historyAppointments.map(
+                  (appointment) =>
+                    renderAppointmentItem(
+                      appointment,
+                      true
+                    )
+                )
+              )}
 
-                    {/* CONTENT */}
-                    <div className="appointment-content-text">
-
-                      <div className="appointment-title-row">
-
-                        {/* PARENT NAME */}
-                        <h3>
-                          {appointmentTitle}
-                        </h3>
-
-                        {hasPermission(
-                          "edit_appointments"
-                        ) ? (
-                          <select
-                            className={`appointment-status status-${(
-                              appointment.status ||
-                              "Pending"
-                            )
-                              .toLowerCase()
-                              .replace(
-                                " ",
-                                "-"
-                              )}`}
-                            value={
-                              appointment.status ||
-                              "Pending"
-                            }
-                            onChange={(e) =>
-                              updateAppointmentStatus(
-                                appointment.appointment_id,
-                                e.target.value
-                              )
-                            }
-                          >
-                            <option value="Pending">
-                              Pending
-                            </option>
-
-                            <option value="Completed">
-                              Completed
-                            </option>
-
-                            <option value="Missed">
-                              Missed
-                            </option>
-
-                            <option value="Cancelled">
-                              Cancelled
-                            </option>
-                          </select>
-                        ) : (
-                          <span
-                            className={`appointment-status status-${(
-                              appointment.status ||
-                              "Pending"
-                            )
-                              .toLowerCase()
-                              .replace(
-                                " ",
-                                "-"
-                              )}`}
-                          >
-                            {appointment.status ||
-                              "Pending"}
-                          </span>
-                        )}
-
-                      </div>
-
-                      {/* CHILDREN */}
-                      <div className="appointment-details">
-
-                        <div className="appointment-detail">
-                          <span className="appointment-detail-label">
-                            Children
-                          </span>
-
-                          <span>
-                            {appointmentChildren.length >
-                            0
-                              ? appointmentChildren
-                                  .map(
-                                    (
-                                      child
-                                    ) =>
-                                      child.child_name
-                                  )
-                                  .join(
-                                    ", "
-                                  )
-                              : "No children"}
-                          </span>
-                        </div>
-
-                        <div className="appointment-detail">
-                          <span className="appointment-detail-label">
-                            Date
-                          </span>
-
-                          <span>
-                            {
-                              appointment.appointment_date
-                            }
-                          </span>
-                        </div>
-
-                        <div className="appointment-detail">
-                          <span className="appointment-detail-label">
-                            Time
-                          </span>
-
-                          <span>
-                            {
-                              appointment.appointment_time
-                            }
-                          </span>
-                        </div>
-
-                        <div className="appointment-detail">
-                          <span className="appointment-detail-label">
-                            Type
-                          </span>
-
-                          <span>
-                            {
-                              appointment.appointment_type ||
-                              "—"
-                            }
-                          </span>
-                        </div>
-
-                        <div className="appointment-detail">
-                          <span className="appointment-detail-label">
-                            Location
-                          </span>
-
-                          <span>
-                            {
-                              appointment.address ||
-                              "—"
-                            }
-                          </span>
-                        </div>
-
-                        <div className="appointment-detail">
-                          <span className="appointment-detail-label">
-                            Vaccines
-                          </span>
-
-                          <span>
-                            {appointment.vaccines?.length >
-                            0
-                              ? appointment.vaccines
-                                  .map(
-                                    (
-                                      item
-                                    ) =>
-                                      `${
-                                        item
-                                          .vaccine
-                                          ?.vaccine_name ||
-                                        "Unknown"
-                                      } (Dose ${
-                                        item.dose_number
-                                      })`
-                                  )
-                                  .join(
-                                    ", "
-                                  )
-                              : "No vaccines"}
-                          </span>
-                        </div>
-
-                      </div>
-
-                    </div>
-
-                    {/* ACTIONS */}
-                    <div className="appointment-action-buttons">
-
-                      {hasPermission(
-                        "edit_appointments"
-                      ) && (
-                        <button
-                          className="appointment-edit-btn"
-                          title="Edit appointment"
-                          onClick={() =>
-                            openEditAppointment(
-                              appointment
-                            )
-                          }
-                        >
-                          <FaPen />
-                        </button>
-                      )}
-
-                    </div>
-
-                  </div>
-                );
-              }
-            )
-          )}
+            </div>
+          </section>
 
         </div>
 
@@ -1121,7 +1345,9 @@ function Appointments() {
                 />
 
                 {/* LOCATION */}
-                <h5>Clinic / Location:</h5>
+                <h5>
+                  Clinic / Location:
+                </h5>
 
                 <input
                   type="text"
