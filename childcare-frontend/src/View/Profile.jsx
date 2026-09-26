@@ -211,24 +211,7 @@ function Profile() {
                   />
                 </div>
 
-                {/* ROLE — ADMIN ONLY */}
-                {isAdmin && (
-                  <div className="profile-form-group">
-                    <label>Role</label>
-
-                    <select
-                      value={editRole}
-                      onChange={(e) => setEditRole(e.target.value)}
-                    >
-                      <option value="System Administrator">
-                        System Administrator
-                      </option>
-
-                      <option value="Staff">Staff</option>
-                    </select>
-                  </div>
-                )}
-
+              
                 {/* BUTTONS */}
                 <div className="profile-modal-buttons">
                   <button
@@ -252,7 +235,7 @@ function Profile() {
                             body: JSON.stringify({
                               Admin_name: editName,
                               Admin_email: editEmail,
-                              Admin_role: editRole,
+                              
                             }),
                           },
                         );
@@ -283,10 +266,7 @@ function Profile() {
                           updatedUser.Admin_email || "",
                         );
 
-                        setEditRole(
-                          updatedUser.Admin_role ||
-                            "System Administrator",
-                        );
+                        
 
                         setShowEditModal(false);
 

@@ -5,9 +5,59 @@ namespace App\Http\Controllers;
 use App\Models\Staff;
 use App\Models\StaffPermission;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class StaffPermissionController extends Controller
 {
+    /**
+     * All permissions currently supported by the system.
+     */
+    private function availablePermissions(): array
+    {
+        return [
+            // Dashboard
+            'view_dashboard',
+
+            // Children
+            'view_patients',
+            'add_patients',
+            'edit_patients',
+
+            // Patient Records
+            'view_patient_records',
+            'add_patient_records',
+            'edit_patient_records',
+
+            // Appointments
+            'view_appointments',
+            'add_appointments',
+            'edit_appointments',
+
+            // Vaccines
+            'view_vaccines',
+            'add_vaccines',
+            'edit_vaccines',
+
+            // Users
+            'view_users',
+            'add_users',
+            'edit_users',
+
+            // Reports
+            'view_reports',
+            'generate_reports',
+            'export_reports',
+
+            // Notifications
+            'view_notifications',
+            'send_notifications',
+            'delete_notifications',
+        ];
+    }
+
+    /**
+     * Get permissions assigned to a staff member.
+     */
     public function index($staffId)
     {
         $staff = Staff::find($staffId);
@@ -19,7 +69,8 @@ class StaffPermissionController extends Controller
         }
 
         $permissions = $staff->permissions()
-            ->pluck('permission');
+            ->pluck('permission')
+            ->values();
 
         return response()->json([
             'staff_id' => $staff->staff_id,
@@ -27,6 +78,9 @@ class StaffPermissionController extends Controller
         ]);
     }
 
+    /**
+     * Update permissions assigned to a staff member.
+     */
     public function update(Request $request, $staffId)
     {
         $staff = Staff::find($staffId);
@@ -39,12 +93,23 @@ class StaffPermissionController extends Controller
 
         $request->validate([
             'permissions' => 'required|array',
-            'permissions.*' => 'string|max:100',
+            'permissions.*' => [
+                'string',
+                'max:100',
+                Rule::in($this->availablePermissions()),
+            ],
         ]);
 
-        StaffPermission::where('staff_id', $staffId)->delete();
+        $permissions = array_values(
+            array_unique($request->permissions)
+        );
 
-        foreach ($request->permissions as $permission) {
+        StaffPermission::where(
+            'staff_id',
+            $staffId
+        )->delete();
+
+        foreach ($permissions as $permission) {
             StaffPermission::create([
                 'staff_id' => $staffId,
                 'permission' => $permission,
@@ -54,7 +119,7 @@ class StaffPermissionController extends Controller
         return response()->json([
             'message' => 'Staff permissions updated successfully.',
             'staff_id' => $staffId,
-            'permissions' => $request->permissions,
+            'permissions' => $permissions,
         ]);
     }
 }

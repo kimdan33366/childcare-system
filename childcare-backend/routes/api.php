@@ -18,6 +18,7 @@ use App\Http\Controllers\PatientViewRecordController;
 use App\Http\Controllers\StaffPermissionController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\GrowthRecordController;
+use App\Http\Controllers\LoginController;
 
 Route::get('/children', [ChildController::class, 'index']);
 Route::get('/children/{id}', [ChildController::class, 'show']);
@@ -85,6 +86,8 @@ Route::post('/growth-records', [GrowthRecordController::class, 'store']);
 Route::get('/growth-record/{id}', [GrowthRecordController::class, 'show']);
 Route::put('/growth-record/{id}', [GrowthRecordController::class, 'update']);
 Route::delete('/growth-record/{id}', [GrowthRecordController::class, 'destroy']);
+
+Route::post('/login', [LoginController::class, 'login']);
 
 Route::get(
     '/staff/{staffId}/permissions',

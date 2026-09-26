@@ -11,7 +11,7 @@ import {
   FaUserCircle,
   FaPhoneAlt,
   FaEdit,
-  FaChevronDown,
+  FaTimes,
 } from "react-icons/fa";
 
 import Sidebar from "../View/Sidebar";
@@ -27,18 +27,21 @@ function Patients() {
 
   const hasPermission = (permission) => {
     return (
-      isAdmin || permissions.includes("all") || permissions.includes(permission)
+      isAdmin ||
+      permissions.includes("all") ||
+      permissions.includes(permission)
     );
   };
 
-  if (!isAdmin && !permissions.includes("view_patients")) {
-    return <div>Access Denied</div>;
-  }
+  // ==========================================
+  // PATIENTS
+  // ==========================================
 
   const [patients, setPatients] = useState([]);
-
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+
+  // Deactivated popup
+  const [showInactivePatients, setShowInactivePatients] = useState(false);
 
   const [showAddPatient, setShowAddPatient] = useState(false);
   const [isEditingPatient, setIsEditingPatient] = useState(false);
@@ -76,6 +79,14 @@ function Patients() {
   const [sendToAll, setSendToAll] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [message, setMessage] = useState(defaultSMSMessage);
+
+  // ==========================================
+  // ACCESS CHECK
+  // ==========================================
+
+  if (!isAdmin && !permissions.includes("view_patients")) {
+    return <div>Access Denied</div>;
+  }
 
   // ==========================================
   // CALCULATE AGE
@@ -130,8 +141,6 @@ function Patients() {
     }
 
     return [...records].sort((a, b) => {
-      // growth_id is the most reliable way to determine
-      // which record was created most recently.
       if (
         a.growth_id != null &&
         b.growth_id != null &&
@@ -140,7 +149,6 @@ function Patients() {
         return Number(b.growth_id) - Number(a.growth_id);
       }
 
-      // Fallback to date if growth_id is unavailable.
       const dateDifference =
         new Date(b.date).getTime() - new Date(a.date).getTime();
 
@@ -148,7 +156,6 @@ function Patients() {
         return dateDifference;
       }
 
-      // Final fallback to created_at.
       return (
         new Date(b.created_at || 0).getTime() -
         new Date(a.created_at || 0).getTime()
@@ -160,30 +167,63 @@ function Patients() {
   // CHILD STATUS
   // ==========================================
 
+  // Backend:
+  // Continuing = Pending in UI
+  // Completed = Completed
+  // Inactive = Deactivated in UI
+
   const getPatientStatus = (patient) => {
-    return patient.status || "Continuing";
+    const status = patient?.status || "Continuing";
+
+    if (status === "Continuing") {
+      return "Pending";
+    }
+
+    if (status === "Inactive") {
+      return "Deactivated";
+    }
+
+    return status;
   };
 
   // ==========================================
-  // FILTER PATIENTS
+  // SEARCH
   // ==========================================
 
   const filteredPatients = patients.filter((patient) => {
-    const searchValue = search.toLowerCase();
+    const searchValue = search.toLowerCase().trim();
+
+    if (!searchValue) {
+      return true;
+    }
 
     const parentName =
       patient.user?.user_fullname || patient.parent_name || "";
 
-    const matchesSearch =
+    return (
       patient.child_name?.toLowerCase().includes(searchValue) ||
-      parentName.toLowerCase().includes(searchValue);
+      parentName.toLowerCase().includes(searchValue)
+    );
+  });
 
-    const patientStatus = getPatientStatus(patient);
+  // ==========================================
+  // STATUS GROUPS
+  // ==========================================
 
-    const matchesStatus =
-      statusFilter === "All" || patientStatus === statusFilter;
+  const pendingPatients = filteredPatients.filter((patient) => {
+    return (
+      patient.status === "Continuing" ||
+      patient.status === "Pending" ||
+      !patient.status
+    );
+  });
 
-    return matchesSearch && matchesStatus;
+  const completedPatients = filteredPatients.filter((patient) => {
+    return patient.status === "Completed";
+  });
+
+  const inactivePatients = filteredPatients.filter((patient) => {
+    return patient.status === "Inactive";
   });
 
   // ==========================================
@@ -218,18 +258,6 @@ function Patients() {
         console.log("Fetched children:", data);
 
         if (Array.isArray(data)) {
-          /*
-           * Laravel returns the relationship as:
-           *
-           * growth_records
-           *
-           * The React frontend uses:
-           *
-           * growthRecords
-           *
-           * Normalize it here so the rest of the component
-           * can consistently use growthRecords.
-           */
           const normalizedChildren = data.map((child) => ({
             ...child,
             growthRecords: child.growth_records || [],
@@ -316,8 +344,6 @@ function Patients() {
 
   const handleSelectUser = (user) => {
     setSelectedUser(user);
-
-    // Child address initially copies parent's address.
     setAddress(getUserAddress(user));
   };
 
@@ -381,10 +407,6 @@ function Patients() {
     }
 
     try {
-      // ==========================================
-      // CREATE CHILD
-      // ==========================================
-
       const childResponse = await fetch(
         "http://127.0.0.1:8000/api/children",
         {
@@ -450,12 +472,6 @@ function Patients() {
 
         return;
       }
-
-      console.log("First growth record created:", growthData);
-
-      // ==========================================
-      // ADD CHILD TO LOCAL LIST
-      // ==========================================
 
       const newChild = {
         ...childData,
@@ -524,10 +540,6 @@ function Patients() {
     }
 
     try {
-      // ==========================================
-      // UPDATE CHILD INFORMATION
-      // ==========================================
-
       const response = await fetch(
         `http://127.0.0.1:8000/api/children/${selectedPatient.child_id}`,
         {
@@ -589,12 +601,6 @@ function Patients() {
 
         return;
       }
-
-      console.log("New growth record created:", growthData);
-
-      // ==========================================
-      // UPDATE LOCAL PATIENT DATA
-      // ==========================================
 
       setPatients((prevPatients) =>
         prevPatients.map((patient) =>
@@ -686,6 +692,228 @@ function Patients() {
     }
   };
 
+  // ==========================================
+  // OPEN EDIT
+  // ==========================================
+
+  const openEditPatient = (patient) => {
+    setSelectedPatient(patient);
+    setIsEditingPatient(true);
+
+    setChildName(patient.child_name || "");
+    setBirthdate(patient.birthdate || "");
+    setSex(patient.gender || "");
+    setRelationship(patient.relationship || "");
+
+    const latestGrowth = getLatestGrowth(patient);
+
+    setHeight(
+      latestGrowth?.height_cm != null
+        ? String(latestGrowth.height_cm)
+        : "",
+    );
+
+    setWeight(
+      latestGrowth?.weight_kg != null
+        ? String(latestGrowth.weight_kg)
+        : "",
+    );
+
+    setAddress(patient.address || "");
+
+    setShowAddPatient(true);
+  };
+
+  // ==========================================
+  // CHILD CARD
+  // ==========================================
+
+  const renderChildCard = (patient) => {
+    const parentName =
+      patient.user?.user_fullname || patient.parent_name || "—";
+
+    const parentPhone =
+      patient.user?.mobile_number ||
+      patient.user?.phone ||
+      "—";
+
+    const latestGrowth = getLatestGrowth(patient);
+
+    const displayStatus = getPatientStatus(patient);
+
+    return (
+      <div className="patient-child-card" key={patient.child_id}>
+        {/* MAIN CHILD INFORMATION */}
+        <div className="patient-child-main">
+          <div className="patient-child-avatar">
+            <FaUserCircle />
+          </div>
+
+          <div className="patient-child-basic">
+            <strong>{patient.child_name}</strong>
+
+            <span>{parentName}</span>
+
+            <span>{calculateAge(patient.birthdate)}</span>
+
+            <span
+              className={`patient-status status-${displayStatus.toLowerCase()}`}
+            >
+              {displayStatus}
+            </span>
+          </div>
+        </div>
+
+        {/* HOVER DETAILS */}
+        <div className="patient-child-hover-details">
+          <div className="patient-detail-row">
+            <span>Birthdate</span>
+            <strong>{patient.birthdate || "—"}</strong>
+          </div>
+
+          <div className="patient-detail-row">
+            <span>Gender</span>
+            <strong>{patient.gender || "—"}</strong>
+          </div>
+
+          <div className="patient-detail-row">
+            <span>Relationship</span>
+            <strong>{patient.relationship || "—"}</strong>
+          </div>
+
+          <div className="patient-detail-row">
+            <span>Address</span>
+            <strong>{patient.address || "—"}</strong>
+          </div>
+
+          <div className="patient-detail-row">
+            <span>Parent Contact</span>
+            <strong>{parentPhone}</strong>
+          </div>
+
+          <div className="patient-detail-row">
+            <span>Height</span>
+            <strong>
+              {latestGrowth?.height_cm != null
+                ? `${latestGrowth.height_cm} cm`
+                : "—"}
+            </strong>
+          </div>
+
+          <div className="patient-detail-row">
+            <span>Weight</span>
+            <strong>
+              {latestGrowth?.weight_kg != null
+                ? `${latestGrowth.weight_kg} kg`
+                : "—"}
+            </strong>
+          </div>
+
+          {/* ACTIONS */}
+          <div className="patient-card-actions">
+            {hasPermission("view_patients") && (
+              <button
+                type="button"
+                className="patient-card-action view-action"
+                title="View Child"
+                onClick={() =>
+                  navigate(`/patient_viewrecord/${patient.child_id}`)
+                }
+              >
+                <FaEye />
+                <span>View</span>
+              </button>
+            )}
+
+            {hasPermission("edit_patients") && (
+              <button
+                type="button"
+                className="patient-card-action edit-action"
+                title="Edit Child"
+                onClick={() => openEditPatient(patient)}
+              >
+                <FaEdit />
+                <span>Edit</span>
+              </button>
+            )}
+
+            {hasPermission("edit_patients") && (
+              <button
+                type="button"
+                className={`patient-card-action ${
+                  patient.status === "Inactive"
+                    ? "reactivate-action"
+                    : "deactivate-action"
+                }`}
+                title={
+                  patient.status === "Inactive"
+                    ? "Reactivate Child"
+                    : "Deactivate Child"
+                }
+                onClick={() => handleToggleChildStatus(patient)}
+              >
+                <span>
+                  {patient.status === "Inactive" ? "✓" : "⏸"}
+                </span>
+
+                <span>
+                  {patient.status === "Inactive"
+                    ? "Reactivate"
+                    : "Deactivate"}
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ==========================================
+  // STATUS PANEL
+  // ==========================================
+
+  const renderStatusPanel = (
+    title,
+    description,
+    patientsList,
+    statusClass,
+    emptyText,
+  ) => {
+    return (
+      <section className={`patient-status-panel ${statusClass}`}>
+        <div className="patient-status-panel-header">
+          <div>
+            <h3>{title}</h3>
+            <p>{description}</p>
+          </div>
+
+          <span className="patient-status-count">
+            {patientsList.length}
+          </span>
+        </div>
+
+        <div className="patient-status-panel-list">
+          {patientsList.length > 0 ? (
+            patientsList.map((patient) => renderChildCard(patient))
+          ) : (
+            <div className="patient-panel-empty">
+              <FaUserCircle />
+
+              <strong>{emptyText}</strong>
+
+              <span>
+                {title === "Pending"
+                  ? "No children are currently pending."
+                  : "No children have completed vaccination yet."}
+              </span>
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  };
+
   return (
     <div className="patients-dashboard">
       <Sidebar />
@@ -698,11 +926,18 @@ function Patients() {
         <div className="patients-header">
           <div>
             <h2>Children</h2>
-            <p>Manage registered children and their vaccination records.</p>
+
+            <p>
+              Manage registered children and their vaccination records.
+            </p>
           </div>
 
           {hasPermission("add_patients") && (
-            <button className="patients-add-btn" onClick={openAddPatient}>
+            <button
+              type="button"
+              className="patients-add-btn"
+              onClick={openAddPatient}
+            >
               <FaPlus />
               Add Child
             </button>
@@ -710,7 +945,7 @@ function Patients() {
         </div>
 
         {/* ==========================================
-            SEARCH + FILTER
+            SEARCH + DEACTIVATED
         ========================================== */}
 
         <div className="patients-search-section">
@@ -725,188 +960,106 @@ function Patients() {
             />
           </div>
 
-          <div className="patients-status-filter">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="All">All Status</option>
-              <option value="Continuing">Continuing</option>
-              <option value="Completed">Completed</option>
-              <option value="Inactive">Inactive</option>
-            </select>
+          <button
+            type="button"
+            className="patients-deactivated-btn"
+            onClick={() => setShowInactivePatients(true)}
+          >
+            <span>Deactivated</span>
 
-            <FaChevronDown />
-          </div>
+            <span className="patients-deactivated-count">
+              {inactivePatients.length}
+            </span>
+          </button>
         </div>
 
         {/* ==========================================
-            CHILD LIST
+            MAIN STATUS BOARD
+            PENDING + COMPLETED SHARE THE SPACE
         ========================================== */}
 
-        <div className="patient-list">
-          <div className="patient-list-header">
-            <h3>Registered Children</h3>
+        <div className="patients-status-board">
+          {renderStatusPanel(
+            "Pending",
+            "Children currently undergoing vaccination.",
+            pendingPatients,
+            "pending-panel",
+            "No pending children",
+          )}
 
-            <span>
-              {filteredPatients.length}
-              {filteredPatients.length === 1 ? " Child" : " Children"}
-            </span>
-          </div>
-
-          {filteredPatients.length > 0 ? (
-            <div className="patients-table-wrapper">
-              <table className="patients-table">
-                <thead>
-                  <tr>
-                    <th>Child</th>
-                    <th>Parent / Guardian</th>
-                    <th>Relationship</th>
-                    <th>Age</th>
-                    <th>Height</th>
-                    <th>Weight</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {filteredPatients.map((patient) => {
-                    const parentName =
-                      patient.user?.user_fullname || patient.parent_name || "—";
-
-                    const latestGrowth = getLatestGrowth(patient);
-
-                    return (
-                      <tr key={patient.child_id}>
-                        <td>
-                          <div className="patient-child-info">
-                            <FaUserCircle />
-                            <span>{patient.child_name}</span>
-                          </div>
-                        </td>
-
-                        <td>
-                          <span className="patient-parent">
-                            {parentName}
-                          </span>
-                        </td>
-
-                        <td>
-                          <span>{patient.relationship || "—"}</span>
-                        </td>
-
-                        <td>{calculateAge(patient.birthdate)}</td>
-
-                        <td>
-                          {latestGrowth?.height_cm != null
-                            ? `${latestGrowth.height_cm} cm`
-                            : "-"}
-                        </td>
-
-                        <td>
-                          {latestGrowth?.weight_kg != null
-                            ? `${latestGrowth.weight_kg} kg`
-                            : "-"}
-                        </td>
-
-                        <td>
-                          <span
-                            className={`patient-status ${patient.status?.toLowerCase()}`}
-                          >
-                            {patient.status}
-                          </span>
-                        </td>
-
-                        <td>
-                          <div className="patient-actions">
-                            {/* VIEW */}
-                            {hasPermission("view_patients") && (
-                              <FaEye
-                                className="view-action"
-                                title="View Child"
-                                onClick={() =>
-                                  navigate(
-                                    `/patient_viewrecord/${patient.child_id}`,
-                                  )
-                                }
-                              />
-                            )}
-
-                            {/* EDIT */}
-                            {hasPermission("edit_patients") && (
-                              <FaEdit
-                                className="edit-action"
-                                title="Edit Child"
-                                onClick={() => {
-                                  setSelectedPatient(patient);
-                                  setIsEditingPatient(true);
-
-                                  setChildName(patient.child_name || "");
-                                  setBirthdate(patient.birthdate || "");
-                                  setSex(patient.gender || "");
-                                  setRelationship(
-                                    patient.relationship || "",
-                                  );
-
-                                  const latestGrowth =
-                                    getLatestGrowth(patient);
-
-                                  setHeight(
-                                    latestGrowth?.height_cm != null
-                                      ? String(latestGrowth.height_cm)
-                                      : "",
-                                  );
-
-                                  setWeight(
-                                    latestGrowth?.weight_kg != null
-                                      ? String(latestGrowth.weight_kg)
-                                      : "",
-                                  );
-
-                                  setAddress(patient.address || "");
-
-                                  setShowAddPatient(true);
-                                }}
-                              />
-                            )}
-
-                            {/* DEACTIVATE / REACTIVATE */}
-                            {hasPermission("edit_patients") && (
-                              <button
-                                type="button"
-                                className="patient-status-action"
-                                title={
-                                  patient.status === "Inactive"
-                                    ? "Reactivate Child"
-                                    : "Deactivate Child"
-                                }
-                                onClick={() =>
-                                  handleToggleChildStatus(patient)
-                                }
-                              >
-                                {patient.status === "Inactive" ? "✓" : "🚫"}
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="patients-empty-state">
-              <FaUserCircle />
-
-              <p>No Child found</p>
-
-              <span>Try searching for a different name.</span>
-            </div>
+          {renderStatusPanel(
+            "Completed",
+            "Children who completed vaccination.",
+            completedPatients,
+            "completed-panel",
+            "No completed children",
           )}
         </div>
       </main>
+
+      {/* ==========================================
+          DEACTIVATED POPUP
+      ========================================== */}
+
+      {showInactivePatients && (
+        <div
+          className="patients-deactivated-overlay"
+          onClick={() => setShowInactivePatients(false)}
+        >
+          <div
+            className="patients-deactivated-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="patients-deactivated-header">
+              <div>
+                <h2>Deactivated Children</h2>
+
+                <p>
+                  Children are kept here for historical records.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="patients-deactivated-close"
+                onClick={() => setShowInactivePatients(false)}
+                title="Close"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="patients-deactivated-search">
+              <FaSearch />
+
+              <input
+                type="text"
+                value={search}
+                readOnly
+                placeholder="Search child or parent..."
+              />
+            </div>
+
+            <div className="patients-deactivated-list">
+              {inactivePatients.length > 0 ? (
+                inactivePatients.map((patient) =>
+                  renderChildCard(patient),
+                )
+              ) : (
+                <div className="patient-panel-empty">
+                  <FaUserCircle />
+
+                  <strong>No deactivated children</strong>
+
+                  <span>
+                    Deactivated children will appear here.
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ==========================================
           SMS MODAL
@@ -923,7 +1076,8 @@ function Patients() {
 
             <p>
               Parent:{" "}
-              {selectedPatient?.user?.user_fullname || "Parent's Name"}
+              {selectedPatient?.user?.user_fullname ||
+                "Parent's Name"}
             </p>
 
             <div className="patients-send-all-container">
@@ -938,7 +1092,8 @@ function Patients() {
 
             {sendToAll && (
               <div className="patients-broadcast-message">
-                The SMS reminder will be sent to all registered parents.
+                The SMS reminder will be sent to all registered
+                parents.
               </div>
             )}
 
@@ -953,7 +1108,9 @@ function Patients() {
                     type="text"
                     placeholder="+63 XXX XXX XXXX"
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    onChange={(e) =>
+                      setPhoneNumber(e.target.value)
+                    }
                   />
                 </div>
               </>
@@ -1079,9 +1236,7 @@ function Patients() {
                   onChange={(e) => setSex(e.target.value)}
                 >
                   <option value="">Select Gender</option>
-
                   <option value="Male">Male</option>
-
                   <option value="Female">Female</option>
                 </select>
 
@@ -1094,11 +1249,8 @@ function Patients() {
                   onChange={(e) => setRelationship(e.target.value)}
                 >
                   <option value="">Select Relationship</option>
-
                   <option value="Mother">Mother</option>
-
                   <option value="Father">Father</option>
-
                   <option value="Guardian">Guardian</option>
                 </select>
 
@@ -1173,8 +1325,8 @@ function Patients() {
                         <h2>Select Parent / Guardian</h2>
 
                         <p>
-                          Select the registered parent or guardian for this
-                          child.
+                          Select the registered parent or guardian
+                          for this child.
                         </p>
                       </div>
                     </div>
@@ -1190,7 +1342,9 @@ function Patients() {
                         type="text"
                         placeholder="Search registered user..."
                         value={userSearch}
-                        onChange={(e) => setUserSearch(e.target.value)}
+                        onChange={(e) =>
+                          setUserSearch(e.target.value)
+                        }
                       />
                     </div>
 
@@ -1199,7 +1353,8 @@ function Patients() {
                         filteredUsers.slice(0, 5).map((user) => {
                           const isSelected =
                             selectedUser &&
-                            getUserId(selectedUser) === getUserId(user);
+                            getUserId(selectedUser) ===
+                              getUserId(user);
 
                           return (
                             <button
@@ -1208,19 +1363,27 @@ function Patients() {
                               className={`patient-user-option ${
                                 isSelected ? "selected" : ""
                               }`}
-                              onClick={() => handleSelectUser(user)}
+                              onClick={() =>
+                                handleSelectUser(user)
+                              }
                             >
                               <FaUserCircle />
 
                               <div>
-                                <strong>{getUserName(user)}</strong>
+                                <strong>
+                                  {getUserName(user)}
+                                </strong>
 
                                 {getUserEmail(user) && (
-                                  <small>{getUserEmail(user)}</small>
+                                  <small>
+                                    {getUserEmail(user)}
+                                  </small>
                                 )}
 
                                 {getUserPhone(user) && (
-                                  <small>{getUserPhone(user)}</small>
+                                  <small>
+                                    {getUserPhone(user)}
+                                  </small>
                                 )}
                               </div>
                             </button>
@@ -1237,7 +1400,9 @@ function Patients() {
                       <div className="patient-selected-user">
                         <span>Selected Parent / Guardian</span>
 
-                        <strong>{getUserName(selectedUser)}</strong>
+                        <strong>
+                          {getUserName(selectedUser)}
+                        </strong>
                       </div>
                     )}
 
@@ -1287,7 +1452,9 @@ function Patients() {
                       <div>
                         <small>Parent / Guardian</small>
 
-                        <strong>{getUserName(selectedUser)}</strong>
+                        <strong>
+                          {getUserName(selectedUser)}
+                        </strong>
                       </div>
                     </div>
 
@@ -1316,7 +1483,9 @@ function Patients() {
                       <div className="patient-selected-user">
                         <span>Calculated Age</span>
 
-                        <strong>{calculateAge(birthdate)}</strong>
+                        <strong>
+                          {calculateAge(birthdate)}
+                        </strong>
                       </div>
                     )}
 
@@ -1329,9 +1498,7 @@ function Patients() {
                       onChange={(e) => setSex(e.target.value)}
                     >
                       <option value="">Select Gender</option>
-
                       <option value="Male">Male</option>
-
                       <option value="Female">Female</option>
                     </select>
 
@@ -1341,14 +1508,13 @@ function Patients() {
 
                     <select
                       value={relationship}
-                      onChange={(e) => setRelationship(e.target.value)}
+                      onChange={(e) =>
+                        setRelationship(e.target.value)
+                      }
                     >
                       <option value="">Select Relationship</option>
-
                       <option value="Mother">Mother</option>
-
                       <option value="Father">Father</option>
-
                       <option value="Guardian">Guardian</option>
                     </select>
 

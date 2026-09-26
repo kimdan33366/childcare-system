@@ -5,26 +5,71 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-body {
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
   background: #f5f7fa;
 }
+
+body {
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+/* =========================================================
+   MAIN CONTAINER
+========================================================= */
 
 .notification-container {
   width: 100%;
+  height: 100vh;
   min-height: 100vh;
+
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 260px minmax(0, 1fr);
+
   background: #f5f7fa;
+
+  /* IMPORTANT:
+     Do not allow the container itself to scroll.
+     The main content below will scroll. */
+  overflow: hidden;
+
+  position: relative;
 }
+
+/* =========================================================
+   MAIN CONTENT
+========================================================= */
 
 .notification-main-content {
   min-width: 0;
+  width: 100%;
+
+  /* IMPORTANT FOR SCROLLING */
+  height: 100vh;
+  min-height: 0;
+
   padding: 30px 35px;
+
+  background: #f5f7fa;
+
+  /* FORCE THIS AREA TO SCROLL */
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  position: relative;
 }
 
-/* =========================
+/* =========================================================
    PAGE HEADER
-========================= */
+========================================================= */
 
 .notification-page-title {
   display: flex;
@@ -35,38 +80,34 @@ body {
 }
 
 .notification-page-title h1 {
+  margin: 0 0 6px;
   font-size: 26px;
   font-weight: 600;
   color: #1f2937;
-  margin-bottom: 6px;
 }
 
 .notification-page-title p {
+  margin: 0;
   font-size: 14px;
   color: #6b7280;
 }
 
-/* =========================
+/* =========================================================
    COMPOSE BUTTON
-========================= */
+========================================================= */
 
 .notification-compose-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-
   padding: 11px 18px;
-
   background: #21457b;
-  color: white;
-
+  color: #ffffff;
   border: none;
   border-radius: 7px;
-
   font-size: 14px;
   font-weight: 500;
-
   cursor: pointer;
   transition: background 0.2s ease;
 }
@@ -74,23 +115,24 @@ body {
 .notification-compose-btn:hover {
   background: #18365f;
 }
- /* =========================
-   NOTIFICATION SUMMARY
-========================= */
+
+/* =========================================================
+   SUMMARY
+========================================================= */
 
 .notification-summary {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
-  margin-bottom: 15px;
+  margin-bottom: 22px;
 }
 
 .notification-summary-card {
+  min-width: 0;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 18px 20px;
-
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -106,18 +148,208 @@ body {
   font-weight: 600;
   color: #1f2937;
 }
-/* =========================
-   NOTIFICATION HISTORY
-========================= */
 
-.notification-history {
+/* =========================================================
+   UPCOMING APPOINTMENTS
+========================================================= */
+
+.notification-appointments {
+  width: 100%;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 25px;
+}
+
+.notification-appointments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.notification-section-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.notification-section-title svg {
+  color: #21457b;
+  font-size: 17px;
+}
+
+.notification-section-title h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.notification-appointments-header p {
+  margin: 5px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.notification-appointment-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 20px;
+  background: #eef3f9;
+  color: #21457b;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   APPOINTMENT TOOLBAR
+========================================================= */
+
+.notification-appointment-toolbar {
+  padding: 14px 22px;
+  background: #fafbfc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.notification-appointment-toolbar input {
+  width: 100%;
+  max-width: 430px;
+  height: 40px;
+  padding: 0 12px;
+  background: #ffffff;
+  border: 1px solid #d9dee5;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+  outline: none;
+}
+
+.notification-appointment-toolbar input::placeholder {
+  color: #9ca3af;
+}
+
+.notification-appointment-toolbar input:focus {
+  border-color: #21457b;
+}
+
+/* =========================================================
+   APPOINTMENT TABLE
+========================================================= */
+
+.notification-appointment-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.notification-appointment-table {
+  width: 100%;
+  min-width: 850px;
+  border-collapse: collapse;
+}
+
+.notification-appointment-table th {
+  padding: 13px 18px;
+  background: #f8fafc;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.notification-appointment-table td {
+  padding: 15px 18px;
+  font-size: 13px;
+  color: #374151;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.notification-appointment-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.notification-appointment-table tbody tr:hover {
+  background: #fafcff;
+}
+
+.notification-appointment-children {
+  max-width: 260px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.notification-appointment-date {
   display: flex;
   flex-direction: column;
+  gap: 3px;
+}
+
+.notification-appointment-date strong {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.notification-appointment-date span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* =========================================================
+   SEND APPOINTMENT BUTTON
+========================================================= */
+
+.notification-appointment-send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 110px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid #21457b;
+  border-radius: 6px;
+  background: #21457b;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-appointment-send-btn:hover {
+  background: #18365f;
+  border-color: #18365f;
+}
+
+.notification-appointment-send-btn.sent {
+  background: #ffffff;
+  color: #21457b;
+}
+
+.notification-appointment-send-btn.sent:hover {
+  background: #f0f5fb;
+}
+
+/* =========================================================
+   NOTIFICATION HISTORY
+========================================================= */
+
+.notification-history {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 25px;
 }
 
 .notification-history-header {
@@ -126,24 +358,25 @@ body {
 }
 
 .notification-history-header h2 {
+  margin: 0 0 5px;
   font-size: 18px;
   font-weight: 600;
   color: #1f2937;
-  margin-bottom: 5px;
 }
 
 .notification-history-header p {
+  margin: 0;
   font-size: 13px;
   color: #6b7280;
 }
 
-/* =========================
+/* =========================================================
    FILTERS
-========================= */
+========================================================= */
 
 .notification-filters {
   display: grid;
-  grid-template-columns: 1fr 170px 210px;
+  grid-template-columns: minmax(0, 1fr) 170px 210px;
   gap: 12px;
   padding: 16px 22px;
   background: #fafbfc;
@@ -152,16 +385,14 @@ body {
 
 .notification-filters input,
 .notification-filters select {
+  width: 100%;
   height: 40px;
   padding: 0 12px;
-
   background: #ffffff;
   border: 1px solid #d9dee5;
   border-radius: 6px;
-
   font-size: 13px;
   color: #374151;
-
   outline: none;
 }
 
@@ -174,36 +405,36 @@ body {
   border-color: #21457b;
 }
 
-/* =========================
-   TABLE
-========================= */
+/* =========================================================
+   HISTORY TABLE
+========================================================= */
 
-
+.notification-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+}
 
 .notification-table {
   width: 100%;
+  min-width: 800px;
   border-collapse: collapse;
-  min-width: 760px;
 }
 
 .notification-table th {
   padding: 13px 18px;
   background: #f8fafc;
-
   font-size: 12px;
   font-weight: 600;
   color: #6b7280;
-
   text-align: left;
   border-bottom: 1px solid #e5e7eb;
 }
 
 .notification-table td {
   padding: 15px 18px;
-
   font-size: 13px;
   color: #374151;
-
   border-bottom: 1px solid #eef0f3;
 }
 
@@ -215,165 +446,218 @@ body {
   background: #fafcff;
 }
 
-/* =========================
+/* =========================================================
+   RECIPIENT
+========================================================= */
+
+.notification-recipient {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.notification-recipient strong {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.notification-recipient small {
+  font-size: 11px;
+  color: #8a94a3;
+}
+
+/* =========================================================
+   TYPE
+========================================================= */
+
+.notification-type {
+  color: #4b5563;
+}
+
+/* =========================================================
    STATUS
-========================= */
+========================================================= */
 
 .notification-status {
   display: inline-flex;
   align-items: center;
-
   padding: 5px 9px;
-
   border-radius: 20px;
-
   background: #eef2f7;
   color: #4b5563;
-
   font-size: 12px;
   font-weight: 500;
 }
 
-/* =========================
-   VIEW BUTTON
-========================= */
+.notification-status-sent {
+  background: #eaf7ef;
+  color: #237a45;
+}
 
-.notification-view-btn {
-  padding: 6px 12px;
+.notification-status-pending {
+  background: #fff7e6;
+  color: #9a6700;
+}
 
-  background: transparent;
-  color: #21457b;
+.notification-status-failed {
+  background: #fdecec;
+  color: #b42318;
+}
 
-  border: 1px solid #cbd5e1;
-  border-radius: 5px;
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
 
-  font-size: 12px;
-  font-weight: 500;
+.notification-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
 
+.notification-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.notification-view-btn:hover {
-  background: #21457b;
-  color: #ffffff;
-  border-color: #21457b;
+.notification-view-icon-btn {
+  background: #ffffff;
+  color: #21457b;
+  border: 1px solid #cbd5e1;
 }
 
-/* =========================
+.notification-view-icon-btn:hover {
+  background: #21457b;
+  border-color: #21457b;
+  color: #ffffff;
+}
+
+.notification-delete-icon-btn {
+  background: #ffffff;
+  color: #b42318;
+  border: 1px solid #e3c1c1;
+}
+
+.notification-delete-icon-btn:hover {
+  background: #b42318;
+  border-color: #b42318;
+  color: #ffffff;
+}
+
+/* =========================================================
    EMPTY STATE
-========================= */
+========================================================= */
 
 .notification-empty {
   padding: 40px 20px !important;
-
   text-align: center !important;
-
   color: #9ca3af !important;
   font-size: 13px !important;
 }
-/* =========================
-   COMPOSE MODAL
-========================= */
+
+/* =========================================================
+   MODAL OVERLAY
+========================================================= */
 
 .notification-modal-overlay {
   position: fixed;
   inset: 0;
-
+  width: 100%;
+  height: 100%;
   background: rgba(15, 23, 42, 0.45);
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   padding: 20px;
-
   z-index: 1000;
+  overflow-y: auto;
 }
+
+.notification-compose-modal,
+.notification-appointment-modal,
+.notification-view-modal,
+.notification-delete-modal {
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18);
+}
+
+/* =========================================================
+   COMPOSE MODAL
+========================================================= */
 
 .notification-compose-modal {
   width: 100%;
   max-width: 500px;
-
-  background: #ffffff;
-  border-radius: 10px;
-
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18);
-
   overflow: hidden;
 }
 
-/* =========================
+/* =========================================================
    MODAL HEADER
-========================= */
+========================================================= */
 
 .notification-compose-header {
   padding: 20px 22px;
-
   border-bottom: 1px solid #e5e7eb;
 }
 
 .notification-compose-header h2 {
+  margin: 0 0 5px;
   font-size: 19px;
   font-weight: 600;
   color: #1f2937;
-
-  margin-bottom: 5px;
 }
 
 .notification-compose-header p {
+  margin: 0;
   font-size: 13px;
   color: #6b7280;
 }
 
-/* =========================
+/* =========================================================
    MODAL BODY
-========================= */
+========================================================= */
 
 .notification-compose-body {
   padding: 20px 22px;
 }
 
-.notification-compose-body label {
+.notification-compose-body label,
+.notification-appointment-modal-body > label {
   display: block;
-
   margin-bottom: 8px;
-
   font-size: 12px;
   font-weight: 600;
-
   color: #4b5563;
 }
 
-/* =========================
+/* =========================================================
    CHILD SELECT
-========================= */
+========================================================= */
 
 .notification-child-select {
   position: relative;
-
   margin-bottom: 20px;
 }
 
 .notification-child-dropdown {
   width: 100%;
   height: 42px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   padding: 0 13px;
-
   background: #ffffff;
-
   border: 1px solid #d9dee5;
   border-radius: 6px;
-
   color: #374151;
-
   font-size: 13px;
-
   cursor: pointer;
   text-align: left;
 }
@@ -384,22 +668,15 @@ body {
 
 .notification-child-list {
   position: absolute;
-
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-
   background: #ffffff;
-
   border: 1px solid #d9dee5;
   border-radius: 7px;
-
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-
   padding: 8px;
-
   z-index: 20;
-
   max-height: 220px;
   overflow-y: auto;
 }
@@ -407,16 +684,11 @@ body {
 .notification-child-list > input {
   width: 100%;
   height: 36px;
-
   padding: 0 10px;
-
   margin-bottom: 7px;
-
   border: 1px solid #d9dee5;
   border-radius: 5px;
-
   font-size: 13px;
-
   outline: none;
 }
 
@@ -428,14 +700,10 @@ body {
   display: flex;
   align-items: center;
   gap: 9px;
-
   padding: 9px 8px;
-
   border-radius: 5px;
-
   font-size: 13px;
   color: #374151;
-
   cursor: pointer;
 }
 
@@ -446,32 +714,45 @@ body {
 .notification-child-option input {
   width: 15px;
   height: 15px;
-
   accent-color: #21457b;
 }
 
-/* =========================
+/* =========================================================
+   COMPOSE TYPE
+========================================================= */
+
+.notification-compose-type {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  margin-bottom: 20px;
+  background: #ffffff;
+  border: 1px solid #d9dee5;
+  border-radius: 6px;
+  color: #374151;
+  font-size: 13px;
+  outline: none;
+}
+
+.notification-compose-type:focus {
+  border-color: #21457b;
+}
+
+/* =========================================================
    MESSAGE
-========================= */
+========================================================= */
 
 .notification-compose-body textarea {
   width: 100%;
   min-height: 130px;
-
   padding: 12px;
-
   background: #ffffff;
-
   border: 1px solid #d9dee5;
   border-radius: 7px;
-
   resize: vertical;
-
   font-size: 13px;
   line-height: 1.5;
-
   color: #374151;
-
   outline: none;
 }
 
@@ -479,18 +760,75 @@ body {
   border-color: #21457b;
 }
 
-/* =========================
+/* =========================================================
+   APPOINTMENT EMAIL MODAL
+========================================================= */
+
+.notification-appointment-modal {
+  width: 100%;
+  max-width: 560px;
+  overflow: hidden;
+}
+
+.notification-appointment-modal-body {
+  padding: 20px 22px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.notification-appointment-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 20px;
+  margin-bottom: 20px;
+}
+
+.notification-appointment-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 0;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.notification-appointment-info-item span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.notification-appointment-info-item strong {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.notification-appointment-message {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: 1px solid #d9dee5;
+  border-radius: 7px;
+  resize: vertical;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #374151;
+  outline: none;
+}
+
+.notification-appointment-message:focus {
+  border-color: #21457b;
+}
+
+/* =========================================================
    MODAL FOOTER
-========================= */
+========================================================= */
 
 .notification-compose-footer {
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 9px;
-
   padding: 16px 22px;
-
   border-top: 1px solid #e5e7eb;
 }
 
@@ -498,23 +836,17 @@ body {
 .notification-send-all-btn,
 .notification-send-btn {
   height: 38px;
-
   padding: 0 15px;
-
   border-radius: 6px;
-
   font-size: 13px;
   font-weight: 500;
-
   cursor: pointer;
-
   transition: all 0.2s ease;
 }
 
 .notification-cancel-btn {
   background: #ffffff;
   color: #4b5563;
-
   border: 1px solid #d1d5db;
 }
 
@@ -525,7 +857,6 @@ body {
 .notification-send-all-btn {
   background: #ffffff;
   color: #21457b;
-
   border: 1px solid #21457b;
 }
 
@@ -537,202 +868,30 @@ body {
   display: flex;
   align-items: center;
   gap: 7px;
-
   background: #21457b;
   color: #ffffff;
-
   border: 1px solid #21457b;
 }
 
 .notification-send-btn:hover {
   background: #18365f;
 }
-/* =========================
-   RESPONSIVE DESIGN
-========================= */
 
-@media (max-width: 1100px) {
-  .notification-main-content {
-    min-width: 0;
-    padding: 25px;
-  }
-
-  .notification-filters {
-    grid-template-columns: 1fr 150px 180px;
-  }
+.notification-cancel-btn:disabled,
+.notification-send-all-btn:disabled,
+.notification-send-btn:disabled,
+.notification-appointment-send-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-@media (max-width: 900px) {
-  .notification-container {
-    grid-template-columns: 210px 1fr;
-  }
-
-  .notification-summary {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-  }
-
-  .notification-summary-card {
-    padding: 16px;
-  }
-
-  .notification-summary-card strong {
-    font-size: 21px;
-  }
-
-  .notification-filters {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .notification-filters input {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 700px) {
-  .notification-container {
-    display: block;
-  }
-
-  .notification-main-content {
-    padding: 20px;
-  }
-
-  .notification-page-title {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .notification-compose-btn {
-    width: 100%;
-  }
-
-  .notification-summary {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .notification-summary-card {
-    padding: 15px 18px;
-  }
-
-  .notification-filters {
-    grid-template-columns: 1fr;
-  }
-
-  .notification-filters input {
-    grid-column: auto;
-  }
-
-  .notification-filters select {
-    width: 100%;
-  }
-
-  .notification-history-header {
-    padding: 18px;
-  }
-
-  .notification-table th,
-  .notification-table td {
-    padding: 12px 14px;
-  }
-}
-
-@media (max-width: 500px) {
-  .notification-main-content {
-    padding: 15px;
-  }
-
-  .notification-page-title h1 {
-    font-size: 23px;
-  }
-
-  .notification-page-title p {
-    font-size: 13px;
-  }
-
-  .notification-compose-modal {
-    max-width: 100%;
-  }
-
-  .notification-compose-header,
-  .notification-compose-body {
-    padding: 18px;
-  }
-
-  .notification-compose-footer {
-    padding: 14px 18px;
-    flex-wrap: wrap;
-  }
-
-  .notification-cancel-btn,
-  .notification-send-all-btn,
-  .notification-send-btn {
-    flex: 1;
-  }
-}
-/* =========================
-   SCROLLABLE NOTIFICATION HISTORY
-========================= */
-/* =========================
-   NOTIFICATION HISTORY
-   SCROLL AREA
-========================= */
-
-.notification-history {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-
-  display: flex;
-  flex-direction: column;
-
-  margin-bottom: 25px;
-
-  height: 500px;
-  overflow: hidden;
-}
-
-/* Header + filters stay outside the scroll area */
-
-
-.notification-table-wrapper {
-  width: 100%;
-  flex: 1;
-
-  overflow-y: auto;
-  overflow-x: auto;
-  padding-bottom: 10px;
-}
-
-/* Keep table header visible */
-
-.notification-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: #f8fafc;
-}
-
-
-/* Keep table headers visible while scrolling */
-
-.notification-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: #f8fafc;
-}
-/* ================================
-   VIEW NOTIFICATION MODAL
-================================ */
+/* =========================================================
+   VIEW MODAL
+========================================================= */
 
 .notification-view-modal {
   width: 500px;
   max-width: calc(100% - 40px);
-  background: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.15);
   overflow: hidden;
 }
 
@@ -794,6 +953,7 @@ body {
   font-weight: 500;
   color: #1f2937;
   text-align: right;
+  max-width: 65%;
 }
 
 .notification-detail-message {
@@ -830,7 +990,7 @@ body {
   padding: 8px 18px;
   border: none;
   border-radius: 6px;
-  background: #21457B;
+  background: #21457b;
   color: #ffffff;
   font-size: 13px;
   cursor: pointer;
@@ -838,4 +998,293 @@ body {
 
 .notification-view-footer button:hover {
   opacity: 0.9;
+}
+
+/* =========================================================
+   DELETE MODAL
+========================================================= */
+
+.notification-delete-modal {
+  width: 100%;
+  max-width: 400px;
+  padding: 28px;
+  text-align: center;
+}
+
+.notification-delete-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fdecec;
+  color: #b42318;
+  font-size: 18px;
+}
+
+.notification-delete-modal h2 {
+  margin-bottom: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.notification-delete-modal p {
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.notification-delete-modal small {
+  display: block;
+  margin: 0 auto;
+  max-width: 320px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #8a94a3;
+}
+
+.notification-delete-footer {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 22px;
+}
+
+.notification-delete-confirm-btn {
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 16px;
+  border: 1px solid #b42318;
+  border-radius: 6px;
+  background: #b42318;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.notification-delete-confirm-btn:hover {
+  background: #941d15;
+  border-color: #941d15;
+}
+
+.notification-delete-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+.notification-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  min-width: 300px;
+  max-width: 430px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.14);
+  z-index: 2000;
+}
+
+.notification-toast-icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #eaf7ef;
+  color: #237a45;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.notification-toast h4 {
+  margin-bottom: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.notification-toast p {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* =========================================================
+   RESPONSIVE DESIGN
+========================================================= */
+
+@media (max-width: 1100px) {
+  .notification-main-content {
+    padding: 25px;
+  }
+
+  .notification-filters {
+    grid-template-columns: minmax(0, 1fr) 150px 180px;
+  }
+}
+
+@media (max-width: 900px) {
+  .notification-container {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .notification-summary {
+    gap: 12px;
+  }
+
+  .notification-summary-card {
+    padding: 16px;
+  }
+
+  .notification-summary-card strong {
+    font-size: 21px;
+  }
+
+  .notification-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .notification-filters input {
+    grid-column: 1 / -1;
+  }
+
+  .notification-appointments-header {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 700px) {
+  .notification-container {
+    display: block;
+  }
+
+  .notification-main-content {
+    width: 100%;
+    height: 100vh;
+    padding: 20px;
+  }
+
+  .notification-page-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .notification-compose-btn {
+    width: 100%;
+  }
+
+  .notification-summary {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .notification-summary-card {
+    padding: 15px 18px;
+  }
+
+  .notification-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-filters input {
+    grid-column: auto;
+  }
+
+  .notification-filters select {
+    width: 100%;
+  }
+
+  .notification-history-header {
+    padding: 18px;
+  }
+
+  .notification-table th,
+  .notification-table td {
+    padding: 12px 14px;
+  }
+
+  .notification-appointments-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .notification-appointment-toolbar {
+    padding: 14px 18px;
+  }
+
+  .notification-appointment-toolbar input {
+    max-width: none;
+  }
+
+  .notification-appointment-info {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 500px) {
+  .notification-main-content {
+    padding: 15px;
+  }
+
+  .notification-page-title h1 {
+    font-size: 23px;
+  }
+
+  .notification-page-title p {
+    font-size: 13px;
+  }
+
+  .notification-compose-modal,
+  .notification-appointment-modal {
+    max-width: 100%;
+  }
+
+  .notification-compose-header,
+  .notification-compose-body,
+  .notification-appointment-modal-body {
+    padding: 18px;
+  }
+
+  .notification-compose-footer {
+    padding: 14px 18px;
+    flex-wrap: wrap;
+  }
+
+  .notification-cancel-btn,
+  .notification-send-all-btn,
+  .notification-send-btn {
+    flex: 1;
+  }
+
+  .notification-delete-modal {
+    max-width: calc(100% - 30px);
+    padding: 24px 20px;
+  }
+
+  .notification-toast {
+    left: 15px;
+    right: 15px;
+    bottom: 15px;
+    transform: none;
+    min-width: 0;
+    max-width: none;
+  }
 }

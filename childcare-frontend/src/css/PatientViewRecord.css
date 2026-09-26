@@ -676,10 +676,11 @@ body,
     margin-top: 5px;
 }
 
+
 .viewRecord-popup input,
 .viewRecord-popup textarea {
     width: 100%;
-    padding: 10px 12px;
+    padding: 15px 14px;
     border: 1px solid #dfe3e8;
     border-radius: 7px;
     outline: none;

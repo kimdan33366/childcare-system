@@ -2,38 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Notification;
+use App\Mail\NotificationMail;
 use App\Models\Child;
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class NotificationController extends Controller
 {
-    // Get all notifications
     public function index()
     {
-        $notifications = Notification::leftJoin(
-            'children',
-            'notifications.child_id',
-            '=',
-            'children.child_id'
-        )
-        ->select(
-            'notifications.*',
-            'children.child_name'
-        )
-        ->orderBy('notifications.created_at', 'desc')
-        ->get();
+        $notifications = Notification::with('appointment')
+            ->leftJoin(
+                'children',
+                'notifications.child_id',
+                '=',
+                'children.child_id'
+            )
+            ->select(
+                'notifications.*',
+                'children.child_name'
+            )
+            ->orderBy('notifications.created_at', 'desc')
+            ->get();
 
         return response()->json($notifications);
     }
 
-    // Create notification for a specific child
     public function store(Request $request)
     {
         $request->validate([
             'child_id' => 'required|exists:children,child_id',
             'message' => 'required|string',
+            'type' => 'nullable|string',
+            'appointment_id' => 'nullable|exists:appointments,appointment_id',
         ]);
 
         $child = Child::findOrFail($request->child_id);
@@ -46,47 +49,102 @@ class NotificationController extends Controller
             ], 400);
         }
 
+        if (empty($user->email)) {
+            return response()->json([
+                'message' => 'The parent does not have an email address.'
+            ], 400);
+        }
+
         $notification = Notification::create([
             'child_id' => $child->child_id,
+            'appointment_id' => $request->appointment_id,
+            'child_name' => $child->child_name,
             'parent' => $user->user_fullname,
             'phone' => $user->mobile_number,
+            'email' => $user->email,
+            'type' => $request->type ?? 'General Announcement',
             'message' => $request->message,
             'status' => 'Pending',
         ]);
 
-        return response()->json([
-            'message' => 'Notification created successfully.',
-            'notification' => $notification
-        ], 201);
+        try {
+            Mail::to($user->email)->send(
+                new NotificationMail($notification)
+            );
+
+            $notification->update([
+                'status' => 'Sent',
+            ]);
+
+            return response()->json([
+                'message' => 'Notification sent successfully.',
+                'notification' => $notification->fresh()
+            ], 201);
+
+        } catch (\Throwable $e) {
+            $notification->update([
+                'status' => 'Failed',
+            ]);
+
+            return response()->json([
+                'message' => 'Notification was created, but the email could not be sent.',
+                'notification' => $notification->fresh(),
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
-    // Send notification to all active parents
     public function broadcast(Request $request)
     {
         $request->validate([
             'message' => 'required|string',
+            'type' => 'nullable|string',
         ]);
 
-        $users = User::where('status', 'Active')->get();
+        $users = User::where('status', 'Active')
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->get();
 
         $notifications = [];
 
         foreach ($users as $user) {
-            $notifications[] = Notification::create([
+            $notification = Notification::create([
                 'child_id' => null,
+                'appointment_id' => null,
+                'child_name' => null,
                 'parent' => $user->user_fullname,
                 'phone' => $user->mobile_number,
+                'email' => $user->email,
+                'type' => $request->type ?? 'General Announcement',
                 'message' => $request->message,
                 'status' => 'Pending',
             ]);
+
+            try {
+                Mail::to($user->email)->send(
+                    new NotificationMail($notification)
+                );
+
+                $notification->update([
+                    'status' => 'Sent',
+                ]);
+
+            } catch (\Throwable $e) {
+                $notification->update([
+                    'status' => 'Failed',
+                ]);
+            }
+
+            $notifications[] = $notification->fresh();
         }
 
         return response()->json([
-            'message' => 'Broadcast notification created successfully.',
-            'notifications' => $notifications
+            'message' => 'Broadcast notification processed successfully.',
+            'notifications' => $notifications,
         ], 201);
     }
-        // Delete notification
+
     public function destroy($id)
     {
         $notification = Notification::find($id);

@@ -1,27 +1,31 @@
 import "../css/Appointment.css";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   FaCalendarAlt,
   FaPen,
   FaTimes,
   FaEye,
   FaTrash,
+  FaUser,
+  FaChild,
+  FaSyringe,
+  FaMapMarkerAlt,
+  FaClock,
 } from "react-icons/fa";
 import Sidebar from "../View/Sidebar";
 
 function Appointments() {
-  const currentUser = JSON.parse(
-    localStorage.getItem("currentUser")
-  );
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const [searchParams, setSearchParams] = useSearchParams();
+  const childFilterId = searchParams.get("child_id");
 
   const isAdmin = currentUser?.user_type === "Admin";
   const permissions = currentUser?.permissions || [];
 
   const hasPermission = (permission) => {
     return (
-      isAdmin ||
-      permissions.includes("all") ||
-      permissions.includes(permission)
+      isAdmin || permissions.includes("all") || permissions.includes(permission)
     );
   };
 
@@ -45,8 +49,7 @@ function Appointments() {
   // HOVER
   // ==============================
 
-  const [hoveredAppointment, setHoveredAppointment] =
-    useState(null);
+  const [hoveredAppointment, setHoveredAppointment] = useState(null);
 
   // ==============================
   // POPUP
@@ -54,6 +57,9 @@ function Appointments() {
 
   const [showPopup, setShowPopup] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [showChildSelection, setShowChildSelection] = useState(false);
+  const [selectedHistoryAppointment, setSelectedHistoryAppointment] =
+    useState(null);
 
   // ==============================
   // FORM
@@ -61,18 +67,13 @@ function Appointments() {
 
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [address, setAddress] = useState(
-    "Barangay Health Center"
-  );
-  const [appointmentType, setAppointmentType] =
-    useState("Vaccination");
+  const [address, setAddress] = useState("Barangay Health Center");
+  const [appointmentType, setAppointmentType] = useState("Vaccination");
 
   const [selectedParents, setSelectedParents] = useState([]);
-  const [selectedChildren, setSelectedChildren] =
-    useState([]);
+  const [selectedChildren, setSelectedChildren] = useState([]);
 
-  const [selectedVaccines, setSelectedVaccines] =
-    useState([]);
+  const [selectedVaccines, setSelectedVaccines] = useState([]);
 
   // ==============================
   // FETCH DATA
@@ -87,9 +88,7 @@ function Appointments() {
 
   const fetchAppointments = async () => {
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/appointments"
-      );
+      const response = await fetch("http://127.0.0.1:8000/api/appointments");
 
       const data = await response.json();
 
@@ -97,41 +96,40 @@ function Appointments() {
         setAppointments(data);
       }
     } catch (error) {
-      console.error(
-        "Error fetching appointments:",
-        error
-      );
+      console.error("Error fetching appointments:", error);
     }
   };
+  useEffect(() => {
+    if (!childFilterId || children.length === 0) {
+      return;
+    }
+
+    const filteredChild = children.find(
+      (child) => String(child.child_id) === String(childFilterId),
+    );
+
+    if (filteredChild) {
+      setSearch(filteredChild.child_name || "");
+    }
+  }, [childFilterId, children]);
 
   const fetchParents = async () => {
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/users"
-      );
+      const response = await fetch("http://127.0.0.1:8000/api/users");
 
       const data = await response.json();
 
       if (response.ok) {
-        setParents(
-          data.filter(
-            (parent) => parent.status === "Active"
-          )
-        );
+        setParents(data.filter((parent) => parent.status === "Active"));
       }
     } catch (error) {
-      console.error(
-        "Error fetching parents:",
-        error
-      );
+      console.error("Error fetching parents:", error);
     }
   };
 
   const fetchChildren = async () => {
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/children"
-      );
+      const response = await fetch("http://127.0.0.1:8000/api/children");
 
       const data = await response.json();
 
@@ -139,18 +137,13 @@ function Appointments() {
         setChildren(data);
       }
     } catch (error) {
-      console.error(
-        "Error fetching children:",
-        error
-      );
+      console.error("Error fetching children:", error);
     }
   };
 
   const fetchVaccines = async () => {
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/vaccines"
-      );
+      const response = await fetch("http://127.0.0.1:8000/api/vaccines");
 
       const data = await response.json();
 
@@ -158,10 +151,7 @@ function Appointments() {
         setVaccines(data);
       }
     } catch (error) {
-      console.error(
-        "Error fetching vaccines:",
-        error
-      );
+      console.error("Error fetching vaccines:", error);
     }
   };
 
@@ -170,29 +160,25 @@ function Appointments() {
   // ==============================
 
   const getAppointmentParentNames = (appointment) => {
-    const appointmentChildren =
-      appointment.children || [];
+    const appointmentChildren = appointment.children || [];
 
     return [
       ...new Set(
         appointmentChildren
           .map((child) => {
             const parent = parents.find(
-              (item) =>
-                Number(item.user_id) ===
-                Number(child.user_id)
+              (item) => Number(item.user_id) === Number(child.user_id),
             );
 
             return parent?.user_fullname || "";
           })
-          .filter(Boolean)
+          .filter(Boolean),
       ),
     ];
   };
 
   const getAppointmentTitle = (appointment) => {
-    const parentNames =
-      getAppointmentParentNames(appointment);
+    const parentNames = getAppointmentParentNames(appointment);
 
     if (parentNames.length === 0) {
       return "No parent assigned";
@@ -202,12 +188,8 @@ function Appointments() {
       return parentNames[0];
     }
 
-    return `${parentNames[0]} + ${
-      parentNames.length - 1
-    } ${
-      parentNames.length - 1 === 1
-        ? "other"
-        : "others"
+    return `${parentNames[0]} + ${parentNames.length - 1} ${
+      parentNames.length - 1 === 1 ? "other" : "others"
     }`;
   };
 
@@ -215,76 +197,64 @@ function Appointments() {
   // FILTER APPOINTMENTS
   // ==============================
 
-  const filteredAppointments = appointments.filter(
-    (appointment) => {
-      const appointmentChildren =
-        appointment.children || [];
+  const filteredAppointments = appointments.filter((appointment) => {
+    const appointmentChildren = appointment.children || [];
 
-      const childNames = appointmentChildren
-        .map((child) => child.child_name || "")
-        .join(" ")
-        .toLowerCase();
+    const childNames = appointmentChildren
+      .map((child) => child.child_name || "")
+      .join(" ")
+      .toLowerCase();
 
-      const parentNames =
-        getAppointmentParentNames(appointment)
-          .join(" ")
-          .toLowerCase();
+    const parentNames = getAppointmentParentNames(appointment)
+      .join(" ")
+      .toLowerCase();
 
-      const searchValue =
-        search.toLowerCase().trim();
+    const searchValue = search.toLowerCase().trim();
 
-      const matchesSearch =
-        searchValue === "" ||
-        childNames.includes(searchValue) ||
-        parentNames.includes(searchValue) ||
-        String(
-          appointment.appointment_id
-        ).includes(searchValue);
+    const matchesSearch =
+      searchValue === "" ||
+      childNames.includes(searchValue) ||
+      parentNames.includes(searchValue) ||
+      String(appointment.appointment_id).includes(searchValue);
 
-      const matchesDate =
-        dateFilter === "All" ||
-        appointment.appointment_date === dateFilter;
+    const matchesDate =
+      dateFilter === "All" || appointment.appointment_date === dateFilter;
 
-      return matchesSearch && matchesDate;
-    }
-  );
+    const matchesChild =
+      !childFilterId ||
+      appointmentChildren.some(
+        (child) => String(child.child_id) === String(childFilterId),
+      );
+
+    return matchesSearch && matchesDate && matchesChild;
+  });
 
   // ==============================
   // SEPARATE APPOINTMENTS
   // ==============================
 
-  const upcomingAppointments =
-    filteredAppointments.filter(
-      (appointment) =>
-        (appointment.status || "Pending") ===
-        "Pending"
-    );
+  const upcomingAppointments = filteredAppointments.filter(
+    (appointment) => (appointment.status || "Pending") === "Pending",
+  );
 
-  const historyAppointments =
-    filteredAppointments.filter((appointment) =>
-      ["Completed", "Missed", "Cancelled"].includes(
-        appointment.status
-      )
-    );
+  const historyAppointments = filteredAppointments.filter((appointment) =>
+    ["Completed", "Missed", "Cancelled"].includes(appointment.status),
+  );
 
   // ==============================
   // OVERVIEW COUNTS
   // ==============================
 
   const upcomingCount = appointments.filter(
-    (appointment) =>
-      (appointment.status || "Pending") ===
-      "Pending"
+    (appointment) => (appointment.status || "Pending") === "Pending",
   ).length;
 
   const completedCount = appointments.filter(
-    (appointment) =>
-      appointment.status === "Completed"
+    (appointment) => appointment.status === "Completed",
   ).length;
 
   const missedCount = appointments.filter(
-    (appointment) =>
-      appointment.status === "Missed"
+    (appointment) => appointment.status === "Missed",
   ).length;
 
   // ==============================
@@ -293,8 +263,7 @@ function Appointments() {
 
   const availableChildren = children.filter(
     (child) =>
-      selectedParents.includes(child.user_id) &&
-      child.status === "Continuing"
+      selectedParents.includes(child.user_id) && child.status === "Continuing",
   );
 
   // ==============================
@@ -303,27 +272,16 @@ function Appointments() {
 
   const toggleParent = (parentId) => {
     setSelectedParents((previous) => {
-      const newSelectedParents =
-        previous.includes(parentId)
-          ? previous.filter(
-              (id) => id !== parentId
-            )
-          : [...previous, parentId];
+      const newSelectedParents = previous.includes(parentId)
+        ? previous.filter((id) => id !== parentId)
+        : [...previous, parentId];
 
       setSelectedChildren((currentChildren) =>
         currentChildren.filter((childId) => {
-          const child = children.find(
-            (item) =>
-              item.child_id === childId
-          );
+          const child = children.find((item) => item.child_id === childId);
 
-          return (
-            child &&
-            newSelectedParents.includes(
-              child.user_id
-            )
-          );
-        })
+          return child && newSelectedParents.includes(child.user_id);
+        }),
       );
 
       return newSelectedParents;
@@ -336,13 +294,44 @@ function Appointments() {
 
   const toggleChild = (childId) => {
     setSelectedChildren((previous) => {
-      if (previous.includes(childId)) {
-        return previous.filter(
-          (id) => id !== childId
-        );
+      const isAlreadySelected = previous.includes(childId);
+
+      // Removing a child is always allowed
+      if (isAlreadySelected) {
+        return previous.filter((id) => id !== childId);
       }
 
-      return [...previous, childId];
+      const newSelectedChildren = [...previous, childId];
+
+      // Check every currently selected vaccine
+      const insufficientVaccine = selectedVaccines.find((selected) => {
+        const vaccine = vaccines.find(
+          (item) => item.vaccine_ID === selected.vaccine_id,
+        );
+
+        if (!vaccine) {
+          return false;
+        }
+
+        const availableStock = Number(vaccine.stock_quantity || 0);
+
+        return availableStock < newSelectedChildren.length;
+      });
+
+      if (insufficientVaccine) {
+        const vaccine = vaccines.find(
+          (item) => item.vaccine_ID === insufficientVaccine.vaccine_id,
+        );
+
+        alert(
+          `Cannot select this child because ${vaccine?.vaccine_name || "the selected vaccine"} ` +
+            `does not have enough stock for ${newSelectedChildren.length} children.`,
+        );
+
+        return previous;
+      }
+
+      return newSelectedChildren;
     });
   };
 
@@ -351,17 +340,36 @@ function Appointments() {
   // ==============================
 
   const toggleVaccine = (vaccineId) => {
-    setSelectedVaccines((previous) => {
-      const existing = previous.find(
-        (item) =>
-          item.vaccine_id === vaccineId
-      );
+    const vaccine = vaccines.find((item) => item.vaccine_ID === vaccineId);
 
+    if (!vaccine) {
+      return;
+    }
+
+    const requiredStock = selectedChildren.length;
+    const availableStock = Number(vaccine.stock_quantity || 0);
+
+    setSelectedVaccines((previous) => {
+      const existing = previous.find((item) => item.vaccine_id === vaccineId);
+
+      // Remove vaccine if already selected
       if (existing) {
-        return previous.filter(
-          (item) =>
-            item.vaccine_id !== vaccineId
+        return previous.filter((item) => item.vaccine_id !== vaccineId);
+      }
+
+      // No children selected yet
+      if (requiredStock === 0) {
+        alert("Please select at least one child first.");
+        return previous;
+      }
+
+      // Not enough stock
+      if (availableStock < requiredStock) {
+        alert(
+          `${vaccine.vaccine_name} does not have enough stock. ` +
+            `Required: ${requiredStock}, Available: ${availableStock}.`,
         );
+        return previous;
       }
 
       return [
@@ -386,8 +394,8 @@ function Appointments() {
               ...item,
               dose_number: Number(dose),
             }
-          : item
-      )
+          : item,
+      ),
     );
   };
 
@@ -396,23 +404,13 @@ function Appointments() {
   // ==============================
 
   const saveAppointment = async () => {
-    if (
-      editingId !== null &&
-      !hasPermission("edit_appointments")
-    ) {
-      alert(
-        "You do not have permission to edit appointments."
-      );
+    if (editingId !== null && !hasPermission("edit_appointments")) {
+      alert("You do not have permission to edit appointments.");
       return;
     }
 
-    if (
-      editingId === null &&
-      !hasPermission("add_appointments")
-    ) {
-      alert(
-        "You do not have permission to add appointments."
-      );
+    if (editingId === null && !hasPermission("add_appointments")) {
+      alert("You do not have permission to add appointments.");
       return;
     }
 
@@ -432,52 +430,38 @@ function Appointments() {
     }
 
     if (selectedParents.length === 0) {
-      alert(
-        "Please select at least one parent or guardian."
-      );
+      alert("Please select at least one parent or guardian.");
       return;
     }
 
     if (selectedChildren.length === 0) {
-      alert(
-        "Please select at least one continuing child."
-      );
+      alert("Please select at least one continuing child.");
       return;
     }
 
     if (selectedVaccines.length === 0) {
-      alert(
-        "Please select at least one vaccine and dose."
-      );
+      alert("Please select at least one vaccine and dose.");
       return;
     }
 
     const existingAppointment =
       editingId !== null
         ? appointments.find(
-            (appointment) =>
-              appointment.appointment_id ===
-              editingId
+            (appointment) => appointment.appointment_id === editingId,
           )
         : null;
 
     const data = {
-      admin_id:
-        currentUser?.Admin_id ||
-        currentUser?.admin_id ||
-        1,
+      admin_id: currentUser?.Admin_id || currentUser?.admin_id || 1,
 
-      staff_id:
-        currentUser?.staff_id || null,
+      staff_id: currentUser?.staff_id || null,
 
       appointment_date: date,
       appointment_time: time,
       address: address,
       appointment_type: appointmentType,
 
-      status:
-        existingAppointment?.status ||
-        "Pending",
+      status: existingAppointment?.status || "Pending",
 
       child_ids: selectedChildren,
       vaccines: selectedVaccines,
@@ -496,33 +480,26 @@ function Appointments() {
               Accept: "application/json",
             },
             body: JSON.stringify(data),
-          }
+          },
         );
       } else {
-        response = await fetch(
-          "http://127.0.0.1:8000/api/appointments",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            body: JSON.stringify(data),
-          }
-        );
+        response = await fetch("http://127.0.0.1:8000/api/appointments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(data),
+        });
       }
 
       const result = await response.json();
 
       if (!response.ok) {
-        console.error(
-          "Laravel error:",
-          result
-        );
+        console.error("Laravel error:", result);
 
         alert(
-          result.message ||
-            "An error occurred while saving the appointment."
+          result.message || "An error occurred while saving the appointment.",
         );
 
         return;
@@ -532,14 +509,9 @@ function Appointments() {
 
       clearForm();
     } catch (error) {
-      console.error(
-        "Error saving appointment:",
-        error
-      );
+      console.error("Error saving appointment:", error);
 
-      alert(
-        "Unable to connect to the server."
-      );
+      alert("Unable to connect to the server.");
     }
   };
 
@@ -547,16 +519,9 @@ function Appointments() {
   // UPDATE STATUS
   // ==============================
 
-  const updateAppointmentStatus = async (
-    id,
-    newStatus
-  ) => {
-    if (
-      !hasPermission("edit_appointments")
-    ) {
-      alert(
-        "You do not have permission to edit appointments."
-      );
+  const updateAppointmentStatus = async (id, newStatus) => {
+    if (!hasPermission("edit_appointments")) {
+      alert("You do not have permission to edit appointments.");
       return;
     }
 
@@ -572,21 +537,15 @@ function Appointments() {
           body: JSON.stringify({
             status: newStatus,
           }),
-        }
+        },
       );
 
       const result = await response.json();
 
       if (!response.ok) {
-        console.error(
-          "Laravel error:",
-          result
-        );
+        console.error("Laravel error:", result);
 
-        alert(
-          result.message ||
-            "Failed to update appointment status."
-        );
+        alert(result.message || "Failed to update appointment status.");
 
         return;
       }
@@ -595,10 +554,7 @@ function Appointments() {
 
       await fetchAppointments();
     } catch (error) {
-      console.error(
-        "Error updating appointment status:",
-        error
-      );
+      console.error("Error updating appointment status:", error);
     }
   };
 
@@ -606,100 +562,63 @@ function Appointments() {
   // CANCEL APPOINTMENT
   // ==============================
 
-  const cancelAppointment = async (
-    appointment
-  ) => {
-    if (
-      !hasPermission("edit_appointments")
-    ) {
-      alert(
-        "You do not have permission to cancel appointments."
-      );
+  const cancelAppointment = async (appointment) => {
+    if (!hasPermission("edit_appointments")) {
+      alert("You do not have permission to cancel appointments.");
       return;
     }
 
     const confirmed = window.confirm(
-      "Are you sure you want to cancel this appointment?"
+      "Are you sure you want to cancel this appointment?",
     );
 
     if (!confirmed) {
       return;
     }
 
-    await updateAppointmentStatus(
-      appointment.appointment_id,
-      "Cancelled"
-    );
+    await updateAppointmentStatus(appointment.appointment_id, "Cancelled");
   };
 
   // ==============================
   // EDIT APPOINTMENT
   // ==============================
 
-  const openEditAppointment = (
-    appointment
-  ) => {
-    if (
-      !hasPermission("edit_appointments")
-    ) {
-      alert(
-        "You do not have permission to edit appointments."
-      );
+  const openEditAppointment = (appointment) => {
+    if (!hasPermission("edit_appointments")) {
+      alert("You do not have permission to edit appointments.");
       return;
     }
 
-    setEditingId(
-      appointment.appointment_id
-    );
+    setEditingId(appointment.appointment_id);
 
-    setDate(
-      appointment.appointment_date || ""
-    );
+    setDate(appointment.appointment_date || "");
 
-    setTime(
-      appointment.appointment_time || ""
-    );
+    setTime(appointment.appointment_time || "");
 
-    setAddress(
-      appointment.address ||
-        "Barangay Health Center"
-    );
+    setAddress(appointment.address || "Barangay Health Center");
 
-    setAppointmentType(
-      appointment.appointment_type ||
-        "Vaccination"
-    );
+    setAppointmentType(appointment.appointment_type || "Vaccination");
 
-    const appointmentChildren =
-      appointment.children || [];
+    const appointmentChildren = appointment.children || [];
 
-    const childIds =
-      appointmentChildren.map(
-        (child) => child.child_id
-      );
+    const childIds = appointmentChildren.map((child) => child.child_id);
 
     const parentIds = [
       ...new Set(
-        appointmentChildren
-          .map((child) => child.user_id)
-          .filter(Boolean)
+        appointmentChildren.map((child) => child.user_id).filter(Boolean),
       ),
     ];
 
     setSelectedChildren(childIds);
     setSelectedParents(parentIds);
 
-    const appointmentVaccines =
-      appointment.vaccines || [];
+    const appointmentVaccines = appointment.vaccines || [];
 
     setSelectedVaccines(
-      appointmentVaccines.map(
-        (item) => ({
-          vaccine_id: item.vaccine_id,
-          dose_number:
-            item.dose_number || 1,
-        })
-      )
+      appointmentVaccines.map((item) => ({
+        vaccine_id: item.vaccine_id,
+        dose_number: item.dose_number || 1,
+      })),
     );
 
     setHoveredAppointment(null);
@@ -714,13 +633,9 @@ function Appointments() {
     setDate("");
     setTime("");
 
-    setAddress(
-      "Barangay Health Center"
-    );
+    setAddress("Barangay Health Center");
 
-    setAppointmentType(
-      "Vaccination"
-    );
+    setAppointmentType("Vaccination");
 
     setSelectedParents([]);
     setSelectedChildren([]);
@@ -735,75 +650,45 @@ function Appointments() {
   // ==============================
 
   const getStatusClass = (status) => {
-    return `status-${(
-      status || "Pending"
-    )
-      .toLowerCase()
-      .replace(" ", "-")}`;
+    return `status-${(status || "Pending").toLowerCase().replace(" ", "-")}`;
   };
 
   // ==============================
   // APPOINTMENT ITEM
   // ==============================
 
-  const renderAppointmentItem = (
-    appointment,
-    isHistory = false
-  ) => {
-    const appointmentChildren =
-      appointment.children || [];
+  const renderAppointmentItem = (appointment, isHistory = false) => {
+    const appointmentChildren = appointment.children || [];
 
-    const parentTitle =
-      getAppointmentTitle(appointment);
+    const parentTitle = getAppointmentTitle(appointment);
 
-    const isHovered =
-      hoveredAppointment ===
-      appointment.appointment_id;
+    const isHovered = hoveredAppointment === appointment.appointment_id;
 
-    const status =
-      appointment.status || "Pending";
+    const status = appointment.status || "Pending";
 
     return (
       <div
         className={`appointment-item ${
-          isHovered
-            ? "appointment-item-hovered"
-            : ""
+          isHovered ? "appointment-item-hovered" : ""
         }`}
         key={appointment.appointment_id}
-        onMouseEnter={() =>
-          setHoveredAppointment(
-            appointment.appointment_id
-          )
-        }
-        onMouseLeave={() =>
-          setHoveredAppointment(null)
-        }
+        onMouseEnter={() => setHoveredAppointment(appointment.appointment_id)}
+        onMouseLeave={() => setHoveredAppointment(null)}
       >
-        {/* COMPACT ROW */}
         <div className="appointment-item-main">
           <div className="appointment-item-date">
             <FaCalendarAlt />
 
-            <span>
-              {appointment.appointment_date}
-            </span>
+            <span>{appointment.appointment_date}</span>
           </div>
 
-          <div className="appointment-item-parent">
-            {parentTitle}
-          </div>
+          <div className="appointment-item-parent">{parentTitle}</div>
 
-          <div
-            className={`appointment-item-status ${getStatusClass(
-              status
-            )}`}
-          >
+          <div className={`appointment-item-status ${getStatusClass(status)}`}>
             {status}
           </div>
         </div>
 
-        {/* HOVER DETAILS */}
         {isHovered && (
           <div
             className={`appointment-hover-card ${
@@ -812,29 +697,20 @@ function Appointments() {
                 : "appointment-hover-upcoming"
             }`}
             onMouseEnter={() =>
-              setHoveredAppointment(
-                appointment.appointment_id
-              )
+              setHoveredAppointment(appointment.appointment_id)
             }
           >
             <div className="appointment-hover-header">
               <div>
-                <h4>
-                  {parentTitle}
-                </h4>
+                <h4>{parentTitle}</h4>
 
                 <span>
-                  {appointment.appointment_date}{" "}
-                  •{" "}
+                  {appointment.appointment_date} •{" "}
                   {appointment.appointment_time}
                 </span>
               </div>
 
-              <span
-                className={`appointment-status ${getStatusClass(
-                  status
-                )}`}
-              >
+              <span className={`appointment-status ${getStatusClass(status)}`}>
                 {status}
               </span>
             </div>
@@ -844,13 +720,9 @@ function Appointments() {
                 <span>Children</span>
 
                 <strong>
-                  {appointmentChildren.length >
-                  0
+                  {appointmentChildren.length > 0
                     ? appointmentChildren
-                        .map(
-                          (child) =>
-                            child.child_name
-                        )
+                        .map((child) => child.child_name)
                         .join(", ")
                     : "No children"}
                 </strong>
@@ -859,46 +731,32 @@ function Appointments() {
               <div className="appointment-hover-detail">
                 <span>Appointment Type</span>
 
-                <strong>
-                  {appointment.appointment_type ||
-                    "—"}
-                </strong>
+                <strong>{appointment.appointment_type || "—"}</strong>
               </div>
 
               <div className="appointment-hover-detail">
                 <span>Clinic / Location</span>
 
-                <strong>
-                  {appointment.address ||
-                    "—"}
-                </strong>
+                <strong>{appointment.address || "—"}</strong>
               </div>
 
               <div className="appointment-hover-detail">
                 <span>Time</span>
 
-                <strong>
-                  {appointment.appointment_time ||
-                    "—"}
-                </strong>
+                <strong>{appointment.appointment_time || "—"}</strong>
               </div>
 
               <div className="appointment-hover-detail appointment-hover-vaccines">
                 <span>Vaccines / Doses</span>
 
                 <strong>
-                  {appointment.vaccines?.length >
-                  0
+                  {appointment.vaccines?.length > 0
                     ? appointment.vaccines
                         .map(
                           (item) =>
-                            `${
-                              item.vaccine
-                                ?.vaccine_name ||
-                              "Unknown"
-                            } (Dose ${
+                            `${item.vaccine?.vaccine_name || "Unknown"} (Dose ${
                               item.dose_number
-                            })`
+                            })`,
                         )
                         .join(", ")
                     : "No vaccines"}
@@ -906,20 +764,15 @@ function Appointments() {
               </div>
             </div>
 
-            {/* UPCOMING ACTIONS */}
             {!isHistory && (
               <div className="appointment-hover-actions">
-                {hasPermission(
-                  "edit_appointments"
-                ) && (
+                {hasPermission("edit_appointments") && (
                   <button
                     className="appointment-edit-btn"
                     title="Edit appointment"
                     onClick={(e) => {
                       e.stopPropagation();
-                      openEditAppointment(
-                        appointment
-                      );
+                      openEditAppointment(appointment);
                     }}
                   >
                     <FaPen />
@@ -927,71 +780,78 @@ function Appointments() {
                   </button>
                 )}
 
-                {hasPermission(
-                  "edit_appointments"
-                ) && (
+                {hasPermission("edit_appointments") && (
                   <button
                     className="appointment-delete-btn"
                     title="Cancel appointment"
                     onClick={(e) => {
                       e.stopPropagation();
-                      cancelAppointment(
-                        appointment
-                      );
+                      cancelAppointment(appointment);
                     }}
                   >
                     <FaTrash />
                     <span>Cancel</span>
                   </button>
                 )}
+                <button
+                  className="appointment-view-btn"
+                  title="View appointment"
+                  onClick={(e) => {
+                    e.stopPropagation();
 
-                {hasPermission(
-                  "edit_appointments"
-                ) && (
+                    if (appointment.children?.length === 1) {
+                      window.location.href = `/patient_viewrecord/${appointment.children[0].child_id}`;
+                    } else if (appointment.children?.length > 1) {
+                      setSelectedHistoryAppointment(appointment);
+                      setShowChildSelection(true);
+                    }
+                  }}
+                >
+                  <FaEye />
+                  <span>View</span>
+                </button>
+
+                {hasPermission("edit_appointments") && (
                   <select
                     className={`appointment-hover-status ${getStatusClass(
-                      status
+                      status,
                     )}`}
                     value={status}
                     onChange={(e) =>
                       updateAppointmentStatus(
                         appointment.appointment_id,
-                        e.target.value
+                        e.target.value,
                       )
                     }
-                    onClick={(e) =>
-                      e.stopPropagation()
-                    }
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <option value="Pending">
-                      Pending
-                    </option>
+                    <option value="Pending">Pending</option>
 
-                    <option value="Completed">
-                      Completed
-                    </option>
+                    <option value="Completed">Completed</option>
 
-                    <option value="Missed">
-                      Missed
-                    </option>
+                    <option value="Missed">Missed</option>
 
-                    <option value="Cancelled">
-                      Cancelled
-                    </option>
+                    <option value="Cancelled">Cancelled</option>
                   </select>
                 )}
               </div>
             )}
 
-            {/* HISTORY ACTION */}
             {isHistory && (
               <div className="appointment-hover-actions">
                 <button
                   className="appointment-view-btn"
                   title="View appointment"
-                  onClick={(e) =>
-                    e.stopPropagation()
-                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+
+                    if (appointment.children?.length === 1) {
+                      window.location.href = `/patient_viewrecord/${appointment.children[0].child_id}`;
+                    } else if (appointment.children?.length > 1) {
+                      setSelectedHistoryAppointment(appointment);
+                      setShowChildSelection(true);
+                    }
+                  }}
                 >
                   <FaEye />
                   <span>View</span>
@@ -1008,12 +868,7 @@ function Appointments() {
   // ACCESS CONTROL
   // ==============================
 
-  if (
-    !isAdmin &&
-    !permissions.includes(
-      "view_appointments"
-    )
-  ) {
+  if (!isAdmin && !permissions.includes("view_appointments")) {
     return (
       <div className="appointment-dashboard">
         <Sidebar />
@@ -1027,10 +882,7 @@ function Appointments() {
           >
             <h2>Access Denied</h2>
 
-            <p>
-              You do not have permission to
-              access Appointments.
-            </p>
+            <p>You do not have permission to access Appointments.</p>
           </div>
         </div>
       </div>
@@ -1046,16 +898,12 @@ function Appointments() {
       <Sidebar />
 
       <div className="appointment-main-content">
-
         {/* HEADER */}
         <div className="appointment-header">
           <div>
             <h3>Appointments</h3>
 
-            <p>
-              Manage upcoming appointments and
-              appointment history.
-            </p>
+            <p>Manage upcoming appointments and appointment history.</p>
           </div>
         </div>
 
@@ -1064,9 +912,7 @@ function Appointments() {
           <div className="appointment-overview-card">
             <div>
               <span>Upcoming</span>
-              <strong>
-                {upcomingCount}
-              </strong>
+              <strong>{upcomingCount}</strong>
             </div>
 
             <FaCalendarAlt />
@@ -1075,9 +921,7 @@ function Appointments() {
           <div className="appointment-overview-card">
             <div>
               <span>Completed</span>
-              <strong>
-                {completedCount}
-              </strong>
+              <strong>{completedCount}</strong>
             </div>
 
             <FaEye />
@@ -1086,9 +930,7 @@ function Appointments() {
           <div className="appointment-overview-card">
             <div>
               <span>Missed</span>
-              <strong>
-                {missedCount}
-              </strong>
+              <strong>{missedCount}</strong>
             </div>
 
             <FaTimes />
@@ -1097,49 +939,43 @@ function Appointments() {
 
         {/* TOOLBAR */}
         <div className="appointment-toolbar">
-
           <div className="appointment-search-box">
             <input
               type="text"
-              placeholder="Search child or parent..."
               value={search}
-              onChange={(e) =>
-                setSearch(e.target.value)
-              }
+              placeholder="Enter child name or Parent"
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearch(value);
+
+                if (childFilterId && value.trim() === "") {
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.delete("child_id");
+                  setSearchParams(newParams);
+                }
+              }}
             />
           </div>
 
           <select
             className="appointment-filter"
             value={dateFilter}
-            onChange={(e) =>
-              setDateFilter(e.target.value)
-            }
+            onChange={(e) => setDateFilter(e.target.value)}
           >
-            <option value="All">
-              All Dates
-            </option>
+            <option value="All">All Dates</option>
 
             {[
               ...new Set(
-                appointments.map(
-                  (appointment) =>
-                    appointment.appointment_date
-                )
+                appointments.map((appointment) => appointment.appointment_date),
               ),
             ].map((appointmentDate) => (
-              <option
-                key={appointmentDate}
-                value={appointmentDate}
-              >
+              <option key={appointmentDate} value={appointmentDate}>
                 {appointmentDate}
               </option>
             ))}
           </select>
 
-          {hasPermission(
-            "add_appointments"
-          ) && (
+          {hasPermission("add_appointments") && (
             <button
               className="appointment-button"
               onClick={() => {
@@ -1154,22 +990,13 @@ function Appointments() {
 
         {/* TWO COLUMN APPOINTMENT AREA */}
         <div className="appointment-columns">
-
-          {/* ==========================
-              UPCOMING
-          ========================== */}
-
+          {/* UPCOMING */}
           <section className="appointment-section">
             <div className="appointment-section-header">
               <div>
-                <h3>
-                  Upcoming Appointments
-                </h3>
+                <h3>Upcoming Appointments</h3>
 
-                <p>
-                  Pending and scheduled
-                  appointments
-                </p>
+                <p>Pending and scheduled appointments</p>
               </div>
 
               <span className="appointment-section-count">
@@ -1178,36 +1005,22 @@ function Appointments() {
             </div>
 
             <div className="appointment-section-list">
-
-              {upcomingAppointments.length ===
-              0 ? (
+              {upcomingAppointments.length === 0 ? (
                 <div className="appointment-empty-section">
                   <FaCalendarAlt />
 
-                  <h4>
-                    No upcoming appointments
-                  </h4>
+                  <h4>No upcoming appointments</h4>
 
-                  <p>
-                    There are no pending
-                    appointments.
-                  </p>
+                  <p>There are no pending appointments.</p>
                 </div>
               ) : (
-                upcomingAppointments.map(
-                  (appointment) =>
-                    renderAppointmentItem(
-                      appointment,
-                      false
-                    )
+                upcomingAppointments.map((appointment) =>
+                  renderAppointmentItem(appointment, false),
                 )
               )}
-
             </div>
 
-            {hasPermission(
-              "add_appointments"
-            ) && (
+            {hasPermission("add_appointments") && (
               <button
                 className="appointment-add-bottom"
                 onClick={() => {
@@ -1220,21 +1033,13 @@ function Appointments() {
             )}
           </section>
 
-          {/* ==========================
-              HISTORY
-          ========================== */}
-
+          {/* HISTORY */}
           <section className="appointment-section appointment-history-section">
             <div className="appointment-section-header">
               <div>
-                <h3>
-                  Appointment History
-                </h3>
+                <h3>Appointment History</h3>
 
-                <p>
-                  Completed, missed, and
-                  cancelled
-                </p>
+                <p>Completed, missed, and cancelled</p>
               </div>
 
               <span className="appointment-section-count">
@@ -1243,435 +1048,485 @@ function Appointments() {
             </div>
 
             <div className="appointment-section-list">
-
-              {historyAppointments.length ===
-              0 ? (
+              {historyAppointments.length === 0 ? (
                 <div className="appointment-empty-section">
                   <FaEye />
 
-                  <h4>
-                    No appointment history
-                  </h4>
+                  <h4>No appointment history</h4>
 
-                  <p>
-                    Completed and missed
-                    appointments will appear
-                    here.
-                  </p>
+                  <p>Completed and missed appointments will appear here.</p>
                 </div>
               ) : (
-                historyAppointments.map(
-                  (appointment) =>
-                    renderAppointmentItem(
-                      appointment,
-                      true
-                    )
+                historyAppointments.map((appointment) =>
+                  renderAppointmentItem(appointment, true),
                 )
               )}
-
             </div>
           </section>
-
         </div>
 
         {/* ==============================
-            ADD / EDIT POPUP
+            REDESIGNED ADD / EDIT POPUP
         ============================== */}
 
         {showPopup &&
-          (
-            editingId === null
-              ? hasPermission(
-                  "add_appointments"
-                )
-              : hasPermission(
-                  "edit_appointments"
-                )
-          ) && (
+          (editingId === null
+            ? hasPermission("add_appointments")
+            : hasPermission("edit_appointments")) && (
             <div className="appointment-popup-overlay">
-
               <div className="appointment-popup">
+                {/* POPUP HEADER */}
+                <div className="appointment-popup-header">
+                  <div className="appointment-popup-title">
+                    <div className="appointment-popup-title-icon">
+                      <FaCalendarAlt />
+                    </div>
 
-                {/* HEADER */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent:
-                      "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <h3>
-                    {editingId !== null
-                      ? "Edit Appointment"
-                      : "Set Appointment"}
-                  </h3>
+                    <div>
+                      <h3>
+                        {editingId !== null
+                          ? "Edit Appointment"
+                          : "Set Appointment"}
+                      </h3>
+
+                      <p>
+                        {editingId !== null
+                          ? "Update the appointment details below."
+                          : "Create a new clinic appointment."}
+                      </p>
+                    </div>
+                  </div>
 
                   <button
                     type="button"
+                    className="appointment-popup-close"
                     onClick={clearForm}
-                    style={{
-                      border: "none",
-                      background:
-                        "transparent",
-                      cursor: "pointer",
-                      fontSize: "18px",
-                    }}
+                    aria-label="Close"
                   >
                     <FaTimes />
                   </button>
                 </div>
 
-                {/* DATE */}
-                <h5>Date:</h5>
+                {/* POPUP BODY */}
+                <div className="appointment-popup-body">
+                  {/* APPOINTMENT DETAILS */}
+                  <div className="appointment-form-section">
+                    <div className="appointment-form-section-heading">
+                      <div className="appointment-form-section-icon">
+                        <FaCalendarAlt />
+                      </div>
 
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) =>
-                    setDate(e.target.value)
-                  }
-                />
+                      <div>
+                        <h4>Appointment Details</h4>
 
-                {/* TIME */}
-                <h5>Time:</h5>
+                        <span>
+                          When and where will the appointment take place?
+                        </span>
+                      </div>
+                    </div>
 
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(e) =>
-                    setTime(e.target.value)
-                  }
-                />
+                    <div className="appointment-details-grid">
+                      <div className="appointment-field">
+                        <label>Date</label>
 
-                {/* LOCATION */}
-                <h5>
-                  Clinic / Location:
-                </h5>
+                        <div className="appointment-input-icon">
+                          <FaCalendarAlt />
 
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) =>
-                    setAddress(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Clinic or location"
-                />
-
-                {/* TYPE */}
-                <h5>
-                  Appointment Type:
-                </h5>
-
-                <select
-                  value={appointmentType}
-                  onChange={(e) =>
-                    setAppointmentType(
-                      e.target.value
-                    )
-                  }
-                >
-                  <option value="Vaccination">
-                    Vaccination
-                  </option>
-
-                  <option value="General">
-                    General
-                  </option>
-                </select>
-
-                {/* PARENTS */}
-                <h5>
-                  Parent / Guardian:
-                </h5>
-
-                <div
-                  style={{
-                    maxHeight: "130px",
-                    overflowY: "auto",
-                    border:
-                      "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    padding: "8px",
-                  }}
-                >
-                  {parents.length === 0 ? (
-                    <p>
-                      No active parents
-                      available.
-                    </p>
-                  ) : (
-                    parents.map(
-                      (parent) => (
-                        <label
-                          key={
-                            parent.user_id
-                          }
-                          style={{
-                            display:
-                              "flex",
-                            alignItems:
-                              "center",
-                            gap: "8px",
-                            padding:
-                              "6px 4px",
-                            cursor:
-                              "pointer",
-                          }}
-                        >
                           <input
-                            type="checkbox"
-                            checked={selectedParents.includes(
-                              parent.user_id
-                            )}
-                            onChange={() =>
-                              toggleParent(
-                                parent.user_id
-                              )
-                            }
+                            type="date"
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
                           />
+                        </div>
+                      </div>
 
-                          <span>
-                            {
-                              parent.user_fullname
-                            }
-                          </span>
-                        </label>
-                      )
-                    )
-                  )}
-                </div>
+                      <div className="appointment-field">
+                        <label>Time</label>
 
-                {/* CHILDREN */}
-                <h5>
-                  Continuing Children:
-                </h5>
+                        <div className="appointment-input-icon">
+                          <FaClock />
 
-                <div
-                  style={{
-                    maxHeight: "130px",
-                    overflowY: "auto",
-                    border:
-                      "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    padding: "8px",
-                  }}
-                >
-                  {selectedParents.length ===
-                  0 ? (
-                    <p>
-                      Select a parent or
-                      guardian first.
-                    </p>
-                  ) : availableChildren.length ===
-                    0 ? (
-                    <p>
-                      No continuing children
-                      found for the selected
-                      parent(s).
-                    </p>
-                  ) : (
-                    availableChildren.map(
-                      (child) => (
-                        <label
-                          key={
-                            child.child_id
-                          }
-                          style={{
-                            display:
-                              "flex",
-                            alignItems:
-                              "center",
-                            gap: "8px",
-                            padding:
-                              "6px 4px",
-                            cursor:
-                              "pointer",
-                          }}
-                        >
                           <input
-                            type="checkbox"
-                            checked={selectedChildren.includes(
-                              child.child_id
-                            )}
-                            onChange={() =>
-                              toggleChild(
-                                child.child_id
-                              )
-                            }
+                            type="time"
+                            value={time}
+                            onChange={(e) => setTime(e.target.value)}
                           />
+                        </div>
+                      </div>
 
-                          <span>
-                            {
-                              child.child_name
-                            }
-                          </span>
+                      <div className="appointment-field appointment-field-full">
+                        <label>Clinic / Location</label>
 
-                          <small
-                            style={{
-                              color:
-                                "#9ca3af",
-                            }}
-                          >
-                            (
-                            {
-                              child
-                                .user
-                                ?.user_fullname
-                            }
-                            )
-                          </small>
-                        </label>
-                      )
-                    )
-                  )}
-                </div>
+                        <div className="appointment-input-icon">
+                          <FaMapMarkerAlt />
 
-                {/* VACCINES */}
-                <h5>
-                  Vaccines / Doses:
-                </h5>
+                          <input
+                            type="text"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            placeholder="Clinic or location"
+                          />
+                        </div>
+                      </div>
 
-                <div
-                  style={{
-                    maxHeight: "160px",
-                    overflowY: "auto",
-                    border:
-                      "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    padding: "8px",
-                  }}
-                >
-                  {vaccines.length === 0 ? (
-                    <p>
-                      No vaccines available.
-                    </p>
-                  ) : (
-                    vaccines.map(
-                      (vaccine) => {
-                        const selected =
-                          selectedVaccines.find(
-                            (item) =>
-                              item.vaccine_id ===
-                              vaccine.vaccine_ID
+                      <div className="appointment-field appointment-field-full">
+                        <label>Appointment Type</label>
+
+                        <select
+                          value={appointmentType}
+                          onChange={(e) => setAppointmentType(e.target.value)}
+                        >
+                          <option value="Vaccination">Vaccination</option>
+
+                          <option value="General">General</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PARENT / GUARDIAN */}
+                  <div className="appointment-form-section">
+                    <div className="appointment-form-section-heading">
+                      <div className="appointment-form-section-icon">
+                        <FaUser />
+                      </div>
+
+                      <div>
+                        <h4>Parent / Guardian</h4>
+
+                        <span>Select one or more parents or guardians.</span>
+                      </div>
+
+                      <span className="appointment-selection-count">
+                        {selectedParents.length} selected
+                      </span>
+                    </div>
+
+                    <div className="appointment-selection-box">
+                      {parents.length === 0 ? (
+                        <div className="appointment-no-data">
+                          No active parents available.
+                        </div>
+                      ) : (
+                        <div className="appointment-parent-grid">
+                          {parents.map((parent) => {
+                            const selected = selectedParents.includes(
+                              parent.user_id,
+                            );
+
+                            return (
+                              <button
+                                type="button"
+                                key={parent.user_id}
+                                className={`appointment-select-card ${
+                                  selected ? "selected" : ""
+                                }`}
+                                onClick={() => toggleParent(parent.user_id)}
+                              >
+                                <span className="appointment-card-checkbox">
+                                  {selected ? "✓" : ""}
+                                </span>
+
+                                <span className="appointment-select-card-icon">
+                                  <FaUser />
+                                </span>
+
+                                <span className="appointment-select-card-text">
+                                  <strong>{parent.user_fullname}</strong>
+
+                                  <small>Parent / Guardian</small>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* CHILDREN */}
+                  <div className="appointment-form-section">
+                    <div className="appointment-form-section-heading">
+                      <div className="appointment-form-section-icon">
+                        <FaChild />
+                      </div>
+
+                      <div>
+                        <h4>Children</h4>
+
+                        <span>
+                          Select the continuing children for this appointment.
+                        </span>
+                      </div>
+
+                      <span className="appointment-selection-count">
+                        {selectedChildren.length} selected
+                      </span>
+                    </div>
+
+                    <div className="appointment-selection-box">
+                      {selectedParents.length === 0 ? (
+                        <div className="appointment-no-data">
+                          Select a parent or guardian first.
+                        </div>
+                      ) : availableChildren.length === 0 ? (
+                        <div className="appointment-no-data">
+                          No continuing children found for the selected
+                          parent(s).
+                        </div>
+                      ) : (
+                        <div className="appointment-child-grid">
+                          {availableChildren.map((child) => {
+                            const selected = selectedChildren.includes(
+                              child.child_id,
+                            );
+
+                            return (
+                              <button
+                                type="button"
+                                key={child.child_id}
+                                className={`appointment-select-card ${
+                                  selected ? "selected" : ""
+                                }`}
+                                onClick={() => toggleChild(child.child_id)}
+                              >
+                                <span className="appointment-card-checkbox">
+                                  {selected ? "✓" : ""}
+                                </span>
+
+                                <span className="appointment-select-card-icon child-icon">
+                                  <FaChild />
+                                </span>
+
+                                <span className="appointment-select-card-text">
+                                  <strong>{child.child_name}</strong>
+
+                                  <small>
+                                    {child.user?.user_fullname ||
+                                      "Parent / Guardian"}
+                                  </small>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* VACCINES */}
+                  <div className="appointment-form-section">
+                    <div className="appointment-form-section-heading">
+                      <div className="appointment-form-section-icon">
+                        <FaSyringe />
+                      </div>
+
+                      <div>
+                        <h4>Vaccines & Doses</h4>
+
+                        <span>
+                          Select the vaccines and assign the required dose.
+                        </span>
+                      </div>
+
+                      <span className="appointment-selection-count">
+                        {selectedVaccines.length} selected
+                      </span>
+                    </div>
+
+                    <div className="appointment-vaccine-list">
+                      {vaccines.length === 0 ? (
+                        <div className="appointment-no-data">
+                          No vaccines available.
+                        </div>
+                      ) : (
+                        vaccines.map((vaccine) => {
+                          const selected = selectedVaccines.find(
+                            (item) => item.vaccine_id === vaccine.vaccine_ID,
                           );
 
-                        return (
-                          <div
-                            key={
-                              vaccine.vaccine_ID
-                            }
-                            style={{
-                              display:
-                                "flex",
-                              alignItems:
-                                "center",
-                              gap: "8px",
-                              padding:
-                                "6px 4px",
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={
-                                !!selected
-                              }
-                              onChange={() =>
-                                toggleVaccine(
-                                  vaccine.vaccine_ID
-                                )
-                              }
-                            />
-
-                            <span
-                              style={{
-                                flex: 1,
-                              }}
+                          return (
+                            <div
+                              key={vaccine.vaccine_ID}
+                              className={`appointment-vaccine-row ${
+                                selected ? "selected" : ""
+                              }`}
                             >
-                              {
-                                vaccine.vaccine_name
-                              }
-                            </span>
-
-                            {selected && (
-                              <select
-                                value={
-                                  selected.dose_number
+                              <button
+                                type="button"
+                                className="appointment-vaccine-select"
+                                disabled={
+                                  !selected &&
+                                  (selectedChildren.length === 0 ||
+                                    Number(vaccine.stock_quantity || 0) <
+                                      selectedChildren.length)
                                 }
-                                onChange={(
-                                  e
-                                ) =>
-                                  changeDose(
-                                    vaccine.vaccine_ID,
-                                    e.target
-                                      .value
-                                  )
+                                onClick={() =>
+                                  toggleVaccine(vaccine.vaccine_ID)
                                 }
-                                style={{
-                                  width:
-                                    "90px",
-                                }}
                               >
-                                <option value="1">
-                                  Dose 1
-                                </option>
+                                <span className="appointment-card-checkbox">
+                                  {selected ? "✓" : ""}
+                                </span>
 
-                                <option value="2">
-                                  Dose 2
-                                </option>
+                                <span className="appointment-vaccine-icon">
+                                  <FaSyringe />
+                                </span>
 
-                                <option value="3">
-                                  Dose 3
-                                </option>
+                                <span className="appointment-vaccine-name">
+                                  <strong>{vaccine.vaccine_name}</strong>
 
-                                <option value="4">
-                                  Dose 4
-                                </option>
+                                  <small>
+                                    Available: {vaccine.stock_quantity ?? 0}
+                                  </small>
+                                </span>
+                              </button>
 
-                                <option value="5">
-                                  Dose 5
-                                </option>
-                              </select>
-                            )}
-                          </div>
-                        );
-                      }
-                    )
-                  )}
+                              {selected && (
+                                <select
+                                  value={selected.dose_number}
+                                  onChange={(e) =>
+                                    changeDose(
+                                      vaccine.vaccine_ID,
+                                      e.target.value,
+                                    )
+                                  }
+                                >
+                                  <option value="1">Dose 1</option>
+
+                                  <option value="2">Dose 2</option>
+
+                                  <option value="3">Dose 3</option>
+
+                                  <option value="4">Dose 4</option>
+
+                                  <option value="5">Dose 5</option>
+                                </select>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                {/* BUTTONS */}
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "10px",
-                    marginTop: "10px",
-                  }}
-                >
-                  <button
-                    className="appointment-cancel"
-                    onClick={clearForm}
-                  >
-                    Cancel
-                  </button>
+                {/* POPUP FOOTER */}
+                <div className="appointment-popup-footer">
+                  <div className="appointment-popup-summary">
+                    <span>
+                      {selectedParents.length} parent
+                      {selectedParents.length !== 1 ? "s" : ""}
+                    </span>
 
-                  <button
-                    className="set"
-                    onClick={saveAppointment}
-                  >
-                    {editingId !== null
-                      ? "Update"
-                      : "Set Appointment"}
-                  </button>
+                    <span>
+                      {selectedChildren.length} child
+                      {selectedChildren.length !== 1 ? "ren" : ""}
+                    </span>
+
+                    <span>
+                      {selectedVaccines.length} vaccine
+                      {selectedVaccines.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  <div className="appointment-popup-actions">
+                    <button
+                      type="button"
+                      className="appointment-cancel"
+                      onClick={clearForm}
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      className="set"
+                      onClick={saveAppointment}
+                    >
+                      {editingId !== null
+                        ? "Update Appointment"
+                        : "Set Appointment"}
+                    </button>
+                  </div>
                 </div>
-
               </div>
-
             </div>
           )}
+        {showChildSelection && selectedHistoryAppointment && (
+          <div
+            className="history-child-popup-overlay"
+            onClick={() => {
+              setShowChildSelection(false);
+              setSelectedHistoryAppointment(null);
+            }}
+          >
+            <div
+              className="history-child-popup"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="history-child-popup-header">
+                <div>
+                  <span className="history-child-popup-label">
+                    APPOINTMENT HISTORY
+                  </span>
 
+                  <h3>Select Child</h3>
+
+                  <p>
+                    This appointment contains multiple children. Select a child
+                    to view their vaccination record.
+                  </p>
+                </div>
+
+                <button
+                  className="history-child-popup-close"
+                  onClick={() => {
+                    setShowChildSelection(false);
+                    setSelectedHistoryAppointment(null);
+                  }}
+                >
+                  <FaTimes />
+                </button>
+              </div>
+
+              <div className="history-child-list">
+                {selectedHistoryAppointment.children.map((child) => (
+                  <button
+                    key={child.child_id}
+                    className="history-child-item"
+                    onClick={() => {
+                      window.location.href = `/patient_viewrecord/${child.child_id}`;
+                    }}
+                  >
+                    <div className="history-child-icon">
+                      <FaEye />
+                    </div>
+
+                    <div className="history-child-info">
+                      <strong>{child.child_name}</strong>
+                      <span>
+                        {child.gender || "Child"} · ID #{child.child_id}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="history-child-popup-footer">
+                <button
+                  className="history-child-cancel"
+                  onClick={() => {
+                    setShowChildSelection(false);
+                    setSelectedHistoryAppointment(null);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

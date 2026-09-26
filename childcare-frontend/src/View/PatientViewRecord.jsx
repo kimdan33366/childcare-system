@@ -1,9 +1,9 @@
 import "../css/PatientViewRecord.css";
 
 import { useState, useEffect } from "react";
-import { FaPaperPlane, FaUserCircle, FaArrowLeft } from "react-icons/fa";
+import { FaUserCircle, FaArrowLeft, FaEdit } from "react-icons/fa";
 
-import { NavLink, useParams, useLocation, useNavigate } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 
 import Sidebar from "../View/Sidebar";
 
@@ -15,9 +15,18 @@ function PatientViewRecord() {
   const backPath = location.state?.from || "/patients";
   const backLabel = location.state?.fromLabel || "Back to Children";
 
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const isAdmin = currentUser?.user_type === "Admin";
+  const permissions = currentUser?.permissions || [];
+
+  const hasPermission = (permission) => {
+    return (
+      isAdmin || permissions.includes("all") || permissions.includes(permission)
+    );
+  };
+
   const [child, setChild] = useState(null);
 
-  const [showAddVaccination, setShowAddVaccination] = useState(false);
   const [showDeleteVaccination, setShowDeleteVaccination] = useState(false);
   const [selectedDeleteVaccination, setSelectedDeleteVaccination] =
     useState(null);
@@ -31,24 +40,27 @@ function PatientViewRecord() {
     provider: "",
   });
 
-  const [showSMSPopup, setShowSMSPopup] = useState(false);
-  const [message, setMessage] = useState("");
-
   const [vaccines, setVaccines] = useState([]);
   const [vaccineInventory, setVaccineInventory] = useState([]);
 
   const [showEditVaccination, setShowEditVaccination] = useState(false);
 
-  const [editVaccinationForm, setEditVaccinationForm] = useState({
-    vaccine: "",
-    dose: "",
-    date: "",
-    status: "",
-    place: "",
-    provider: "",
-  });
-
   const [selectedVaccination, setSelectedVaccination] = useState(null);
+
+  // ==========================================
+  // EDIT CHILD
+  // ==========================================
+
+  const [showEditChild, setShowEditChild] = useState(false);
+
+  const [editChildForm, setEditChildForm] = useState({
+    child_name: "",
+    birthdate: "",
+    gender: "",
+    relationship: "",
+    address: "",
+    status: "Continuing",
+  });
 
   // ==========================================
   // FETCH CHILD
@@ -253,27 +265,103 @@ function PatientViewRecord() {
     return vaccine?.vaccine_name || "Unknown Vaccine";
   };
 
-  const getSelectedVaccineStock = () => {
-    const selectedVaccine = vaccineInventory.find(
-      (vaccine) =>
-        String(vaccine.vaccine_ID) === String(vaccinationForm.vaccine),
-    );
+  // ==========================================
+  // OPEN EDIT CHILD
+  // ==========================================
 
-    return selectedVaccine ? Number(selectedVaccine.stock_quantity) : null;
+  const handleOpenEditChild = () => {
+    if (!child) {
+      return;
+    }
+
+    setEditChildForm({
+      child_name: child.child_name || "",
+      birthdate: child.birthdate
+        ? String(child.birthdate).substring(0, 10)
+        : "",
+      gender: child.gender || "",
+      relationship: child.relationship || "",
+      address: child.address || "",
+      status: child.status || "Continuing",
+    });
+
+    setShowEditChild(true);
   };
 
-  const isSelectedVaccineOutOfStock = getSelectedVaccineStock() === 0;
-
   // ==========================================
-  // VACCINATION FORM
+  // EDIT CHILD FORM CHANGE
   // ==========================================
 
-  const handleVaccinationChange = (field, value) => {
-    setVaccinationForm((prev) => ({
+  const handleEditChildChange = (field, value) => {
+    setEditChildForm((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
+
+  // ==========================================
+  // SAVE CHILD
+  // ==========================================
+
+  const handleSaveChild = async () => {
+    if (
+      !editChildForm.child_name ||
+      !editChildForm.birthdate ||
+      !editChildForm.gender ||
+      !editChildForm.relationship ||
+      !editChildForm.address
+    ) {
+      alert("Please complete all child information fields.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/children/${child_id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            child_name: editChildForm.child_name,
+            birthdate: editChildForm.birthdate,
+            gender: editChildForm.gender,
+            relationship: editChildForm.relationship,
+            address: editChildForm.address,
+            status: editChildForm.status,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Laravel error:", data);
+
+        alert(
+          data.message || data.error || "Failed to update child information.",
+        );
+
+        return;
+      }
+
+      await fetchChild();
+
+      alert("Child information updated successfully!");
+
+      setShowEditChild(false);
+    } catch (error) {
+      console.error("Error updating child:", error);
+
+      alert("Failed to update child information.");
+    }
+  };
+
+  // ==========================================
+  // VACCINATION FORM
+  // ==========================================
 
   // ==========================================
   // EDIT VACCINATION
@@ -292,84 +380,6 @@ function PatientViewRecord() {
     });
 
     setShowEditVaccination(true);
-  };
-
-  // ==========================================
-  // SAVE NEW VACCINATION
-  // ==========================================
-
-  const handleSaveVaccination = async () => {
-    if (
-      !vaccinationForm.vaccine ||
-      !vaccinationForm.dose ||
-      !vaccinationForm.date ||
-      !vaccinationForm.status ||
-      !vaccinationForm.place ||
-      !vaccinationForm.provider
-    ) {
-      alert("Please complete all vaccination fields.");
-      return;
-    }
-
-    const selectedStock = getSelectedVaccineStock();
-
-    if (vaccinationForm.status === "Completed" && selectedStock === 0) {
-      alert("This vaccine is out of stock. Please select another vaccine.");
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/patient-records",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            child_id: child_id,
-            vaccine_id: vaccinationForm.vaccine,
-            dose_number: vaccinationForm.dose,
-            date_taken: vaccinationForm.date,
-            place: vaccinationForm.place,
-            status: vaccinationForm.status,
-            provider: vaccinationForm.provider,
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Laravel error:", data);
-
-        alert(
-          data.message || data.error || "Failed to save vaccination record.",
-        );
-
-        return;
-      }
-
-      await fetchVaccinationRecords();
-      await fetchVaccineInventory();
-
-      alert("Vaccination record added successfully!");
-
-      setVaccinationForm({
-        vaccine: "",
-        dose: "",
-        date: "",
-        status: "",
-        place: "",
-        provider: "",
-      });
-
-      setShowAddVaccination(false);
-    } catch (error) {
-      console.error("Error saving vaccination:", error);
-      alert("Failed to save vaccination record.");
-    }
   };
 
   // ==========================================
@@ -498,18 +508,10 @@ function PatientViewRecord() {
 
     const oldStatus = selectedRecord.status;
 
-    console.log("Updating vaccination status:", {
-      patientRecordID,
-      oldStatus,
-      newStatus: value,
-    });
-
-    // If the status did not actually change
     if (oldStatus === value) {
       return;
     }
 
-    // Optimistically update the UI
     const previousVaccines = [...vaccines];
 
     setVaccines((prevVaccines) =>
@@ -542,10 +544,6 @@ function PatientViewRecord() {
 
       const data = await response.json();
 
-      console.log("Status update HTTP status:", response.status);
-
-      console.log("Status update server response:", data);
-
       if (!response.ok) {
         setVaccines(previousVaccines);
 
@@ -556,10 +554,6 @@ function PatientViewRecord() {
         return;
       }
 
-      /*
-       * Use the status returned by Laravel.
-       * This confirms what was actually saved.
-       */
       const savedStatus = data?.record?.status || value;
 
       setVaccines((prevVaccines) =>
@@ -573,13 +567,7 @@ function PatientViewRecord() {
         ),
       );
 
-      console.log("Vaccination status successfully saved as:", savedStatus);
-
-      // Refresh records from database
       await fetchVaccinationRecords();
-
-      // Refresh vaccine inventory because Completed
-      // changes stock quantity.
       await fetchVaccineInventory();
     } catch (error) {
       console.error("Error updating vaccination status:", error);
@@ -660,7 +648,7 @@ function PatientViewRecord() {
             <button
               type="button"
               className="viewRecord-back-link"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate(backPath)}
             >
               <FaArrowLeft />
               {backLabel}
@@ -744,13 +732,15 @@ function PatientViewRecord() {
             </div>
           </div>
 
-          <button
-            className="viewRecord-sms-btn"
-            onClick={() => setShowSMSPopup(true)}
-          >
-            <FaPaperPlane />
-            Send SMS
-          </button>
+          {hasPermission("edit_patients") && (
+            <button
+              className="viewRecord-sms-btn"
+              onClick={handleOpenEditChild}
+            >
+              <FaEdit />
+              Edit Child
+            </button>
+          )}
         </section>
 
         {/* VACCINATION MANAGEMENT */}
@@ -763,12 +753,14 @@ function PatientViewRecord() {
               <p>Set, update, and manage the child's vaccination records.</p>
             </div>
 
-            <button
-              className="viewRecord-add-btn"
-              onClick={() => setShowAddVaccination(true)}
-            >
-              + Add Vaccination
-            </button>
+            {hasPermission("view_appointments") && (
+              <button
+                className="viewRecord-add-btn"
+                onClick={() => navigate(`/appointments?child_id=${child.child_id}`)}
+              >
+                View Appointments
+              </button>
+            )}
           </div>
 
           <div className="viewRecord-table-wrapper">
@@ -858,12 +850,14 @@ function PatientViewRecord() {
                           yet.
                         </p>
 
-                        <button
-                          className="viewRecord-empty-add"
-                          onClick={() => setShowAddVaccination(true)}
-                        >
-                          + Add Vaccination
-                        </button>
+                        {hasPermission("view_appointments") && (
+                          <button
+                            className="viewRecord-empty-add"
+                            onClick={() => navigate("/appointments")}
+                          >
+                            View Appointments
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -989,20 +983,20 @@ function PatientViewRecord() {
           </div>
         </section>
 
-        {/* SMS POPUP */}
+        {/* EDIT CHILD */}
 
-        {showSMSPopup && (
+        {showEditChild && (
           <div className="viewRecord-popup-overlay">
             <div className="viewRecord-popup">
               <div className="viewRecord-popup-header">
                 <div>
-                  <h2>Send Reminder</h2>
+                  <h2>Edit Child</h2>
 
-                  <p>Send a vaccination reminder to the parent.</p>
+                  <p>Update the child's information.</p>
                 </div>
 
                 <button
-                  onClick={() => setShowSMSPopup(false)}
+                  onClick={() => setShowEditChild(false)}
                   className="viewRecord-popup-close"
                 >
                   ×
@@ -1019,204 +1013,111 @@ function PatientViewRecord() {
                 </div>
               </div>
 
-              <label>Recipient</label>
+              <label>Child Name</label>
 
               <input
                 type="text"
-                value={child?.user?.mobile_number || ""}
-                placeholder="Enter contact number"
-                readOnly
+                className="vaccination-form-input"
+                value={editChildForm.child_name}
+                onChange={(e) =>
+                  handleEditChildChange("child_name", e.target.value)
+                }
+                placeholder="Enter child's name"
               />
 
-              <label>Message</label>
-
-              <textarea
-                rows="5"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Enter reminder message..."
-              />
-
-              <div className="viewRecord-popup-buttons">
-                <button
-                  className="viewRecord-cancel-btn"
-                  onClick={() => {
-                    setMessage("");
-                    setShowSMSPopup(false);
-                  }}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  className="viewRecord-send-btn"
-                  onClick={() => {
-                    alert("SMS Sent!");
-                    setMessage("");
-                    setShowSMSPopup(false);
-                  }}
-                >
-                  Send SMS
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ADD VACCINATION */}
-
-        {showAddVaccination && (
-          <div className="viewRecord-popup-overlay">
-            <div className="viewRecord-popup vaccination-popup">
-              <div className="viewRecord-popup-header">
-                <div>
-                  <h2>Add Vaccination</h2>
-
-                  <p>Add a vaccination record for this child.</p>
-                </div>
-
-                <button
-                  onClick={() => setShowAddVaccination(false)}
-                  className="viewRecord-popup-close"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="viewRecord-popup-child">
-                <FaUserCircle />
-
-                <strong>{child?.child_name || "Child's Name"}</strong>
-              </div>
-
-              <label>Vaccine</label>
-
-              <select
-                className="vaccination-form-input"
-                value={vaccinationForm.vaccine}
-                onChange={(e) =>
-                  handleVaccinationChange("vaccine", e.target.value)
-                }
-              >
-                <option value="">Select vaccine</option>
-
-                {vaccineInventory.map((vaccine) => (
-                  <option key={vaccine.vaccine_ID} value={vaccine.vaccine_ID}>
-                    {vaccine.vaccine_name}
-                  </option>
-                ))}
-              </select>
-
-              {isSelectedVaccineOutOfStock && (
-                <p className="vaccine-stock-warning">
-                  ⚠ This vaccine is currently out of stock.
-                </p>
-              )}
-
-              <label>Dose</label>
-
-              <select
-                className="vaccination-form-input"
-                value={vaccinationForm.dose}
-                onChange={(e) =>
-                  handleVaccinationChange("dose", e.target.value)
-                }
-              >
-                <option value="">Select dose</option>
-
-                <option value="1">Dose 1</option>
-
-                <option value="2">Dose 2</option>
-
-                <option value="3">Dose 3</option>
-              </select>
-
-              <label>Vaccination Date</label>
+              <label>Birthdate</label>
 
               <input
                 type="date"
                 className="vaccination-form-input"
-                value={vaccinationForm.date}
+                value={editChildForm.birthdate}
                 onChange={(e) =>
-                  handleVaccinationChange("date", e.target.value)
+                  handleEditChildChange("birthdate", e.target.value)
                 }
+              />
+
+              <label>Gender</label>
+
+              <select
+                className="vaccination-form-input"
+                value={editChildForm.gender}
+                onChange={(e) =>
+                  handleEditChildChange("gender", e.target.value)
+                }
+              >
+                <option value="">Select gender</option>
+
+                <option value="Male">Male</option>
+
+                <option value="Female">Female</option>
+              </select>
+
+              <label>Relationship</label>
+
+              <select
+                className="vaccination-form-input"
+                value={editChildForm.relationship}
+                onChange={(e) =>
+                  handleEditChildChange("relationship", e.target.value)
+                }
+              >
+                <option value="">Select relationship</option>
+
+                <option value="Mother">Mother</option>
+
+                <option value="Father">Father</option>
+
+                <option value="Guardian">Guardian</option>
+              </select>
+
+              <label>Address</label>
+
+              <input
+                className="vaccination-form-input"
+                // rows="3"
+                value={editChildForm.address}
+                onChange={(e) =>
+                  handleEditChildChange("address", e.target.value)
+                }
+                placeholder="Enter child's address"
               />
 
               <label>Status</label>
 
               <select
                 className="vaccination-form-input"
-                value={vaccinationForm.status}
+                value={editChildForm.status}
                 onChange={(e) =>
-                  handleVaccinationChange("status", e.target.value)
+                  handleEditChildChange("status", e.target.value)
                 }
               >
-                <option value="">Select status</option>
+                <option value="Continuing">Continuing</option>
 
                 <option value="Completed">Completed</option>
 
-                <option value="Continuing">Continuing</option>
-
-                <option value="Missed">Missed</option>
+                <option value="Inactive">Inactive</option>
               </select>
-
-              <label>Place</label>
-
-              <input
-                type="text"
-                className="vaccination-form-input"
-                placeholder="e.g. Health Center"
-                value={vaccinationForm.place}
-                onChange={(e) =>
-                  handleVaccinationChange("place", e.target.value)
-                }
-              />
-
-              <label>Provider</label>
-
-              <input
-                type="text"
-                className="vaccination-form-input"
-                placeholder="e.g. Dr. Maria"
-                value={vaccinationForm.provider}
-                onChange={(e) =>
-                  handleVaccinationChange("provider", e.target.value)
-                }
-              />
 
               <div className="viewRecord-popup-buttons">
                 <button
                   className="viewRecord-cancel-btn"
-                  onClick={() => {
-                    setVaccinationForm({
-                      vaccine: "",
-                      dose: "",
-                      date: "",
-                      status: "",
-                      place: "",
-                      provider: "",
-                    });
-
-                    setShowAddVaccination(false);
-                  }}
+                  onClick={() => setShowEditChild(false)}
                 >
                   Cancel
                 </button>
 
                 <button
                   className="viewRecord-send-btn"
-                  onClick={handleSaveVaccination}
-                  disabled={
-                    isSelectedVaccineOutOfStock &&
-                    vaccinationForm.status === "Completed"
-                  }
+                  onClick={handleSaveChild}
                 >
-                  Save Vaccination
+                  Save Changes
                 </button>
               </div>
             </div>
           </div>
         )}
+
+        
 
         {/* EDIT VACCINATION */}
 

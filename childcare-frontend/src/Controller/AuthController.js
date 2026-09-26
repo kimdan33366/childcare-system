@@ -1,29 +1,20 @@
-export const loginUser = async (username, password, role) => {
+export const loginUser = async (username, password) => {
   try {
-    const endpoint =
-      role === "Staff"
-        ? "http://127.0.0.1:8000/api/staff/login"
-        : "http://127.0.0.1:8000/api/admins/login";
-
-    const body =
-      role === "Staff"
-        ? {
-            staff_email: username,
-            staff_password: password,
-          }
-        : {
-            Admin_name: username,
-            Admin_password: password,
-          };
-
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(body),
-    });
+    // One login endpoint for both Administrator and Staff
+    const response = await fetch(
+      "http://127.0.0.1:8000/api/login",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password,
+        }),
+      }
+    );
 
     const data = await response.json();
 
@@ -37,7 +28,10 @@ export const loginUser = async (username, password, role) => {
 
     let loggedInUser;
 
-    if (role === "Staff") {
+    // =========================
+    // STAFF LOGIN
+    // =========================
+    if (data.user_type === "Staff") {
       const permissionResponse = await fetch(
         `http://127.0.0.1:8000/api/staff/${data.staff.staff_id}/permissions`
       );
@@ -57,7 +51,12 @@ export const loginUser = async (username, password, role) => {
         user_type: "Staff",
         permissions: permissionData.permissions || [],
       };
-    } else {
+    }
+
+    // =========================
+    // ADMINISTRATOR LOGIN
+    // =========================
+    else if (data.user_type === "Admin") {
       loggedInUser = {
         ...data.admin,
         user_type: "Admin",
@@ -65,6 +64,18 @@ export const loginUser = async (username, password, role) => {
       };
     }
 
+    // =========================
+    // UNKNOWN USER TYPE
+    // =========================
+    else {
+      return {
+        success: false,
+        user: null,
+        message: "Unknown account type.",
+      };
+    }
+
+    // Save logged-in user
     localStorage.setItem(
       "currentUser",
       JSON.stringify(loggedInUser)
