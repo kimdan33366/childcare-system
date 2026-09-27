@@ -792,22 +792,14 @@ function PatientViewRecord() {
                       <td>{item.date || item.date_taken || "—"}</td>
 
                       <td>
-                        <select
+                        <div
                           value={item.status || ""}
-                          onChange={(e) =>
-                            handleVaccineChange(index, "status", e.target.value)
-                          }
-                          className={`viewRecord-status-select ${
-                            item.status?.toLowerCase().replace(/\s+/g, "-") ||
-                            ""
-                          }`}
+                          
                         >
                           <option value="Completed">Completed</option>
 
-                          <option value="Continuing">Continuing</option>
-
-                          <option value="Missed">Missed</option>
-                        </select>
+                          
+                        </div>
                       </td>
 
                       <td>{item.place || "—"}</td>
@@ -816,12 +808,7 @@ function PatientViewRecord() {
 
                       <td>
                         <div className="viewRecord-action-buttons">
-                          <button
-                            className="viewRecord-edit-btn"
-                            onClick={() => handleEditVaccination(item)}
-                          >
-                            Edit
-                          </button>
+                          
 
                           <button
                             className="viewRecord-delete-btn"

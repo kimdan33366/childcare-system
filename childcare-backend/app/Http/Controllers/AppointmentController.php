@@ -16,7 +16,7 @@ class AppointmentController extends Controller
         $appointments = Appointment::with([
             'admin',
             'staff',
-            'children',
+            'children.user',
             'vaccines.vaccine',
             'growthRecords',
             'patientRecords',
@@ -60,9 +60,6 @@ class AppointmentController extends Controller
              *
              * Each selected vaccine is required once for every
              * selected child.
-             *
-             * Example:
-             * 3 children + BCG = 3 doses of BCG.
              */
             if (in_array($status, ['Pending', 'Completed'])) {
                 $this->reserveVaccineStock(
@@ -99,10 +96,6 @@ class AppointmentController extends Controller
             /*
              * If an appointment is created directly as Completed,
              * generate the corresponding patient vaccination records.
-             *
-             * Stock has already been reserved above,
-             * so createPatientRecordsFromAppointment() does NOT
-             * deduct stock again.
              */
             if ($status === 'Completed') {
                 $this->createPatientRecordsFromAppointment($appointment);
@@ -114,7 +107,7 @@ class AppointmentController extends Controller
                 $appointment->fresh()->load([
                     'admin',
                     'staff',
-                    'children',
+                    'children.user',
                     'vaccines.vaccine',
                     'patientRecords',
                 ]),
@@ -136,7 +129,7 @@ class AppointmentController extends Controller
         $appointment = Appointment::with([
             'admin',
             'staff',
-            'children',
+            'children.user',
             'vaccines.vaccine',
             'growthRecords',
             'patientRecords',
@@ -185,6 +178,7 @@ class AppointmentController extends Controller
 
         try {
             $oldStatus = $appointment->status;
+
             $newStatus = $request->has('status')
                 ? $request->status
                 : $oldStatus;
@@ -193,8 +187,6 @@ class AppointmentController extends Controller
              * Completed appointments are historical records.
              *
              * Do not allow their children or vaccines to be changed.
-             * This prevents the appointment history and vaccine stock
-             * from becoming inconsistent.
              */
             if (
                 $oldStatus === 'Completed' &&
@@ -240,12 +232,7 @@ class AppointmentController extends Controller
                 : $oldVaccines;
 
             /*
-             * If the appointment currently has reserved stock
-             * (Pending or Completed), return that reservation first
-             * when the appointment is being changed to another
-             * reserving configuration.
-             *
-             * We then reserve the new required amount below.
+             * Determine stock reservation states.
              */
             $oldReservesStock = in_array(
                 $oldStatus,
@@ -258,13 +245,16 @@ class AppointmentController extends Controller
             );
 
             /*
-             * If changing children/vaccines while still reserving stock,
-             * release the old reservation first.
+             * Determine whether children or vaccines changed.
              */
             $configurationChanged =
                 $request->has('child_ids') ||
                 $request->has('vaccines');
 
+            /*
+             * If changing children/vaccines while still reserving stock,
+             * release the old reservation first.
+             */
             if ($oldReservesStock && $configurationChanged) {
                 $this->releaseVaccineStock(
                     $oldVaccines,
@@ -346,9 +336,6 @@ class AppointmentController extends Controller
             /*
              * Generate patient records only when the appointment
              * changes into Completed.
-             *
-             * Stock has already been reserved, so this does NOT
-             * deduct stock again.
              */
             if (
                 $oldStatus !== 'Completed' &&
@@ -365,7 +352,7 @@ class AppointmentController extends Controller
                 $appointment->fresh()->load([
                     'admin',
                     'staff',
-                    'children',
+                    'children.user',
                     'vaccines.vaccine',
                     'patientRecords',
                 ])
@@ -384,9 +371,6 @@ class AppointmentController extends Controller
      * Reserve vaccine stock.
      *
      * Each selected vaccine requires one dose for every selected child.
-     *
-     * Example:
-     * 3 children + vaccine = 3 stock deducted.
      */
     private function reserveVaccineStock(
         array $vaccines,
@@ -397,9 +381,8 @@ class AppointmentController extends Controller
         }
 
         /*
-         * If the same vaccine somehow appears more than once,
-         * combine it so stock is checked/deducted only once
-         * for the appointment.
+         * If the same vaccine appears more than once,
+         * combine it so stock is checked/deducted only once.
          */
         $vaccineIds = collect($vaccines)
             ->pluck('vaccine_id')
@@ -407,10 +390,6 @@ class AppointmentController extends Controller
             ->values();
 
         foreach ($vaccineIds as $vaccineId) {
-            /*
-             * Lock the row so two simultaneous appointments
-             * cannot consume the same stock.
-             */
             $vaccine = Vaccine::where(
                 'vaccine_ID',
                 $vaccineId
@@ -517,7 +496,6 @@ class AppointmentController extends Controller
      *
      * Every selected vaccine/dose is recorded for every selected child.
      *
-     * IMPORTANT:
      * Stock is NOT deducted here because the appointment already
      * reserved/deducted the stock when it was created.
      */

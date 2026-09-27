@@ -102,7 +102,7 @@ function Sidebar() {
 
           <NavLink to="/notification">
             <FaBell />
-            Notifications
+            Send Reminder
           </NavLink>
         </div>
       </nav>

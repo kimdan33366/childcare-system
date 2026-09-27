@@ -1,4 +1,3 @@
-
 import "../css/Notification.css";
 
 import { useEffect, useMemo, useState } from "react";
@@ -153,6 +152,7 @@ function Notification() {
     );
   };
 
+  // Get children belonging to an appointment
   const getAppointmentChildren = (appointment) => {
     if (!appointment) {
       return [];
@@ -170,7 +170,7 @@ function Notification() {
       return [appointment.child];
     }
 
-    if (appointment.child_ids) {
+    if (Array.isArray(appointment.child_ids)) {
       return appointment.child_ids
         .map((id) => getChildById(id))
         .filter(Boolean);
@@ -179,41 +179,51 @@ function Notification() {
     return [];
   };
 
+  // Get parent names belonging to an appointment
   const getAppointmentParentNames = (appointment) => {
+    if (!appointment) {
+      return [];
+    }
+
+    const parentNames = [];
+
+    // Direct user relationship
+    if (appointment.user?.user_fullname) {
+      parentNames.push(appointment.user.user_fullname);
+    }
+
+    // Direct parent relationship
+    if (appointment.parent?.user_fullname) {
+      parentNames.push(appointment.parent.user_fullname);
+    }
+
+    // Parent may be returned directly as a string
+    if (
+      typeof appointment.parent === "string" &&
+      appointment.parent.trim()
+    ) {
+      parentNames.push(appointment.parent);
+    }
+
+    // Parent information may be included inside children
     const appointmentChildren =
       getAppointmentChildren(appointment);
 
-    const parentNames = appointmentChildren
-      .map((child) => {
-        if (child?.user) {
-          return child.user.user_fullname;
-        }
+    appointmentChildren.forEach((child) => {
+      if (child?.user?.user_fullname) {
+        parentNames.push(child.user.user_fullname);
+      }
 
-        if (child?.parent) {
-          return child.parent.user_fullname || child.parent;
-        }
+      if (child?.parent?.user_fullname) {
+        parentNames.push(child.parent.user_fullname);
+      }
 
-        const parentId =
-          child?.user_id ||
-          child?.parent_id;
+      if (child?.user_fullname) {
+        parentNames.push(child.user_fullname);
+      }
+    });
 
-        if (parentId) {
-          const parent = children
-            .map((item) => item.user)
-            .find(
-              (user) =>
-                user &&
-                Number(user.user_id) === Number(parentId),
-            );
-
-          return parent?.user_fullname;
-        }
-
-        return null;
-      })
-      .filter(Boolean);
-
-    return [...new Set(parentNames)];
+    return [...new Set(parentNames)].filter(Boolean);
   };
 
   const getAppointmentDate = (appointment) => {
@@ -260,6 +270,8 @@ function Notification() {
     });
   };
 
+  // This function already returns a STRING.
+  // Do NOT use .join() when calling it.
   const getAppointmentChildNames = (appointment) => {
     const appointmentChildren =
       getAppointmentChildren(appointment);
@@ -269,7 +281,7 @@ function Notification() {
     }
 
     return appointmentChildren
-      .map((child) => child.child_name)
+      .map((child) => child?.child_name)
       .filter(Boolean)
       .join(", ");
   };
@@ -413,7 +425,7 @@ function Notification() {
     setSelectedAppointment(appointment);
 
     const childNames = appointmentChildren
-      .map((child) => child.child_name)
+      .map((child) => child?.child_name)
       .filter(Boolean);
 
     const date = getAppointmentDate(appointment);
@@ -855,7 +867,7 @@ function Notification() {
         {/* PAGE HEADER */}
         <div className="notification-page-title">
           <div>
-            <h1>Notifications</h1>
+            <h1>Reminders</h1>
             <p>
               Send appointment reminders and manage parent
               notifications.
@@ -871,7 +883,7 @@ function Notification() {
               }}
             >
               <FaPaperPlane />
-              Compose Notification
+              Compose Reminder
             </button>
           )}
         </div>
@@ -929,7 +941,7 @@ function Notification() {
             <table className="notification-table notification-appointment-table">
               <thead>
                 <tr>
-                  <th>Appointment</th>
+                  <th>Parent</th>
                   <th>Children</th>
                   <th>Date & Time</th>
                   <th>Status</th>
@@ -950,10 +962,10 @@ function Notification() {
                     >
                       <td>
                         <strong>
-                          #
-                          {
-                            appointment.appointment_id
-                          }
+                          {getAppointmentParentNames(
+                            appointment,
+                          ).join(", ") ||
+                            "Unknown Parent"}
                         </strong>
                       </td>
 
@@ -1035,7 +1047,7 @@ function Notification() {
         <div className="notification-history">
           <div className="notification-history-header">
             <div>
-              <h2>Notification History</h2>
+              <h2>Reminder History</h2>
 
               <p>
                 View and manage previously sent notifications.
@@ -1769,4 +1781,3 @@ function Notification() {
 }
 
 export default Notification;
-
