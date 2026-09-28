@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FiEye, FiEdit2, FiKey } from "react-icons/fi";
+import { FiEye, FiEdit2, FiKey, FiTrash2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import "../css/UserManagement.css";
@@ -34,8 +34,17 @@ function UserManagement() {
   // ADD USER
   // ==============================
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-
   const [addUserStep, setAddUserStep] = useState(1);
+
+  const createEmptyChild = (parentAddress = "") => ({
+    childName: "",
+    childBirthdate: "",
+    childGender: "",
+    childAddress: parentAddress,
+    relationship: "",
+    height: "",
+    weight: "",
+  });
 
   const [newUser, setNewUser] = useState({
     name: "",
@@ -45,12 +54,7 @@ function UserManagement() {
     password: "",
     confirmPassword: "",
     status: "Active",
-
-    childName: "",
-    childBirthdate: "",
-    childGender: "",
-    childAddress: "",
-    relationship: "",
+    children: [createEmptyChild()],
   });
 
   // ==============================
@@ -163,16 +167,58 @@ function UserManagement() {
       password: "",
       confirmPassword: "",
       status: "Active",
-
-      childName: "",
-      childBirthdate: "",
-      childGender: "",
-      childAddress: "",
-      relationship: "",
+      children: [createEmptyChild()],
     });
 
     setAddUserStep(1);
     setShowAddUserModal(true);
+  };
+
+  // ==============================
+  // UPDATE CHILD
+  // ==============================
+  const handleChildChange = (index, field, value) => {
+    setNewUser((prev) => {
+      const updatedChildren = [...prev.children];
+
+      updatedChildren[index] = {
+        ...updatedChildren[index],
+        [field]: value,
+      };
+
+      return {
+        ...prev,
+        children: updatedChildren,
+      };
+    });
+  };
+
+  // ==============================
+  // ADD ANOTHER CHILD
+  // ==============================
+  const handleAddAnotherChild = () => {
+    setNewUser((prev) => ({
+      ...prev,
+      children: [
+        ...prev.children,
+        createEmptyChild(prev.address),
+      ],
+    }));
+  };
+
+  // ==============================
+  // REMOVE CHILD
+  // ==============================
+  const handleRemoveChild = (index) => {
+    if (newUser.children.length === 1) {
+      alert("At least one child is required.");
+      return;
+    }
+
+    setNewUser((prev) => ({
+      ...prev,
+      children: prev.children.filter((_, childIndex) => childIndex !== index),
+    }));
   };
 
   // ==============================
@@ -201,7 +247,10 @@ function UserManagement() {
 
     setNewUser((prev) => ({
       ...prev,
-      childAddress: prev.childAddress || prev.address,
+      children: prev.children.map((child) => ({
+        ...child,
+        childAddress: child.childAddress || prev.address,
+      })),
     }));
 
     setAddUserStep(2);
@@ -215,7 +264,7 @@ function UserManagement() {
   };
 
   // ==============================
-  // CREATE USER + FIRST CHILD
+  // CREATE USER + CHILDREN
   // ==============================
   const handleCreateUser = async () => {
     if (!hasPermission("add_users")) {
@@ -223,14 +272,22 @@ function UserManagement() {
       return;
     }
 
-    if (
-      !newUser.childName ||
-      !newUser.childBirthdate ||
-      !newUser.childGender ||
-      !newUser.childAddress ||
-      !newUser.relationship
-    ) {
-      alert("Please fill in all required child information.");
+    if (!newUser.children || newUser.children.length === 0) {
+      alert("Please add at least one child.");
+      return;
+    }
+
+    const invalidChild = newUser.children.some(
+      (child) =>
+        !child.childName ||
+        !child.childBirthdate ||
+        !child.childGender ||
+        !child.childAddress ||
+        !child.relationship
+    );
+
+    if (invalidChild) {
+      alert("Please fill in all required information for every child.");
       return;
     }
 
@@ -250,12 +307,16 @@ function UserManagement() {
           password: newUser.password,
           status: newUser.status,
 
-          // First child
-          child_name: newUser.childName,
-          child_birthdate: newUser.childBirthdate,
-          child_gender: newUser.childGender,
-          child_address: newUser.childAddress,
-          relationship: newUser.relationship,
+          // Children
+          children: newUser.children.map((child) => ({
+            child_name: child.childName,
+            child_birthdate: child.childBirthdate,
+            child_gender: child.childGender,
+            child_address: child.childAddress,
+            relationship: child.relationship,
+            height: child.height || null,
+            weight: child.weight || null,
+          })),
         }),
       });
 
@@ -274,12 +335,7 @@ function UserManagement() {
         password: "",
         confirmPassword: "",
         status: "Active",
-
-        childName: "",
-        childBirthdate: "",
-        childGender: "",
-        childAddress: "",
-        relationship: "",
+        children: [createEmptyChild()],
       });
 
       setAddUserStep(1);
@@ -287,7 +343,11 @@ function UserManagement() {
 
       fetchUsers();
 
-      alert("Parent and first child created successfully.");
+      alert(
+        `Parent and ${newUser.children.length} ${
+          newUser.children.length === 1 ? "child" : "children"
+        } created successfully.`
+      );
     } catch (error) {
       console.error("Error creating user:", error);
       alert("Unable to connect to the server.");
@@ -341,7 +401,6 @@ function UserManagement() {
       }
 
       setEditUser(null);
-
       fetchUsers();
 
       alert("User updated successfully.");
@@ -424,7 +483,11 @@ function UserManagement() {
     setOpenActionMenu(null);
     setActionMenuPosition(null);
 
-    navigate(`/parent-profile/${user.id}`);
+    navigate(`/parent-profile/${user.id}`,{
+      state:{
+        from:"/user-management",
+      }
+    });
   };
 
   // ==============================
@@ -581,7 +644,6 @@ function UserManagement() {
       }
 
       setSelectedUser(null);
-
       fetchUsers();
 
       alert(
@@ -698,7 +760,6 @@ function UserManagement() {
                   <tr key={user.id}>
                     <td>
                       <div className="user-name">{user.name}</div>
-
                       <div className="user-email">{user.email}</div>
                     </td>
 
@@ -718,7 +779,6 @@ function UserManagement() {
 
                     <td>
                       <div className="user-action-wrapper">
-                        {/* VIEW USER / PARENT PROFILE */}
                         {hasPermission("view_users") && (
                           <button
                             type="button"
@@ -730,7 +790,6 @@ function UserManagement() {
                           </button>
                         )}
 
-                        {/* EDIT USER */}
                         {hasPermission("edit_users") && (
                           <button
                             type="button"
@@ -742,7 +801,6 @@ function UserManagement() {
                           </button>
                         )}
 
-                        {/* RESET PASSWORD */}
                         {hasPermission("edit_users") && (
                           <button
                             type="button"
@@ -754,7 +812,6 @@ function UserManagement() {
                           </button>
                         )}
 
-                        {/* ACTIVATE / DEACTIVATE */}
                         {hasPermission("edit_users") && (
                           <button
                             type="button"
@@ -770,7 +827,6 @@ function UserManagement() {
                           </button>
                         )}
 
-                        {/* VIEW ONLY */}
                         {!hasPermission("edit_users") &&
                           hasPermission("view_users") && (
                             <span
@@ -810,19 +866,19 @@ function UserManagement() {
         ============================== */}
         {showAddUserModal && hasPermission("add_users") && (
           <div className="user-modal-overlay">
-            <div className="user-modal">
+            <div className="user-modal add-user-modal">
               <div className="user-modal-header">
                 <div>
                   <h2>
                     {addUserStep === 1
                       ? "Parent Information"
-                      : "Child Information"}
+                      : "Children Information"}
                   </h2>
 
                   <p>
                     {addUserStep === 1
                       ? "Create a new parent account."
-                      : "Register the parent's first child."}
+                      : "Add one or more children to this parent account."}
                   </p>
                 </div>
 
@@ -839,85 +895,109 @@ function UserManagement() {
               </div>
 
               {/* STEP INDICATOR */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  marginBottom: "20px",
-                  fontSize: "13px",
-                }}
-              >
-                <span
-                  style={{
-                    fontWeight: addUserStep === 1 ? "600" : "400",
-                    color: addUserStep === 1 ? "#2563eb" : "#6b7280",
-                  }}
+              <div className="add-user-stepper">
+                <div
+                  className={`add-user-step ${
+                    addUserStep === 1 ? "active" : "completed"
+                  }`}
                 >
-                  1. Parent
-                </span>
+                  <span className="add-user-step-number">
+                    {addUserStep === 1 ? "1" : "✓"}
+                  </span>
 
-                <span style={{ color: "#9ca3af" }}>→</span>
+                  <span>Parent Information</span>
+                </div>
 
-                <span
-                  style={{
-                    fontWeight: addUserStep === 2 ? "600" : "400",
-                    color: addUserStep === 2 ? "#2563eb" : "#6b7280",
-                  }}
+                <div className="add-user-step-line"></div>
+
+                <div
+                  className={`add-user-step ${
+                    addUserStep === 2 ? "active" : ""
+                  }`}
                 >
-                  2. Child
-                </span>
+                  <span className="add-user-step-number">2</span>
+
+                  <span>Children</span>
+                </div>
               </div>
 
-              {/* STEP 1 */}
+              {/* ==============================
+                  STEP 1
+              ============================== */}
               {addUserStep === 1 && (
                 <div className="user-form">
-                  <div className="user-form-group">
-                    <label>Full Name *</label>
-
-                    <input
-                      type="text"
-                      placeholder="Enter full name"
-                      value={newUser.name}
-                      onChange={(e) =>
-                        setNewUser({
-                          ...newUser,
-                          name: e.target.value,
-                        })
-                      }
-                    />
+                  <div className="user-form-section-title">
+                    <h3>Parent Details</h3>
+                    <p>Enter the information for the parent account.</p>
                   </div>
 
-                  <div className="user-form-group">
-                    <label>Email</label>
+                  <div className="user-form-row">
+                    <div className="user-form-group">
+                      <label>Full Name *</label>
 
-                    <input
-                      type="email"
-                      placeholder="Enter email address"
-                      value={newUser.email}
-                      onChange={(e) =>
-                        setNewUser({
-                          ...newUser,
-                          email: e.target.value,
-                        })
-                      }
-                    />
+                      <input
+                        type="text"
+                        placeholder="Enter full name"
+                        value={newUser.name}
+                        onChange={(e) =>
+                          setNewUser({
+                            ...newUser,
+                            name: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="user-form-group">
+                      <label>Email</label>
+
+                      <input
+                        type="email"
+                        placeholder="Enter email address"
+                        value={newUser.email}
+                        onChange={(e) =>
+                          setNewUser({
+                            ...newUser,
+                            email: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
                   </div>
 
-                  <div className="user-form-group">
-                    <label>Mobile Number *</label>
+                  <div className="user-form-row">
+                    <div className="user-form-group">
+                      <label>Mobile Number *</label>
 
-                    <input
-                      type="text"
-                      placeholder="Enter mobile number"
-                      value={newUser.mobile}
-                      onChange={(e) =>
-                        setNewUser({
-                          ...newUser,
-                          mobile: e.target.value,
-                        })
-                      }
-                    />
+                      <input
+                        type="text"
+                        placeholder="Enter mobile number"
+                        value={newUser.mobile}
+                        onChange={(e) =>
+                          setNewUser({
+                            ...newUser,
+                            mobile: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="user-form-group">
+                      <label>Status</label>
+
+                      <select
+                        value={newUser.status}
+                        onChange={(e) =>
+                          setNewUser({
+                            ...newUser,
+                            status: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="user-form-group">
@@ -931,6 +1011,11 @@ function UserManagement() {
                         setNewUser({
                           ...newUser,
                           address: e.target.value,
+                          children: newUser.children.map((child) => ({
+                            ...child,
+                            childAddress:
+                              child.childAddress || e.target.value,
+                          })),
                         })
                       }
                     />
@@ -969,123 +1054,233 @@ function UserManagement() {
                       />
                     </div>
                   </div>
-
-                  <div className="user-form-group">
-                    <label>Status</label>
-
-                    <select
-                      value={newUser.status}
-                      onChange={(e) =>
-                        setNewUser({
-                          ...newUser,
-                          status: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
-                  </div>
                 </div>
               )}
 
-              {/* STEP 2 */}
+              {/* ==============================
+                  STEP 2 - CHILDREN
+              ============================== */}
               {addUserStep === 2 && (
-                <div className="user-form">
-                  <div className="user-form-group">
-                    <label>Child Name *</label>
+                <div className="children-form">
+                  <div className="children-form-heading">
+                    <div>
+                      <h3>Registered Children</h3>
+                      <p>
+                        Add all children belonging to this parent before
+                        creating the account.
+                      </p>
+                    </div>
 
-                    <input
-                      type="text"
-                      placeholder="Enter child's full name"
-                      value={newUser.childName}
-                      onChange={(e) =>
-                        setNewUser({
-                          ...newUser,
-                          childName: e.target.value,
-                        })
-                      }
-                    />
+                    <span className="children-count-badge">
+                      {newUser.children.length}{" "}
+                      {newUser.children.length === 1 ? "Child" : "Children"}
+                    </span>
                   </div>
 
-                  <div className="user-form-group">
-                    <label>Birthdate *</label>
+                  <div className="child-form-list">
+                    {newUser.children.map((child, index) => (
+                      <div className="child-form-card" key={index}>
+                        <div className="child-form-card-header">
+                          <div className="child-form-title">
+                            <span className="child-form-number">
+                              {index + 1}
+                            </span>
 
-                    <input
-                      type="date"
-                      value={newUser.childBirthdate}
-                      onChange={(e) =>
-                        setNewUser({
-                          ...newUser,
-                          childBirthdate: e.target.value,
-                        })
-                      }
-                    />
+                            <div>
+                              <h3>Child {index + 1}</h3>
+
+                              <p>
+                                Enter the child's information and initial
+                                growth measurements.
+                              </p>
+                            </div>
+                          </div>
+
+                          {newUser.children.length > 1 && (
+                            <button
+                              type="button"
+                              className="remove-child-button"
+                              onClick={() => handleRemoveChild(index)}
+                              title={`Remove Child ${index + 1}`}
+                            >
+                              <FiTrash2 size={15} />
+                              <span>Remove</span>
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="child-form-card-body">
+                          <div className="user-form-row">
+                            <div className="user-form-group">
+                              <label>Child Name *</label>
+
+                              <input
+                                type="text"
+                                placeholder="Enter child's full name"
+                                value={child.childName}
+                                onChange={(e) =>
+                                  handleChildChange(
+                                    index,
+                                    "childName",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </div>
+
+                            <div className="user-form-group">
+                              <label>Birthdate *</label>
+
+                              <input
+                                type="date"
+                                value={child.childBirthdate}
+                                onChange={(e) =>
+                                  handleChildChange(
+                                    index,
+                                    "childBirthdate",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+
+                          <div className="user-form-row">
+                            <div className="user-form-group">
+                              <label>Gender *</label>
+
+                              <select
+                                value={child.childGender}
+                                onChange={(e) =>
+                                  handleChildChange(
+                                    index,
+                                    "childGender",
+                                    e.target.value
+                                  )
+                                }
+                              >
+                                <option value="">Select gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                              </select>
+                            </div>
+
+                            <div className="user-form-group">
+                              <label>Relationship to Child *</label>
+
+                              <select
+                                value={child.relationship}
+                                onChange={(e) =>
+                                  handleChildChange(
+                                    index,
+                                    "relationship",
+                                    e.target.value
+                                  )
+                                }
+                              >
+                                <option value="">
+                                  Select relationship
+                                </option>
+                                <option value="Mother">Mother</option>
+                                <option value="Father">Father</option>
+                                <option value="Guardian">Guardian</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="user-form-group">
+                            <label>Address *</label>
+
+                            <input
+                              type="text"
+                              placeholder="Child's address"
+                              value={child.childAddress}
+                              onChange={(e) =>
+                                handleChildChange(
+                                  index,
+                                  "childAddress",
+                                  e.target.value
+                                )
+                              }
+                            />
+
+                            <small className="child-address-note">
+                              Initially copied from the parent's address. You
+                              can edit it separately if needed.
+                            </small>
+                          </div>
+
+                          <div className="growth-section">
+                            <div className="growth-section-header">
+                              <div>
+                                <h4>Initial Growth Information</h4>
+                                <p>
+                                  Optional measurements recorded during
+                                  registration.
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="user-form-row">
+                              <div className="user-form-group">
+                                <label>Height (cm)</label>
+
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.1"
+                                  placeholder="e.g. 85.5"
+                                  value={child.height}
+                                  onChange={(e) =>
+                                    handleChildChange(
+                                      index,
+                                      "height",
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                              </div>
+
+                              <div className="user-form-group">
+                                <label>Weight (kg)</label>
+
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.1"
+                                  placeholder="e.g. 12.5"
+                                  value={child.weight}
+                                  onChange={(e) =>
+                                    handleChildChange(
+                                      index,
+                                      "weight",
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
-                  <div className="user-form-group">
-                    <label>Gender *</label>
+                  {/* ADD ANOTHER CHILD */}
+                  <button
+                    type="button"
+                    className="add-another-child-button"
+                    onClick={handleAddAnotherChild}
+                  >
+                    <span className="add-another-child-icon">+</span>
 
-                    <select
-                      value={newUser.childGender}
-                      onChange={(e) =>
-                        setNewUser({
-                          ...newUser,
-                          childGender: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Select gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                    </select>
-                  </div>
-
-                  <div className="user-form-group">
-                    <label>Address *</label>
-
-                    <input
-                      type="text"
-                      placeholder="Child's address"
-                      value={newUser.childAddress}
-                      onChange={(e) =>
-                        setNewUser({
-                          ...newUser,
-                          childAddress: e.target.value,
-                        })
-                      }
-                    />
-
-                    <small
-                      style={{
-                        display: "block",
-                        marginTop: "5px",
-                        color: "#6b7280",
-                      }}
-                    >
-                      Initially copied from the parent's address. You can edit
-                      it separately later.
-                    </small>
-                  </div>
-
-                  <div className="user-form-group">
-                    <label>Relationship to Child *</label>
-
-                    <select
-                      value={newUser.relationship}
-                      onChange={(e) =>
-                        setNewUser({
-                          ...newUser,
-                          relationship: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Select relationship</option>
-                      <option value="Mother">Mother</option>
-                      <option value="Father">Father</option>
-                      <option value="Guardian">Guardian</option>
-                    </select>
-                  </div>
+                    <span>
+                      <strong>Add Another Child</strong>
+                      <small>
+                        Add another child under this parent account
+                      </small>
+                    </span>
+                  </button>
                 </div>
               )}
 
@@ -1127,7 +1322,7 @@ function UserManagement() {
                       className="user-create-button"
                       onClick={handleCreateUser}
                     >
-                      Create User
+                      Register User
                     </button>
                   </>
                 )}

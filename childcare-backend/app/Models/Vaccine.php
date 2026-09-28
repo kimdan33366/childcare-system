@@ -15,6 +15,7 @@ class Vaccine extends Model
     protected $fillable = [
         'vaccine_name',
         'date_stored',
+        'production_date',
         'expiration_date',
         'stock_quantity',
         'status',

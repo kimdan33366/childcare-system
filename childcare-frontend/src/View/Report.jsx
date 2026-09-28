@@ -7,9 +7,7 @@ function Report() {
   const [report, setReport] = useState(null);
 
   // Logged-in user
-  const currentUser = JSON.parse(
-    localStorage.getItem("currentUser")
-  );
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
   const isAdmin = currentUser?.user_type === "Admin";
   const permissions = currentUser?.permissions || [];
@@ -17,9 +15,7 @@ function Report() {
   // Permission helper
   const hasPermission = (permission) => {
     return (
-      isAdmin ||
-      permissions.includes("all") ||
-      permissions.includes(permission)
+      isAdmin || permissions.includes("all") || permissions.includes(permission)
     );
   };
 
@@ -34,9 +30,7 @@ function Report() {
 
     const fetchReport = async () => {
       try {
-        const response = await fetch(
-          "http://127.0.0.1:8000/api/reports"
-        );
+        const response = await fetch("http://127.0.0.1:8000/api/reports");
 
         if (!response.ok) {
           throw new Error("Failed to fetch report");
@@ -64,17 +58,10 @@ function Report() {
         <Sidebar />
 
         <main className="report-content">
-          <div
-            style={{
-              padding: "40px",
-              textAlign: "center",
-            }}
-          >
+          <div className="report-access-denied">
             <h2>Access Denied</h2>
 
-            <p>
-              You do not have permission to access Reports.
-            </p>
+            <p>You do not have permission to access Reports.</p>
           </div>
         </main>
       </div>
@@ -89,18 +76,13 @@ function Report() {
     ? report.monthly_doses
     : [];
 
-  const vaccinationStatus =
-    report?.vaccination_status || {};
+  const vaccinationStatus = report?.vaccination_status || {};
 
-  const vaccineUsage = Array.isArray(
-    report?.vaccine_usage
-  )
+  const vaccineUsage = Array.isArray(report?.vaccine_usage)
     ? report.vaccine_usage
     : [];
 
-  const appointmentSummary = Array.isArray(
-    report?.appointment_summary
-  )
+  const appointmentSummary = Array.isArray(report?.appointment_summary)
     ? report.appointment_summary
     : [];
 
@@ -109,14 +91,11 @@ function Report() {
   ========================================================= */
 
   const maxDose = Math.max(
-    ...monthlyDoses.map((item) =>
-      Number(item.dose_count || 0)
-    ),
-    0
+    ...monthlyDoses.map((item) => Number(item.dose_count || 0)),
+    0,
   );
 
-  const graphMax =
-    Math.ceil(maxDose / 10) * 10 || 10;
+  const graphMax = Math.ceil(maxDose / 10) * 10 || 10;
 
   /* =========================================================
      APPOINTMENT COUNTS
@@ -124,13 +103,29 @@ function Report() {
 
   const getAppointmentCount = (status) => {
     const appointment = appointmentSummary.find(
-      (item) =>
-        String(item.status).toLowerCase() ===
-        status.toLowerCase()
+      (item) => String(item.status).toLowerCase() === status.toLowerCase(),
     );
 
     return appointment?.count ?? 0;
   };
+
+  const pendingAppointments = getAppointmentCount("Pending");
+
+  const completedAppointments = getAppointmentCount("Completed");
+
+  const missedAppointments = getAppointmentCount("Missed");
+
+  const cancelledAppointments = getAppointmentCount("Cancelled");
+
+  /*
+   * For the summary card, use all currently known
+   * appointment statuses.
+   */
+  const totalAppointmentsThisMonth =
+    Number(pendingAppointments || 0) +
+    Number(completedAppointments || 0) +
+    Number(missedAppointments || 0) +
+    Number(cancelledAppointments || 0);
 
   /* =========================================================
      RENDER
@@ -138,433 +133,266 @@ function Report() {
 
   return (
     <div className="report-dashboard">
-
       <Sidebar />
 
       <main className="report-content">
-
         {/* =====================================================
-            HEADER
+            PAGE HEADER
         ===================================================== */}
 
         <div className="report-topbar">
-
-          <div>
+          <div className="report-header-text">
             <h1>Reports</h1>
 
-            <p>
-              Vaccination and clinic performance overview.
-            </p>
+            <p>Vaccination and clinic performance overview.</p>
           </div>
 
+          <button
+            type="button"
+            className="report-export-btn"
+            onClick={() =>{
+              window.open("http://127.0.0.1:8000/api/reports/export", "_blank");
+            }}
+          >
+            Export Report
+          </button>
         </div>
-
 
         {/* =====================================================
             SUMMARY CARDS
         ===================================================== */}
 
         <div className="report-summary">
+          {/* Vaccination Coverage */}
 
           <div className="report-summary-card">
+            <div className="report-summary-card-content">
+              <span>Vaccination Coverage</span>
 
-            <span>Overall Coverage</span>
+              <strong>
+                {report ? `${report.overall_coverage ?? 0}%` : "..."}
+              </strong>
 
-            <strong>
-              {report
-                ? `${report.overall_coverage ?? 0}%`
-                : "..."}
-            </strong>
-
+              <small>Overall vaccination progress</small>
+            </div>
           </div>
 
+          {/* Children Completed */}
 
           <div className="report-summary-card">
+            <div className="report-summary-card-content">
+              <span>Children Completed</span>
 
-            <span>Complete Series</span>
+              <strong>{report ? (report.complete_series ?? 0) : "..."}</strong>
 
-            <strong>
-              {report
-                ? report.complete_series ?? 0
-                : "..."}
-            </strong>
-
+              <small>Completed vaccination series</small>
+            </div>
           </div>
 
+          {/* Appointments This Month */}
 
           <div className="report-summary-card">
+            <div className="report-summary-card-content">
+              <span>Appointments This Month</span>
 
-            <span>Total Doses</span>
+              <strong>{report ? totalAppointmentsThisMonth : "..."}</strong>
 
-            <strong>
-              {report
-                ? report.total_dose_q2 ??
-                  report.total_doses ??
-                  0
-                : "..."}
-            </strong>
-
+              <small>Scheduled clinic visits</small>
+            </div>
           </div>
-
         </div>
 
-
         {/* =====================================================
-            MIDDLE SECTION
+            MONTHLY VACCINATION ACTIVITY
         ===================================================== */}
 
-        <div className="report-middle">
+        <div className="report-section report-monthly">
+          <div className="report-section-header">
+            <div>
+              <h2>Monthly Vaccination Activity</h2>
 
-          {/* ===================================================
-              MONTHLY DOSES
-          =================================================== */}
-
-          <div className="report-section report-monthly">
-
-            <div className="report-section-header">
-
-              <div>
-
-                <h2>Monthly Doses</h2>
-
-                <p>
-                  Doses administered throughout the year.
-                </p>
-
-              </div>
-
+              <p>Doses administered throughout the year.</p>
             </div>
-
-
-            <div className="report-chart">
-
-              <div className="report-y-axis">
-
-                {Array.from(
-                  { length: 6 },
-                  (_, index) => (
-                    <span key={index}>
-                      {Math.round(
-                        graphMax -
-                          (graphMax / 5) *
-                            index
-                      )}
-                    </span>
-                  )
-                )}
-
-              </div>
-
-
-              <div className="report-bars">
-
-                {monthlyDoses.length > 0 ? (
-
-                  monthlyDoses.map(
-                    (item, index) => {
-
-                      const doseCount = Number(
-                        item.dose_count || 0
-                      );
-
-                      const height =
-                        graphMax > 0
-                          ? (doseCount /
-                              graphMax) *
-                            100
-                          : 0;
-
-                      return (
-                        <div
-                          className="report-bar-group"
-                          key={
-                            item.id ||
-                            item.month ||
-                            index
-                          }
-                        >
-
-                          <div
-                            className="report-bar"
-                            style={{
-                              height: `${height}%`,
-                            }}
-                            title={`${doseCount} doses`}
-                          />
-
-                          <span>
-                            {item.month}
-                          </span>
-
-                        </div>
-                      );
-                    }
-                  )
-
-                ) : (
-
-                  <div
-                    style={{
-                      width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#777",
-                    }}
-                  >
-                    No monthly dose data available.
-                  </div>
-
-                )}
-
-              </div>
-
-            </div>
-
           </div>
 
+          <div className="report-chart">
+            <div className="report-y-axis">
+              {Array.from({ length: 6 }, (_, index) => (
+                <span key={index}>
+                  {Math.round(graphMax - (graphMax / 5) * index)}
+                </span>
+              ))}
+            </div>
 
+            <div className="report-bars">
+              {monthlyDoses.length > 0 ? (
+                monthlyDoses.map((item, index) => {
+                  const doseCount = Number(item.dose_count || 0);
+
+                  const height =
+                    graphMax > 0 ? (doseCount / graphMax) * 100 : 0;
+
+                  return (
+                    <div
+                      className="report-bar-group"
+                      key={item.id || item.month || index}
+                    >
+                      <div
+                        className="report-bar"
+                        style={{
+                          height: `${height}%`,
+                        }}
+                        title={`${doseCount} doses`}
+                      />
+
+                      <span>{item.month}</span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="report-no-data">
+                  No monthly vaccination data available.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* =====================================================
+            STATUS SECTION
+        ===================================================== */}
+
+        <div className="report-status-grid">
           {/* ===================================================
               VACCINATION STATUS
           =================================================== */}
 
-          <div className="report-section report-status">
-
+          <div className="report-section">
             <div className="report-section-header">
-
               <div>
-
                 <h2>Vaccination Status</h2>
 
-                <p>
-                  Current vaccination progress.
-                </p>
-
+                <p>Current vaccination progress.</p>
               </div>
-
             </div>
 
-
             <div className="report-status-list">
-
               <div className="report-status-item">
-
                 <span>Completed</span>
 
                 <strong>
-                  {report
-                    ? vaccinationStatus.completed ?? 0
-                    : "..."}
+                  {report ? (vaccinationStatus.completed ?? 0) : "..."}
                 </strong>
-
               </div>
 
-
               <div className="report-status-item">
-
                 <span>Continuing</span>
 
                 <strong>
-                  {report
-                    ? vaccinationStatus.continuing ?? 0
-                    : "..."}
+                  {report ? (vaccinationStatus.continuing ?? 0) : "..."}
                 </strong>
-
               </div>
 
-
               <div className="report-status-item">
-
                 <span>Missed</span>
 
                 <strong>
-                  {report
-                    ? vaccinationStatus.missed ?? 0
-                    : "..."}
+                  {report ? (vaccinationStatus.missed ?? 0) : "..."}
                 </strong>
-
               </div>
 
-
               <div className="report-status-item">
-
                 <span>Not Started</span>
 
                 <strong>
-                  {report
-                    ? vaccinationStatus.not_started ?? 0
-                    : "..."}
+                  {report ? (vaccinationStatus.not_started ?? 0) : "..."}
                 </strong>
-
               </div>
-
             </div>
-
           </div>
 
-        </div>
-
-
-        {/* =====================================================
-            BOTTOM SECTION
-        ===================================================== */}
-
-        <div className="report-bottom">
-
           {/* ===================================================
-              VACCINE USAGE
+              APPOINTMENT STATUS
           =================================================== */}
 
           <div className="report-section">
-
             <div className="report-section-header">
-
               <div>
+                <h2>Appointment Status</h2>
 
-                <h2>Vaccine Usage</h2>
-
-                <p>
-                  Doses administered by vaccine.
-                </p>
-
+                <p>Current appointment activity.</p>
               </div>
-
             </div>
 
+            <div className="report-status-list">
+              <div className="report-status-item">
+                <span>Upcoming</span>
 
-            <div className="report-usage-list">
-
-              {vaccineUsage.length > 0 ? (
-
-                vaccineUsage.map(
-                  (item, index) => (
-
-                    <div
-                      className="report-usage-item"
-                      key={
-                        item.vaccine_id ||
-                        item.vaccine_name ||
-                        index
-                      }
-                    >
-
-                      <span>
-                        {item.vaccine_name ||
-                          "Unknown Vaccine"}
-                      </span>
-
-                      <strong>
-                        {item.dose_count ?? 0} doses
-                      </strong>
-
-                    </div>
-
-                  )
-                )
-
-              ) : (
-
-                <div className="report-usage-item">
-
-                  <span>
-                    No vaccine usage recorded
-                  </span>
-
-                  <strong>
-                    0 doses
-                  </strong>
-
-                </div>
-
-              )}
-
-            </div>
-
-          </div>
-
-
-          {/* ===================================================
-              APPOINTMENT SUMMARY
-          =================================================== */}
-
-          <div className="report-section">
-
-            <div className="report-section-header">
-
-              <div>
-
-                <h2>Appointment Summary</h2>
-
-                <p>
-                  Appointment status overview.
-                </p>
-
+                <strong>{report ? pendingAppointments : "..."}</strong>
               </div>
 
-            </div>
-
-
-            <div className="report-appointment-list">
-
-              <div className="report-appointment-item">
-
-                <span>Pending</span>
-
-                <strong>
-                  {report
-                    ? getAppointmentCount("Pending")
-                    : "..."}
-                </strong>
-
-              </div>
-
-
-              <div className="report-appointment-item">
-
+              <div className="report-status-item">
                 <span>Completed</span>
 
-                <strong>
-                  {report
-                    ? getAppointmentCount("Completed")
-                    : "..."}
-                </strong>
-
+                <strong>{report ? completedAppointments : "..."}</strong>
               </div>
 
-
-              <div className="report-appointment-item">
-
+              <div className="report-status-item">
                 <span>Missed</span>
 
-                <strong>
-                  {report
-                    ? getAppointmentCount("Missed")
-                    : "..."}
-                </strong>
-
+                <strong>{report ? missedAppointments : "..."}</strong>
               </div>
 
-
-              <div className="report-appointment-item">
-
+              <div className="report-status-item">
                 <span>Cancelled</span>
 
-                <strong>
-                  {report
-                    ? getAppointmentCount("Cancelled")
-                    : "..."}
-                </strong>
-
+                <strong>{report ? cancelledAppointments : "..."}</strong>
               </div>
-
             </div>
-
           </div>
-
         </div>
 
-      </main>
+        {/* =====================================================
+            VACCINE USAGE
+        ===================================================== */}
 
+        <div className="report-section report-vaccine-usage">
+          <div className="report-section-header">
+            <div>
+              <h2>Vaccine Usage</h2>
+
+              <p>Doses administered by vaccine.</p>
+            </div>
+          </div>
+
+          <div className="report-usage-table">
+            <div className="report-usage-header">
+              <span>Vaccine</span>
+
+              <span>Doses Administered</span>
+            </div>
+
+            {vaccineUsage.length > 0 ? (
+              vaccineUsage.map((item, index) => (
+                <div
+                  className="report-usage-row"
+                  key={item.vaccine_id || item.vaccine_name || index}
+                >
+                  <span>{item.vaccine_name || "Unknown Vaccine"}</span>
+
+                  <strong>{item.dose_count ?? 0}</strong>
+                </div>
+              ))
+            ) : (
+              <div className="report-usage-row report-empty-row">
+                <span>No vaccine usage recorded</span>
+
+                <strong>0</strong>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

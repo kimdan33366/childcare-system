@@ -124,6 +124,11 @@ function Vaccine() {
 
         stock,
 
+        production:
+          vaccine.production_date ??
+          vaccine.production ??
+          "",
+
         expiration:
           vaccine.expiration_date ??
           vaccine.expiration ??
@@ -229,7 +234,7 @@ function Vaccine() {
 
         <div className="vaccine-summary">
 
-          <div className="vaccine-summary-card">
+          {/* <div className="vaccine-summary-card">
 
             <div className="vaccine-summary-icon">
               <FaCapsules />
@@ -243,7 +248,7 @@ function Vaccine() {
               </strong>
             </div>
 
-          </div>
+          </div> */}
 
 
           <div className="vaccine-summary-card">
@@ -360,6 +365,7 @@ function Vaccine() {
               <tr>
                 <th>Vaccine</th>
                 <th>Stock</th>
+                <th>Production Date</th>
                 <th>Expiration</th>
                 <th>Status</th>
                 <th>Action</th>
@@ -416,6 +422,21 @@ function Vaccine() {
                         </td>
 
 
+                        {/* PRODUCTION DATE */}
+
+                        <td>
+
+                          <span className="vaccine-production">
+
+                            {vaccine.production
+                              ? vaccine.production
+                              : "—"}
+
+                          </span>
+
+                        </td>
+
+
                         {/* EXPIRATION */}
 
                         <td>
@@ -441,7 +462,7 @@ function Vaccine() {
                             {status.label}
                           </span>
 
-                          </td>
+                        </td>
 
 
                         {/* ACTIONS */}
@@ -499,7 +520,7 @@ function Vaccine() {
                 <tr>
 
                   <td
-                    colSpan="5"
+                    colSpan="6"
                     className="vaccine-empty-state"
                   >
                     <FaCapsules />
@@ -574,6 +595,30 @@ function Vaccine() {
                   onChange={(event) =>
                     handleInputChange(
                       "name",
+                      event.target.value
+                    )
+                  }
+                />
+
+              </div>
+
+
+              {/* PRODUCTION DATE */}
+
+              <div className="vaccine-modal-input">
+
+                <label>
+                  Production Date
+                </label>
+
+                <input
+                  type="date"
+                  value={
+                    newVaccine.production || ""
+                  }
+                  onChange={(event) =>
+                    handleInputChange(
+                      "production",
                       event.target.value
                     )
                   }

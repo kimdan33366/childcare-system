@@ -40,11 +40,13 @@ class UserController extends Controller
     }
 
     // POST /api/users
-    // Creates a parent and the parent's first child.
+    // Creates a parent and one or more children.
     public function store(Request $request)
     {
         $request->validate([
-            // Parent information
+            // ==============================
+            // PARENT INFORMATION
+            // ==============================
             'user_fullname' => 'required|string|max:255',
             'email' => 'nullable|email|max:255|unique:user,email',
             'date_of_birth' => 'nullable|date',
@@ -54,17 +56,22 @@ class UserController extends Controller
             'password' => 'required|string|min:6',
             'status' => 'nullable|in:Active,Inactive',
 
-            // First child information
-            'child_name' => 'required|string|max:255',
-            'child_birthdate' => 'required|date',
-            'child_gender' => 'required|string|max:255',
-            'child_address' => 'nullable|string|max:255',
-            'relationship' => 'required|in:Mother,Father,Guardian',
+            // ==============================
+            // CHILDREN INFORMATION
+            // ==============================
+            'children' => 'required|array|min:1',
+
+            'children.*.child_name' => 'required|string|max:255',
+            'children.*.child_birthdate' => 'required|date',
+            'children.*.child_gender' => 'required|string|max:255',
+            'children.*.child_address' => 'nullable|string|max:255',
+            'children.*.relationship' => 'required|in:Mother,Father,Guardian',
         ]);
 
         DB::beginTransaction();
 
         try {
+
             // ==============================
             // CREATE PARENT
             // ==============================
@@ -80,28 +87,39 @@ class UserController extends Controller
             ]);
 
             // ==============================
-            // CREATE FIRST CHILD
+            // CREATE CHILDREN
             // ==============================
-            $child = $user->children()->create([
-                'child_name' => $request->child_name,
-                'birthdate' => $request->child_birthdate,
-                'gender' => $request->child_gender,
+            $createdChildren = [];
 
-                // If no separate child address is provided,
-                // use the parent's address.
-                'address' => $request->child_address
-                    ?: $request->address,
+            foreach ($request->children as $childData) {
 
-                'relationship' => $request->relationship,
-                'status' => 'Continuing',
-            ]);
+                $child = $user->children()->create([
+                    'child_name' => $childData['child_name'],
+                    'birthdate' => $childData['child_birthdate'],
+                    'gender' => $childData['child_gender'],
+
+                    // If child address is empty,
+                    // use the parent's address.
+                    'address' => !empty($childData['child_address'])
+                        ? $childData['child_address']
+                        : $request->address,
+
+                    'relationship' => $childData['relationship'],
+
+                    // New children always start as Continuing.
+                    'status' => 'Continuing',
+                ]);
+
+                $createdChildren[] = $child;
+            }
 
             DB::commit();
 
             return response()->json([
-                'message' => 'Parent and first child created successfully.',
-                'user' => $user,
-                'child' => $child,
+                'message' => 'Parent and children created successfully.',
+                'user' => $user->load('children'),
+                'children' => $createdChildren,
+                'children_count' => count($createdChildren),
             ], 201);
 
         } catch (\Exception $e) {
@@ -109,7 +127,7 @@ class UserController extends Controller
             DB::rollBack();
 
             return response()->json([
-                'message' => 'Failed to create parent and first child.',
+                'message' => 'Failed to create parent and children.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -189,7 +207,9 @@ class UserController extends Controller
                     $records = $child->patientRecords;
 
                     if ($records->isEmpty()) {
+
                         $restoredStatus = 'Continuing';
+
                     } elseif (
                         $records->contains(function ($record) {
                             return in_array(
@@ -198,14 +218,19 @@ class UserController extends Controller
                             );
                         })
                     ) {
+
                         $restoredStatus = 'Continuing';
+
                     } elseif (
                         $records->every(function ($record) {
                             return $record->status === 'Completed';
                         })
                     ) {
+
                         $restoredStatus = 'Completed';
+
                     } else {
+
                         $restoredStatus = 'Continuing';
                     }
 

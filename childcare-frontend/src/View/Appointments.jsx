@@ -1,6 +1,7 @@
 import "../css/Appointment.css";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   FaCalendarAlt,
   FaPen,
@@ -19,7 +20,7 @@ function Appointments() {
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
   const [searchParams, setSearchParams] = useSearchParams();
   const childFilterId = searchParams.get("child_id");
-
+  const navigate = useNavigate();
   const isAdmin = currentUser?.user_type === "Admin";
   const permissions = currentUser?.permissions || [];
 
@@ -37,6 +38,7 @@ function Appointments() {
   const [parents, setParents] = useState([]);
   const [children, setChildren] = useState([]);
   const [vaccines, setVaccines] = useState([]);
+  const [staff, setStaff] = useState([]);
 
   // ==============================
   // FILTERS
@@ -44,12 +46,7 @@ function Appointments() {
 
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("All");
-
-  // ==============================
-  // HOVER
-  // ==============================
-
-  const [hoveredAppointment, setHoveredAppointment] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("All");
 
   // ==============================
   // POPUP
@@ -60,6 +57,15 @@ function Appointments() {
   const [showChildSelection, setShowChildSelection] = useState(false);
   const [selectedHistoryAppointment, setSelectedHistoryAppointment] =
     useState(null);
+
+  // ==============================
+  // COMPLETION POPUP
+  // ==============================
+
+  const [showCompletionPopup, setShowCompletionPopup] = useState(false);
+  const [completionAppointment, setCompletionAppointment] = useState(null);
+  const [completionProvider, setCompletionProvider] = useState("");
+  const [completionMeasurements, setCompletionMeasurements] = useState({});
 
   // ==============================
   // FORM
@@ -74,6 +80,7 @@ function Appointments() {
   const [selectedChildren, setSelectedChildren] = useState([]);
 
   const [selectedVaccines, setSelectedVaccines] = useState([]);
+  const [parentSearch, setParentSearch] = useState("");
 
   // ==============================
   // FETCH DATA
@@ -84,6 +91,7 @@ function Appointments() {
     fetchParents();
     fetchChildren();
     fetchVaccines();
+    fetchStaff();
   }, []);
 
   const fetchAppointments = async () => {
@@ -99,6 +107,7 @@ function Appointments() {
       console.error("Error fetching appointments:", error);
     }
   };
+
   useEffect(() => {
     if (!childFilterId || children.length === 0) {
       return;
@@ -152,6 +161,24 @@ function Appointments() {
       }
     } catch (error) {
       console.error("Error fetching vaccines:", error);
+    }
+  };
+
+  const fetchStaff = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/staff");
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setStaff(
+          Array.isArray(data)
+            ? data.filter((person) => person.status === "Active")
+            : [],
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching staff:", error);
     }
   };
 
@@ -220,26 +247,55 @@ function Appointments() {
     const matchesDate =
       dateFilter === "All" || appointment.appointment_date === dateFilter;
 
+    const status = appointment.status || "Pending";
+
+    const matchesStatus = statusFilter === "All" || status === statusFilter;
+
     const matchesChild =
       !childFilterId ||
       appointmentChildren.some(
         (child) => String(child.child_id) === String(childFilterId),
       );
 
-    return matchesSearch && matchesDate && matchesChild;
+    return matchesSearch && matchesDate && matchesStatus && matchesChild;
   });
 
   // ==============================
-  // SEPARATE APPOINTMENTS
+  // SORT APPOINTMENTS
   // ==============================
 
-  const upcomingAppointments = filteredAppointments.filter(
-    (appointment) => (appointment.status || "Pending") === "Pending",
-  );
+  const statusOrder = {
+    Pending: 1,
+    Missed: 2,
+    Cancelled: 3,
+    Completed: 4,
+  };
 
-  const historyAppointments = filteredAppointments.filter((appointment) =>
-    ["Completed", "Missed", "Cancelled"].includes(appointment.status),
-  );
+  const sortedAppointments = [...filteredAppointments].sort((a, b) => {
+    const statusA = a.status || "Pending";
+    const statusB = b.status || "Pending";
+
+    const statusDifference =
+      (statusOrder[statusA] || 99) - (statusOrder[statusB] || 99);
+
+    if (statusDifference !== 0) {
+      return statusDifference;
+    }
+
+    const dateA = new Date(
+      `${a.appointment_date || "9999-12-31"}T${
+        a.appointment_time || "00:00:00"
+      }`,
+    );
+
+    const dateB = new Date(
+      `${b.appointment_date || "9999-12-31"}T${
+        b.appointment_time || "00:00:00"
+      }`,
+    );
+
+    return dateA - dateB;
+  });
 
   // ==============================
   // OVERVIEW COUNTS
@@ -270,6 +326,20 @@ function Appointments() {
   // PARENT SELECTION
   // ==============================
 
+  const filteredParents = parents.filter((parent) => {
+    const searchValue = parentSearch.toLowerCase().trim();
+
+    if (!searchValue) {
+      return true;
+    }
+
+    return (
+      parent.user_fullname?.toLowerCase().includes(searchValue) ||
+      parent.email?.toLowerCase().includes(searchValue) ||
+      parent.mobile_number?.toLowerCase().includes(searchValue)
+    );
+  });
+
   const toggleParent = (parentId) => {
     setSelectedParents((previous) => {
       const newSelectedParents = previous.includes(parentId)
@@ -296,14 +366,12 @@ function Appointments() {
     setSelectedChildren((previous) => {
       const isAlreadySelected = previous.includes(childId);
 
-      // Removing a child is always allowed
       if (isAlreadySelected) {
         return previous.filter((id) => id !== childId);
       }
 
       const newSelectedChildren = [...previous, childId];
 
-      // Check every currently selected vaccine
       const insufficientVaccine = selectedVaccines.find((selected) => {
         const vaccine = vaccines.find(
           (item) => item.vaccine_ID === selected.vaccine_id,
@@ -324,8 +392,11 @@ function Appointments() {
         );
 
         alert(
-          `Cannot select this child because ${vaccine?.vaccine_name || "the selected vaccine"} ` +
-            `does not have enough stock for ${newSelectedChildren.length} children.`,
+          `Cannot select this child because ${
+            vaccine?.vaccine_name || "the selected vaccine"
+          } does not have enough stock for ${
+            newSelectedChildren.length
+          } children.`,
         );
 
         return previous;
@@ -352,23 +423,21 @@ function Appointments() {
     setSelectedVaccines((previous) => {
       const existing = previous.find((item) => item.vaccine_id === vaccineId);
 
-      // Remove vaccine if already selected
       if (existing) {
         return previous.filter((item) => item.vaccine_id !== vaccineId);
       }
 
-      // No children selected yet
       if (requiredStock === 0) {
         alert("Please select at least one child first.");
         return previous;
       }
 
-      // Not enough stock
       if (availableStock < requiredStock) {
         alert(
           `${vaccine.vaccine_name} does not have enough stock. ` +
             `Required: ${requiredStock}, Available: ${availableStock}.`,
         );
+
         return previous;
       }
 
@@ -453,16 +522,12 @@ function Appointments() {
 
     const data = {
       admin_id: currentUser?.Admin_id || currentUser?.admin_id || 1,
-
       staff_id: currentUser?.staff_id || null,
-
       appointment_date: date,
       appointment_time: time,
       address: address,
       appointment_type: appointmentType,
-
       status: existingAppointment?.status || "Pending",
-
       child_ids: selectedChildren,
       vaccines: selectedVaccines,
     };
@@ -516,12 +581,161 @@ function Appointments() {
   };
 
   // ==============================
+  // OPEN COMPLETION POPUP
+  // ==============================
+
+  const openCompletionPopup = (appointment) => {
+    const appointmentChildren = appointment.children || [];
+
+    const initialMeasurements = {};
+
+    appointmentChildren.forEach((child) => {
+      initialMeasurements[child.child_id] = {
+        height_cm: "",
+        weight_kg: "",
+      };
+    });
+
+    setCompletionAppointment(appointment);
+    setCompletionProvider(
+      appointment.staff_id ? String(appointment.staff_id) : "",
+    );
+    setCompletionMeasurements(initialMeasurements);
+    setShowCompletionPopup(true);
+  };
+
+  // ==============================
+  // CLOSE COMPLETION POPUP
+  // ==============================
+
+  const closeCompletionPopup = () => {
+    setShowCompletionPopup(false);
+    setCompletionAppointment(null);
+    setCompletionProvider("");
+    setCompletionMeasurements({});
+  };
+
+  // ==============================
+  // UPDATE COMPLETION MEASUREMENT
+  // ==============================
+
+  const updateCompletionMeasurement = (childId, field, value) => {
+    setCompletionMeasurements((previous) => ({
+      ...previous,
+      [childId]: {
+        ...(previous[childId] || {}),
+        [field]: value,
+      },
+    }));
+  };
+
+  // ==============================
+  // COMPLETE APPOINTMENT
+  // ==============================
+
+  const completeAppointment = async () => {
+    if (!completionAppointment) {
+      return;
+    }
+
+    if (!completionProvider) {
+      alert("Please select the provider or personnel.");
+      return;
+    }
+
+    const appointmentChildren = completionAppointment.children || [];
+
+    for (const child of appointmentChildren) {
+      const measurement = completionMeasurements[child.child_id];
+
+      if (
+        !measurement ||
+        measurement.height_cm === "" ||
+        measurement.weight_kg === ""
+      ) {
+        alert(
+          `Please enter the current height and weight for ${child.child_name}.`,
+        );
+        return;
+      }
+
+      if (
+        Number(measurement.height_cm) <= 0 ||
+        Number(measurement.weight_kg) <= 0
+      ) {
+        alert(`Please enter valid height and weight for ${child.child_name}.`);
+        return;
+      }
+    }
+
+    const growthRecords = appointmentChildren.map((child) => {
+      const measurement = completionMeasurements[child.child_id];
+
+      return {
+        child_id: child.child_id,
+        appointment_id: completionAppointment.appointment_id,
+        height_cm: Number(measurement.height_cm),
+        weight_kg: Number(measurement.weight_kg),
+      };
+    });
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/appointments/${completionAppointment.appointment_id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            status: "Completed",
+            staff_id: Number(completionProvider),
+            provider_id: Number(completionProvider),
+            growth_records: growthRecords,
+          }),
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error("Laravel error:", result);
+
+        alert(result.message || "Failed to complete the appointment.");
+
+        return;
+      }
+
+      await fetchAppointments();
+
+      closeCompletionPopup();
+    } catch (error) {
+      console.error("Error completing appointment:", error);
+
+      alert("Unable to connect to the server.");
+    }
+  };
+
+  // ==============================
   // UPDATE STATUS
   // ==============================
 
   const updateAppointmentStatus = async (id, newStatus) => {
     if (!hasPermission("edit_appointments")) {
       alert("You do not have permission to edit appointments.");
+      return;
+    }
+
+    const appointment = appointments.find((item) => item.appointment_id === id);
+
+    if (!appointment) {
+      return;
+    }
+
+    // Completed requires the completion form first.
+    if (newStatus === "Completed") {
+      openCompletionPopup(appointment);
       return;
     }
 
@@ -549,8 +763,6 @@ function Appointments() {
 
         return;
       }
-
-      setHoveredAppointment(null);
 
       await fetchAppointments();
     } catch (error) {
@@ -621,7 +833,6 @@ function Appointments() {
       })),
     );
 
-    setHoveredAppointment(null);
     setShowPopup(true);
   };
 
@@ -641,6 +852,8 @@ function Appointments() {
     setSelectedChildren([]);
     setSelectedVaccines([]);
 
+    setParentSearch("");
+
     setEditingId(null);
     setShowPopup(false);
   };
@@ -654,212 +867,165 @@ function Appointments() {
   };
 
   // ==============================
-  // APPOINTMENT ITEM
+  // VIEW APPOINTMENT
   // ==============================
 
-  const renderAppointmentItem = (appointment, isHistory = false) => {
+  const viewAppointment = (appointment) => {
+  if (appointment.children?.length === 1) {
+    navigate(`/patient_viewrecord/${appointment.children[0].child_id}`, {
+      state: {
+        from: "/appointments",
+        fromLabel: "Back to Appointments",
+      },
+    });
+  } else if (appointment.children?.length > 1) {
+    setSelectedHistoryAppointment(appointment);
+    setShowChildSelection(true);
+  }
+};
+
+  // ==============================
+  // APPOINTMENT ROW
+  // ==============================
+
+  const renderAppointmentRow = (appointment) => {
     const appointmentChildren = appointment.children || [];
 
     const parentTitle = getAppointmentTitle(appointment);
 
-    const isHovered = hoveredAppointment === appointment.appointment_id;
-
     const status = appointment.status || "Pending";
 
+    const childNames =
+      appointmentChildren.length > 0
+        ? appointmentChildren.map((child) => child.child_name).join(", ")
+        : "No children";
+
+    const vaccineNames =
+      appointment.vaccines?.length > 0
+        ? appointment.vaccines
+            .map(
+              (item) =>
+                `${item.vaccine?.vaccine_name || "Unknown"} (Dose ${
+                  item.dose_number || 1
+                })`,
+            )
+            .join(", ")
+        : "No vaccines";
+
     return (
-      <div
-        className={`appointment-item ${
-          isHovered ? "appointment-item-hovered" : ""
-        }`}
-        key={appointment.appointment_id}
-        onMouseEnter={() => setHoveredAppointment(appointment.appointment_id)}
-        onMouseLeave={() => setHoveredAppointment(null)}
-      >
-        <div className="appointment-item-main">
-          <div className="appointment-item-date">
-            <FaCalendarAlt />
+      <div className="appointment-table-row" key={appointment.appointment_id}>
+        {/* DATE & TIME */}
+        <div className="appointment-table-cell appointment-table-date">
+          <FaCalendarAlt />
 
-            <span>{appointment.appointment_date}</span>
-          </div>
+          <div>
+            <strong>{appointment.appointment_date}</strong>
 
-          <div className="appointment-item-parent">{parentTitle}</div>
-
-          <div className={`appointment-item-status ${getStatusClass(status)}`}>
-            {status}
+            <span>{appointment.appointment_time || "—"}</span>
           </div>
         </div>
 
-        {isHovered && (
-          <div
-            className={`appointment-hover-card ${
-              isHistory
-                ? "appointment-hover-history"
-                : "appointment-hover-upcoming"
-            }`}
-            onMouseEnter={() =>
-              setHoveredAppointment(appointment.appointment_id)
-            }
+        {/* PARENT / GUARDIAN */}
+        <div className="appointment-table-cell appointment-table-parent">
+          <FaUser />
+
+          <span>{parentTitle}</span>
+        </div>
+
+        {/* CHILDREN */}
+        <div className="appointment-table-cell appointment-table-children">
+          <FaChild />
+
+          <span>{childNames}</span>
+        </div>
+
+        {/* APPOINTMENT TYPE */}
+        <div className="appointment-table-cell appointment-table-type">
+          {appointment.appointment_type || "—"}
+        </div>
+
+        {/* CLINIC / LOCATION */}
+        <div className="appointment-table-cell appointment-table-location">
+          <FaMapMarkerAlt />
+
+          <span>{appointment.address || "—"}</span>
+        </div>
+
+        {/* VACCINES / DOSES */}
+        <div className="appointment-table-cell appointment-table-vaccines">
+          <FaSyringe />
+
+          <span>{vaccineNames}</span>
+        </div>
+
+        {/* STATUS */}
+        <div className="appointment-table-cell appointment-table-status">
+          {hasPermission("edit_appointments") ? (
+            <select
+              className={`appointment-table-status-select ${getStatusClass(
+                status,
+              )}`}
+              value={status}
+              onChange={(e) =>
+                updateAppointmentStatus(
+                  appointment.appointment_id,
+                  e.target.value,
+                )
+              }
+              title="Change appointment status"
+            >
+              <option value="Pending">Pending</option>
+              <option value="Completed">Completed</option>
+              <option value="Missed">Missed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          ) : (
+            <span className={`appointment-status ${getStatusClass(status)}`}>
+              {status}
+            </span>
+          )}
+        </div>
+
+        {/* ACTIONS */}
+        <div className="appointment-table-cell appointment-table-actions">
+          {hasPermission("edit_appointments") && status === "Pending" && (
+            <button
+              className="appointment-table-action edit"
+              title="Edit appointment"
+              onClick={(e) => {
+                e.stopPropagation();
+                openEditAppointment(appointment);
+              }}
+            >
+              <FaPen />
+            </button>
+          )}
+
+          {hasPermission("edit_appointments") && status === "Pending" && (
+            <button
+              className="appointment-table-action cancel"
+              title="Cancel appointment"
+              onClick={(e) => {
+                e.stopPropagation();
+                cancelAppointment(appointment);
+              }}
+            >
+              <FaTrash />
+            </button>
+          )}
+
+          <button
+            className="appointment-table-action view"
+            title="View appointment"
+            onClick={(e) => {
+              e.stopPropagation();
+              viewAppointment(appointment);
+            }}
+            
           >
-            <div className="appointment-hover-header">
-              <div>
-                <h4>{parentTitle}</h4>
-
-                <span>
-                  {appointment.appointment_date} •{" "}
-                  {appointment.appointment_time}
-                </span>
-              </div>
-
-              <span className={`appointment-status ${getStatusClass(status)}`}>
-                {status}
-              </span>
-            </div>
-
-            <div className="appointment-hover-details">
-              <div className="appointment-hover-detail">
-                <span>Children</span>
-
-                <strong>
-                  {appointmentChildren.length > 0
-                    ? appointmentChildren
-                        .map((child) => child.child_name)
-                        .join(", ")
-                    : "No children"}
-                </strong>
-              </div>
-
-              <div className="appointment-hover-detail">
-                <span>Appointment Type</span>
-
-                <strong>{appointment.appointment_type || "—"}</strong>
-              </div>
-
-              <div className="appointment-hover-detail">
-                <span>Clinic / Location</span>
-
-                <strong>{appointment.address || "—"}</strong>
-              </div>
-
-              <div className="appointment-hover-detail">
-                <span>Time</span>
-
-                <strong>{appointment.appointment_time || "—"}</strong>
-              </div>
-
-              <div className="appointment-hover-detail appointment-hover-vaccines">
-                <span>Vaccines / Doses</span>
-
-                <strong>
-                  {appointment.vaccines?.length > 0
-                    ? appointment.vaccines
-                        .map(
-                          (item) =>
-                            `${item.vaccine?.vaccine_name || "Unknown"} (Dose ${
-                              item.dose_number
-                            })`,
-                        )
-                        .join(", ")
-                    : "No vaccines"}
-                </strong>
-              </div>
-            </div>
-
-            {!isHistory && (
-              <div className="appointment-hover-actions">
-                {hasPermission("edit_appointments") && (
-                  <button
-                    className="appointment-edit-btn"
-                    title="Edit appointment"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEditAppointment(appointment);
-                    }}
-                  >
-                    <FaPen />
-                    <span>Edit</span>
-                  </button>
-                )}
-
-                {hasPermission("edit_appointments") && (
-                  <button
-                    className="appointment-delete-btn"
-                    title="Cancel appointment"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      cancelAppointment(appointment);
-                    }}
-                  >
-                    <FaTrash />
-                    <span>Cancel</span>
-                  </button>
-                )}
-                <button
-                  className="appointment-view-btn"
-                  title="View appointment"
-                  onClick={(e) => {
-                    e.stopPropagation();
-
-                    if (appointment.children?.length === 1) {
-                      window.location.href = `/patient_viewrecord/${appointment.children[0].child_id}`;
-                    } else if (appointment.children?.length > 1) {
-                      setSelectedHistoryAppointment(appointment);
-                      setShowChildSelection(true);
-                    }
-                  }}
-                >
-                  <FaEye />
-                  <span>View</span>
-                </button>
-
-                {hasPermission("edit_appointments") && (
-                  <select
-                    className={`appointment-hover-status ${getStatusClass(
-                      status,
-                    )}`}
-                    value={status}
-                    onChange={(e) =>
-                      updateAppointmentStatus(
-                        appointment.appointment_id,
-                        e.target.value,
-                      )
-                    }
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <option value="Pending">Pending</option>
-
-                    <option value="Completed">Completed</option>
-
-                    <option value="Missed">Missed</option>
-
-                    <option value="Cancelled">Cancelled</option>
-                  </select>
-                )}
-              </div>
-            )}
-
-            {isHistory && (
-              <div className="appointment-hover-actions">
-                <button
-                  className="appointment-view-btn"
-                  title="View appointment"
-                  onClick={(e) => {
-                    e.stopPropagation();
-
-                    if (appointment.children?.length === 1) {
-                      window.location.href = `/patient_viewrecord/${appointment.children[0].child_id}`;
-                    } else if (appointment.children?.length > 1) {
-                      setSelectedHistoryAppointment(appointment);
-                      setShowChildSelection(true);
-                    }
-                  }}
-                >
-                  <FaEye />
-                  <span>View</span>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+            <FaEye />
+          </button>
+        </div>
       </div>
     );
   };
@@ -903,7 +1069,7 @@ function Appointments() {
           <div>
             <h3>Appointments</h3>
 
-            <p>Manage upcoming appointments and appointment history.</p>
+            <p>Manage all scheduled and past appointments.</p>
           </div>
         </div>
 
@@ -943,14 +1109,17 @@ function Appointments() {
             <input
               type="text"
               value={search}
-              placeholder="Enter child name or Parent"
+              placeholder="Search child, parent, or appointment ID"
               onChange={(e) => {
                 const value = e.target.value;
+
                 setSearch(value);
 
                 if (childFilterId && value.trim() === "") {
                   const newParams = new URLSearchParams(searchParams);
+
                   newParams.delete("child_id");
+
                   setSearchParams(newParams);
                 }
               }}
@@ -975,6 +1144,18 @@ function Appointments() {
             ))}
           </select>
 
+          <select
+            className="appointment-filter appointment-status-filter"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="All">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Missed">Missed</option>
+            <option value="Cancelled">Cancelled</option>
+            <option value="Completed">Completed</option>
+          </select>
+
           {hasPermission("add_appointments") && (
             <button
               className="appointment-button"
@@ -983,90 +1164,47 @@ function Appointments() {
                 setShowPopup(true);
               }}
             >
-              Add Appointment
+              + Add Appointment
             </button>
           )}
         </div>
 
-        {/* TWO COLUMN APPOINTMENT AREA */}
-        <div className="appointment-columns">
-          {/* UPCOMING */}
-          <section className="appointment-section">
-            <div className="appointment-section-header">
-              <div>
-                <h3>Upcoming Appointments</h3>
-
-                <p>Pending and scheduled appointments</p>
-              </div>
-
-              <span className="appointment-section-count">
-                {upcomingAppointments.length}
-              </span>
+        {/* SINGLE APPOINTMENT TABLE */}
+        <div className="appointment-table-container">
+          <div className="appointment-table">
+            {/* TABLE HEADER */}
+            <div className="appointment-table-header">
+              <div>Date & Time</div>
+              <div>Parent / Guardian</div>
+              <div>Children</div>
+              <div>Appointment Type</div>
+              <div>Clinic / Location</div>
+              <div>Vaccines & Doses</div>
+              <div>Status</div>
+              <div>Actions</div>
             </div>
 
-            <div className="appointment-section-list">
-              {upcomingAppointments.length === 0 ? (
-                <div className="appointment-empty-section">
+            {/* TABLE BODY */}
+            <div className="appointment-table-body">
+              {sortedAppointments.length === 0 ? (
+                <div className="appointment-table-empty">
                   <FaCalendarAlt />
 
-                  <h4>No upcoming appointments</h4>
+                  <h4>No appointments found</h4>
 
-                  <p>There are no pending appointments.</p>
+                  <p>Try changing your search or filter settings.</p>
                 </div>
               ) : (
-                upcomingAppointments.map((appointment) =>
-                  renderAppointmentItem(appointment, false),
+                sortedAppointments.map((appointment) =>
+                  renderAppointmentRow(appointment),
                 )
               )}
             </div>
-
-            {hasPermission("add_appointments") && (
-              <button
-                className="appointment-add-bottom"
-                onClick={() => {
-                  clearForm();
-                  setShowPopup(true);
-                }}
-              >
-                + New Appointment
-              </button>
-            )}
-          </section>
-
-          {/* HISTORY */}
-          <section className="appointment-section appointment-history-section">
-            <div className="appointment-section-header">
-              <div>
-                <h3>Appointment History</h3>
-
-                <p>Completed, missed, and cancelled</p>
-              </div>
-
-              <span className="appointment-section-count">
-                {historyAppointments.length}
-              </span>
-            </div>
-
-            <div className="appointment-section-list">
-              {historyAppointments.length === 0 ? (
-                <div className="appointment-empty-section">
-                  <FaEye />
-
-                  <h4>No appointment history</h4>
-
-                  <p>Completed and missed appointments will appear here.</p>
-                </div>
-              ) : (
-                historyAppointments.map((appointment) =>
-                  renderAppointmentItem(appointment, true),
-                )
-              )}
-            </div>
-          </section>
+          </div>
         </div>
 
         {/* ==============================
-            REDESIGNED ADD / EDIT POPUP
+            ADD / EDIT POPUP
         ============================== */}
 
         {showPopup &&
@@ -1208,38 +1346,55 @@ function Appointments() {
                           No active parents available.
                         </div>
                       ) : (
-                        <div className="appointment-parent-grid">
-                          {parents.map((parent) => {
-                            const selected = selectedParents.includes(
-                              parent.user_id,
-                            );
+                        <>
+                          <div className="appointment-parent-search">
+                            <input
+                              type="text"
+                              value={parentSearch}
+                              onChange={(e) => setParentSearch(e.target.value)}
+                              placeholder="Search parent by name, email, or phone..."
+                            />
+                          </div>
 
-                            return (
-                              <button
-                                type="button"
-                                key={parent.user_id}
-                                className={`appointment-select-card ${
-                                  selected ? "selected" : ""
-                                }`}
-                                onClick={() => toggleParent(parent.user_id)}
-                              >
-                                <span className="appointment-card-checkbox">
-                                  {selected ? "✓" : ""}
-                                </span>
+                          {filteredParents.length === 0 ? (
+                            <div className="appointment-no-data">
+                              No parents found matching "{parentSearch}".
+                            </div>
+                          ) : (
+                            <div className="appointment-parent-grid">
+                              {filteredParents.map((parent) => {
+                                const selected = selectedParents.includes(
+                                  parent.user_id,
+                                );
 
-                                <span className="appointment-select-card-icon">
-                                  <FaUser />
-                                </span>
+                                return (
+                                  <button
+                                    type="button"
+                                    key={parent.user_id}
+                                    className={`appointment-select-card ${
+                                      selected ? "selected" : ""
+                                    }`}
+                                    onClick={() => toggleParent(parent.user_id)}
+                                  >
+                                    <span className="appointment-card-checkbox">
+                                      {selected ? "✓" : ""}
+                                    </span>
 
-                                <span className="appointment-select-card-text">
-                                  <strong>{parent.user_fullname}</strong>
+                                    <span className="appointment-select-card-icon">
+                                      <FaUser />
+                                    </span>
 
-                                  <small>Parent / Guardian</small>
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                                    <span className="appointment-select-card-text">
+                                      <strong>{parent.user_fullname}</strong>
+
+                                      <small>Parent / Guardian</small>
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -1453,6 +1608,224 @@ function Appointments() {
               </div>
             </div>
           )}
+
+        {/* ==============================
+            COMPLETE APPOINTMENT POPUP
+        ============================== */}
+
+        {showCompletionPopup && completionAppointment && (
+          <div className="appointment-popup-overlay">
+            <div className="appointment-popup">
+              {/* POPUP HEADER */}
+              <div className="appointment-popup-header">
+                <div className="appointment-popup-title">
+                  <div className="appointment-popup-title-icon">
+                    <FaSyringe />
+                  </div>
+
+                  <div>
+                    <h3>Complete Appointment</h3>
+
+                    <p>Record the provider and current child measurements.</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="appointment-popup-close"
+                  onClick={closeCompletionPopup}
+                  aria-label="Close"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+
+              {/* POPUP BODY */}
+              <div className="appointment-popup-body">
+                {/* PROVIDER */}
+                <div className="appointment-form-section">
+                  <div className="appointment-form-section-heading">
+                    <div className="appointment-form-section-icon">
+                      <FaUser />
+                    </div>
+
+                    <div>
+                      <h4>Provider / Personnel</h4>
+
+                      <span>
+                        Select the personnel who administered the vaccine.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="appointment-field appointment-field-full">
+                    <label>Provider / Personnel</label>
+
+                    <select
+                      value={completionProvider}
+                      onChange={(e) => setCompletionProvider(e.target.value)}
+                    >
+                      <option value="">Select provider / personnel</option>
+
+                      {staff.map((person) => (
+                        <option key={person.staff_id} value={person.staff_id}>
+                          {person.staff_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* CHILD MEASUREMENTS */}
+                <div className="appointment-form-section">
+                  <div className="appointment-form-section-heading">
+                    <div className="appointment-form-section-icon">
+                      <FaChild />
+                    </div>
+
+                    <div>
+                      <h4>Child Measurements</h4>
+
+                      <span>Enter the child's current height and weight.</span>
+                    </div>
+                  </div>
+
+                  <div className="appointment-selection-box">
+                    {completionAppointment.children?.length === 0 ? (
+                      <div className="appointment-no-data">
+                        No children found for this appointment.
+                      </div>
+                    ) : (
+                      <div className="appointment-child-grid">
+                        {completionAppointment.children.map((child) => {
+                          const measurement = completionMeasurements[
+                            child.child_id
+                          ] || {
+                            height_cm: "",
+                            weight_kg: "",
+                          };
+
+                          return (
+                            <div
+                              key={child.child_id}
+                              className="appointment-select-card selected"
+                              style={{
+                                cursor: "default",
+                                display: "block",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "10px",
+                                  marginBottom: "14px",
+                                }}
+                              >
+                                <span className="appointment-select-card-icon child-icon">
+                                  <FaChild />
+                                </span>
+
+                                <span className="appointment-select-card-text">
+                                  <strong>{child.child_name}</strong>
+
+                                  <small>Current measurements</small>
+                                </span>
+                              </div>
+
+                              <div
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns: "1fr 1fr",
+                                  gap: "12px",
+                                }}
+                              >
+                                <div className="appointment-field">
+                                  <label>Height (cm)</label>
+
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.1"
+                                    value={measurement.height_cm}
+                                    onChange={(e) =>
+                                      updateCompletionMeasurement(
+                                        child.child_id,
+                                        "height_cm",
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder="e.g. 85"
+                                  />
+                                </div>
+
+                                <div className="appointment-field">
+                                  <label>Weight (kg)</label>
+
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.1"
+                                    value={measurement.weight_kg}
+                                    onChange={(e) =>
+                                      updateCompletionMeasurement(
+                                        child.child_id,
+                                        "weight_kg",
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder="e.g. 12"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* POPUP FOOTER */}
+              <div className="appointment-popup-footer">
+                <div className="appointment-popup-summary">
+                  <span>
+                    {completionAppointment.children?.length || 0} child
+                    {(completionAppointment.children?.length || 0) !== 1
+                      ? "ren"
+                      : ""}
+                  </span>
+
+                  <span>Provider required</span>
+                </div>
+
+                <div className="appointment-popup-actions">
+                  <button
+                    type="button"
+                    className="appointment-cancel"
+                    onClick={closeCompletionPopup}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    className="set"
+                    onClick={completeAppointment}
+                  >
+                    Complete Appointment
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ==============================
+            MULTIPLE CHILD SELECTION
+        ============================== */}
+
         {showChildSelection && selectedHistoryAppointment && (
           <div
             className="history-child-popup-overlay"
@@ -1467,9 +1840,7 @@ function Appointments() {
             >
               <div className="history-child-popup-header">
                 <div>
-                  <span className="history-child-popup-label">
-                    APPOINTMENT HISTORY
-                  </span>
+                  <span className="history-child-popup-label">APPOINTMENT</span>
 
                   <h3>Select Child</h3>
 
@@ -1505,6 +1876,7 @@ function Appointments() {
 
                     <div className="history-child-info">
                       <strong>{child.child_name}</strong>
+
                       <span>
                         {child.gender || "Child"} · ID #{child.child_id}
                       </span>

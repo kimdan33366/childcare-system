@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 
 import {
   FiArrowLeft,
@@ -17,10 +17,12 @@ import {
 
 import Sidebar from "../View/Sidebar";
 import "../css/ParentProfile.css";
+import UserManagement from "./UserManagement";
 
 function ParentProfile() {
   const navigate = useNavigate();
   const { userId } = useParams();
+  const location = useLocation();
 
   // ==========================================
   // CURRENT USER / PERMISSIONS
@@ -442,7 +444,7 @@ function ParentProfile() {
           <button
             type="button"
             className="parent-profile-back"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(location.state?.from || "/user-management")}
           >
             <FiArrowLeft />
             Back
@@ -472,7 +474,7 @@ function ParentProfile() {
         <button
           type="button"
           className="parent-profile-back"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(location.state?.from||"/user-management")}
         >
           <FiArrowLeft />
           Back

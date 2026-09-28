@@ -35,6 +35,10 @@ class VaccineController extends Controller
         $validated = $request->validate([
             'vaccine_name' => 'required|string|max:255',
             'date_stored' => 'required|date',
+
+            // Production date is optional for existing/older vaccines.
+            'production_date' => 'nullable|date|before_or_equal:date_stored',
+
             'expiration_date' => 'required|date|after_or_equal:date_stored',
             'stock_quantity' => 'required|integer|min:0',
         ]);
@@ -66,6 +70,10 @@ class VaccineController extends Controller
         $validated = $request->validate([
             'vaccine_name' => 'required|string|max:255',
             'date_stored' => 'required|date',
+
+            // Production date is optional.
+            'production_date' => 'nullable|date|before_or_equal:date_stored',
+
             'expiration_date' => 'required|date|after_or_equal:date_stored',
             'stock_quantity' => 'required|integer|min:0',
         ]);

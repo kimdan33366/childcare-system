@@ -31,7 +31,13 @@ function PatientViewRecord() {
   const [selectedDeleteVaccination, setSelectedDeleteVaccination] =
     useState(null);
 
-  const [vaccinationForm, setVaccinationForm] = useState({
+  const [vaccines, setVaccines] = useState([]);
+  const [vaccineInventory, setVaccineInventory] = useState([]);
+
+  const [showEditVaccination, setShowEditVaccination] = useState(false);
+  const [selectedVaccination, setSelectedVaccination] = useState(null);
+
+  const [editVaccinationForm, setEditVaccinationForm] = useState({
     vaccine: "",
     dose: "",
     date: "",
@@ -40,12 +46,17 @@ function PatientViewRecord() {
     provider: "",
   });
 
-  const [vaccines, setVaccines] = useState([]);
-  const [vaccineInventory, setVaccineInventory] = useState([]);
+  // ==========================================
+  // GROWTH RECORD
+  // ==========================================
 
-  const [showEditVaccination, setShowEditVaccination] = useState(false);
+  const [showAddGrowth, setShowAddGrowth] = useState(false);
 
-  const [selectedVaccination, setSelectedVaccination] = useState(null);
+  const [growthForm, setGrowthForm] = useState({
+    date: new Date().toISOString().split("T")[0],
+    weight_kg: "",
+    height_cm: "",
+  });
 
   // ==========================================
   // EDIT CHILD
@@ -87,11 +98,8 @@ function PatientViewRecord() {
 
       const normalizedChild = {
         ...data,
-
         growthRecords: data.growth_records || data.growthRecords || [],
-
         appointments: data.appointments || [],
-
         patientRecords: data.patient_records || data.patientRecords || [],
       };
 
@@ -254,6 +262,81 @@ function PatientViewRecord() {
       : "—";
 
   // ==========================================
+  // CALCULATE BMI
+  // ==========================================
+
+  const calculateBMI = (weightKg, heightCm) => {
+    const weight = Number(weightKg);
+    const height = Number(heightCm);
+
+    if (
+      !Number.isFinite(weight) ||
+      !Number.isFinite(height) ||
+      weight <= 0 ||
+      height <= 0
+    ) {
+      return "—";
+    }
+
+    const heightInMeters = height / 100;
+    const bmi = weight / (heightInMeters * heightInMeters);
+
+    return bmi.toFixed(2);
+  };
+
+  // ==========================================
+  // CALCULATE GROWTH CHANGE
+  // ==========================================
+
+  const getGrowthChange = (index) => {
+    const current = sortedGrowthRecords[index];
+
+    if (!current) {
+      return "—";
+    }
+
+    const previous = sortedGrowthRecords[index + 1];
+
+    if (!previous) {
+      return "Baseline";
+    }
+
+    const currentWeight = Number(current.weight_kg);
+    const previousWeight = Number(previous.weight_kg);
+
+    const currentHeight = Number(current.height_cm);
+    const previousHeight = Number(previous.height_cm);
+
+    const changes = [];
+
+    if (Number.isFinite(currentWeight) && Number.isFinite(previousWeight)) {
+      const weightChange = currentWeight - previousWeight;
+
+      if (weightChange > 0) {
+        changes.push(`+${weightChange.toFixed(2)} kg`);
+      } else if (weightChange < 0) {
+        changes.push(`${weightChange.toFixed(2)} kg`);
+      } else {
+        changes.push("0.00 kg");
+      }
+    }
+
+    if (Number.isFinite(currentHeight) && Number.isFinite(previousHeight)) {
+      const heightChange = currentHeight - previousHeight;
+
+      if (heightChange > 0) {
+        changes.push(`+${heightChange.toFixed(2)} cm`);
+      } else if (heightChange < 0) {
+        changes.push(`${heightChange.toFixed(2)} cm`);
+      } else {
+        changes.push("0.00 cm");
+      }
+    }
+
+    return changes.length > 0 ? changes.join(" · ") : "—";
+  };
+
+  // ==========================================
   // VACCINE HELPERS
   // ==========================================
 
@@ -263,6 +346,97 @@ function PatientViewRecord() {
     );
 
     return vaccine?.vaccine_name || "Unknown Vaccine";
+  };
+
+  // ==========================================
+  // OPEN ADD GROWTH RECORD
+  // ==========================================
+
+  const handleOpenAddGrowth = () => {
+    setGrowthForm({
+      date: new Date().toISOString().split("T")[0],
+      weight_kg: "",
+      height_cm: "",
+    });
+
+    setShowAddGrowth(true);
+  };
+
+  // ==========================================
+  // SAVE GROWTH RECORD
+  // ==========================================
+
+  const handleSaveGrowth = async () => {
+    if (
+      !growthForm.date ||
+      !growthForm.weight_kg ||
+      !growthForm.height_cm
+    ) {
+      alert("Please complete the date, weight, and height.");
+      return;
+    }
+
+    const weight = Number(growthForm.weight_kg);
+    const height = Number(growthForm.height_cm);
+
+    if (!Number.isFinite(weight) || weight <= 0) {
+      alert("Please enter a valid weight.");
+      return;
+    }
+
+    if (!Number.isFinite(height) || height <= 0) {
+      alert("Please enter a valid height.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/growth-records",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            child_id: child_id,
+            date: growthForm.date,
+            weight_kg: weight,
+            height_cm: height,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Laravel growth record error:", data);
+
+        alert(
+          data.message ||
+            data.error ||
+            "Failed to save the growth record.",
+        );
+
+        return;
+      }
+
+      await fetchChild();
+
+      alert("Growth record added successfully!");
+
+      setShowAddGrowth(false);
+
+      setGrowthForm({
+        date: new Date().toISOString().split("T")[0],
+        weight_kg: "",
+        height_cm: "",
+      });
+    } catch (error) {
+      console.error("Error saving growth record:", error);
+
+      alert("Failed to save the growth record.");
+    }
   };
 
   // ==========================================
@@ -341,7 +515,9 @@ function PatientViewRecord() {
         console.error("Laravel error:", data);
 
         alert(
-          data.message || data.error || "Failed to update child information.",
+          data.message ||
+            data.error ||
+            "Failed to update child information.",
         );
 
         return;
@@ -358,10 +534,6 @@ function PatientViewRecord() {
       alert("Failed to update child information.");
     }
   };
-
-  // ==========================================
-  // VACCINATION FORM
-  // ==========================================
 
   // ==========================================
   // EDIT VACCINATION
@@ -413,7 +585,6 @@ function PatientViewRecord() {
       : null;
 
     const oldStatus = selectedVaccination.status;
-
     const oldVaccineId = selectedVaccination.vaccine_id;
 
     if (
@@ -476,6 +647,7 @@ function PatientViewRecord() {
       setSelectedVaccination(null);
     } catch (error) {
       console.error("Error updating vaccination:", error);
+
       alert("Failed to update vaccination record.");
     }
   };
@@ -548,7 +720,9 @@ function PatientViewRecord() {
         setVaccines(previousVaccines);
 
         alert(
-          data.message || data.error || "Failed to update vaccination status.",
+          data.message ||
+            data.error ||
+            "Failed to update vaccination status.",
         );
 
         return;
@@ -753,10 +927,12 @@ function PatientViewRecord() {
               <p>Set, update, and manage the child's vaccination records.</p>
             </div>
 
-            {hasPermission("view_appointments") && (
+            {hasPermission("view_appointments") && child && (
               <button
                 className="viewRecord-add-btn"
-                onClick={() => navigate(`/appointments?child_id=${child.child_id}`)}
+                onClick={() =>
+                  navigate(`/appointments?child_id=${child.child_id}`)
+                }
               >
                 View Appointments
               </button>
@@ -791,16 +967,7 @@ function PatientViewRecord() {
 
                       <td>{item.date || item.date_taken || "—"}</td>
 
-                      <td>
-                        <div
-                          value={item.status || ""}
-                          
-                        >
-                          <option value="Completed">Completed</option>
-
-                          
-                        </div>
-                      </td>
+                      <td>{item.status || "—"}</td>
 
                       <td>{item.place || "—"}</td>
 
@@ -808,13 +975,10 @@ function PatientViewRecord() {
 
                       <td>
                         <div className="viewRecord-action-buttons">
-                          
-
                           <button
                             className="viewRecord-delete-btn"
                             onClick={() => {
                               setSelectedDeleteVaccination(item);
-
                               setShowDeleteVaccination(true);
                             }}
                           >
@@ -866,6 +1030,15 @@ function PatientViewRecord() {
                 visits.
               </p>
             </div>
+
+            {hasPermission("edit_patients") && (
+              <button
+                className="viewRecord-add-btn"
+                onClick={handleOpenAddGrowth}
+              >
+                Add Growth Record
+              </button>
+            )}
           </div>
 
           <div className="viewRecord-table-wrapper">
@@ -875,13 +1048,14 @@ function PatientViewRecord() {
                   <th>Date</th>
                   <th>Weight</th>
                   <th>Height</th>
-                  <th>Appointment</th>
+                  <th>Growth Change</th>
+                  <th>BMI</th>
                 </tr>
               </thead>
 
               <tbody>
                 {sortedGrowthRecords.length > 0 ? (
-                  sortedGrowthRecords.map((growth) => (
+                  sortedGrowthRecords.map((growth, index) => (
                     <tr key={growth.growth_id}>
                       <td>{growth.date || "—"}</td>
 
@@ -901,16 +1075,16 @@ function PatientViewRecord() {
                           : "—"}
                       </td>
 
+                      <td>{getGrowthChange(index)}</td>
+
                       <td>
-                        {growth.appointment_id
-                          ? `#${growth.appointment_id}`
-                          : "Clinic Visit"}
+                        {calculateBMI(growth.weight_kg, growth.height_cm)}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="viewRecord-empty">
+                    <td colSpan="5" className="viewRecord-empty">
                       No growth records available.
                     </td>
                   </tr>
@@ -969,6 +1143,133 @@ function PatientViewRecord() {
             </table>
           </div>
         </section>
+
+        {/* ADD GROWTH RECORD */}
+
+        {showAddGrowth && (
+          <div className="viewRecord-popup-overlay">
+            <div className="viewRecord-popup">
+              <div className="viewRecord-popup-header">
+                <div>
+                  <h2>Add Growth Record</h2>
+
+                  <p>
+                    Record a new height and weight measurement for this child.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setShowAddGrowth(false)}
+                  className="viewRecord-popup-close"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="viewRecord-popup-child">
+                <FaUserCircle />
+
+                <div>
+                  <strong>{child?.child_name || "Child's Name"}</strong>
+
+                  <small>Parent: {parentName}</small>
+                </div>
+              </div>
+
+              <label>Date</label>
+
+              <input
+                type="date"
+                className="vaccination-form-input"
+                value={growthForm.date}
+                onChange={(e) =>
+                  setGrowthForm((prev) => ({
+                    ...prev,
+                    date: e.target.value,
+                  }))
+                }
+              />
+
+              <label>Weight (kg)</label>
+
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                className="vaccination-form-input"
+                value={growthForm.weight_kg}
+                onChange={(e) =>
+                  setGrowthForm((prev) => ({
+                    ...prev,
+                    weight_kg: e.target.value,
+                  }))
+                }
+                placeholder="Enter weight in kilograms"
+              />
+
+              <label>Height (cm)</label>
+
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                className="vaccination-form-input"
+                value={growthForm.height_cm}
+                onChange={(e) =>
+                  setGrowthForm((prev) => ({
+                    ...prev,
+                    height_cm: e.target.value,
+                  }))
+                }
+                placeholder="Enter height in centimeters"
+              />
+
+              <label>BMI</label>
+
+              <div
+                className="vaccination-form-input"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  background: "#f5f6f8",
+                }}
+              >
+                {calculateBMI(
+                  growthForm.weight_kg,
+                  growthForm.height_cm,
+                )}
+              </div>
+
+              <small
+                style={{
+                  display: "block",
+                  marginTop: "-4px",
+                  marginBottom: "12px",
+                  color: "#666",
+                }}
+              >
+                BMI is calculated automatically and is not stored in the
+                database.
+              </small>
+
+              <div className="viewRecord-popup-buttons">
+                <button
+                  className="viewRecord-cancel-btn"
+                  onClick={() => setShowAddGrowth(false)}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  className="viewRecord-send-btn"
+                  onClick={handleSaveGrowth}
+                >
+                  Save Growth Record
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* EDIT CHILD */}
 
@@ -1061,7 +1362,6 @@ function PatientViewRecord() {
 
               <input
                 className="vaccination-form-input"
-                // rows="3"
                 value={editChildForm.address}
                 onChange={(e) =>
                   handleEditChildChange("address", e.target.value)
@@ -1103,8 +1403,6 @@ function PatientViewRecord() {
             </div>
           </div>
         )}
-
-        
 
         {/* EDIT VACCINATION */}
 
@@ -1277,7 +1575,9 @@ function PatientViewRecord() {
                   <div className="delete-vaccination-details">
                     <strong>
                       {selectedDeleteVaccination.vaccine ||
-                        getVaccineName(selectedDeleteVaccination.vaccine_id)}
+                        getVaccineName(
+                          selectedDeleteVaccination.vaccine_id,
+                        )}
                     </strong>
 
                     <span>
@@ -1297,7 +1597,6 @@ function PatientViewRecord() {
                   className="viewRecord-cancel-btn"
                   onClick={() => {
                     setShowDeleteVaccination(false);
-
                     setSelectedDeleteVaccination(null);
                   }}
                 >
