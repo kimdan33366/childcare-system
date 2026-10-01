@@ -114,10 +114,10 @@ function Sidebar() {
           Profile
         </NavLink>
 
-        <NavLink to="/help">
+        {/* <NavLink to="/help">
           <FaQuestionCircle />
           Help & Feedback
-        </NavLink>
+        </NavLink> */}
 
         <button onClick={handleLogout}>
           <FaSignOutAlt />

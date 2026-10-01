@@ -81,6 +81,40 @@ class LoginController extends Controller
             ], 200);
         }
 
+        $user = User::where('email', $request->username)
+                ->orWhere('user_fullname', $request->username)
+                ->first();
+
+                if($user){
+
+                if (!Hash::check($request->password, $user->password)){
+                    return response()->json([
+                        'message' => 'Invalid username or password.'
+                    ], 401);
+                }
+
+                if ($user->status !== 'Active'){
+                    return response()->json([
+                        'message' => 'This user account is inactive.'
+                    ], 403);
+                }
+
+                return response()->json([
+                    'message' => 'Login successful',
+                    'user_type' => 'User',
+                    'user' =>[
+                        'user_id' => $user->user_id,
+                        'user_fullname' => $user->user_fullname,
+                        'email' => $user->email,
+                        'date_of_birth' => $user->date_of_birth,
+                        'gender' => $user->gender,
+                        'address' => $user->address,
+                        'mobile_number' => $user->mobile_number,
+                        'status' => $user->status,
+                    ]
+                ], 200);
+                }
+
         /*
         |--------------------------------------------------------------------------
         | ACCOUNT NOT FOUND

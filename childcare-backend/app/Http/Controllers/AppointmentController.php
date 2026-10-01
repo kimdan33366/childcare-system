@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Appointment;
 use App\Models\PatientRecord;
 use App\Models\Vaccine;
+use App\Models\GrowthRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -172,6 +173,12 @@ class AppointmentController extends Controller
             'vaccines' => 'sometimes|array',
             'vaccines.*.vaccine_id' => 'required|integer|exists:vaccine,vaccine_ID',
             'vaccines.*.dose_number' => 'required|integer|min:1',
+
+            'growth_records' => 'sometimes|array',
+            'growth_records.*.child_id' => 'required|integer|exists:children,child_id',
+'growth_records.*.appointment_id' => 'nullable|integer|exists:appointments,appointment_id',
+'growth_records.*.height_cm' => 'required|numeric|min:0',
+'growth_records.*.weight_kg' => 'required|numeric|min:0',
         ]);
 
         DB::beginTransaction();
@@ -345,6 +352,21 @@ class AppointmentController extends Controller
 
                 $this->createPatientRecordsFromAppointment($appointment);
             }
+                if ($request->has('growth_records')) {
+    foreach ($request->growth_records as $growth) {
+        GrowthRecord::updateOrCreate(
+            [
+                'appointment_id' => $appointment->appointment_id,
+                'child_id' => $growth['child_id'],
+            ],
+            [
+                'date' => $appointment->appointment_date,
+                'height_cm' => $growth['height_cm'],
+                'weight_kg' => $growth['weight_kg'],
+            ]
+        );
+    }
+}
 
             DB::commit();
 

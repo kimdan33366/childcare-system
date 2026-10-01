@@ -301,18 +301,7 @@ function Dashboard() {
           </NavLink>
 
 
-          <NavLink
-            to="/report"
-            className="dashboard-card"
-          >
-            <div className="dashboard-card-top">
-              <FaShieldAlt className="dashboard-card-icon vaccine" />
-            </div>
-
-            <small>Doses Given</small>
-
-            <h2>{dashboardData.doses_given || 0}</h2>
-          </NavLink>
+          
 
         </div>
 

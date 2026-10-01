@@ -1568,3 +1568,658 @@ body,
   }
 }
 
+/* ==========================================
+   EDIT CHILD MODAL
+   ========================================== */
+
+.patients-edit-child-modal {
+  width: 640px;
+  max-width: 92%;
+  max-height: 90vh;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px 32px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  overflow-y: auto;
+}
+
+.patients-edit-child-modal::-webkit-scrollbar {
+  width: 7px;
+}
+
+.patients-edit-child-modal::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.patients-edit-child-modal::-webkit-scrollbar-thumb {
+  background: #d1d7e0;
+  border-radius: 10px;
+}
+
+
+/* ==========================================
+   EDIT HEADER
+   ========================================== */
+
+.patient-step-header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 22px;
+}
+
+.patient-step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #2e86de;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.patient-step-header h2 {
+  margin: 0;
+  color: #21457b;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.patient-step-header p {
+  margin: 4px 0 0;
+  color: #777;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+
+/* ==========================================
+   PARENT / GUARDIAN
+   ========================================== */
+
+.patient-connected-user {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 14px;
+  margin-bottom: 22px;
+  border-radius: 8px;
+  background: #f4f8fd;
+  border: 1px solid #dbe8f7;
+}
+
+.patient-connected-user > svg {
+  color: #2e86de;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.patient-connected-user > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.patient-connected-user small {
+  color: #8a94a6;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.patient-connected-user strong {
+  color: #21457b;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+
+/* ==========================================
+   EDIT FORM
+   ========================================== */
+
+.patients-edit-child-modal > label.patient-form-label {
+  display: block;
+  margin: 0 0 7px;
+  color: #444;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.patients-edit-child-modal > input,
+.patients-edit-child-modal > select {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  margin-bottom: 16px;
+  border: 1px solid #d9dee7;
+  border-radius: 8px;
+  outline: none;
+  background: #ffffff;
+  color: #333;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: 0.2s ease;
+}
+
+.patients-edit-child-modal > input:hover,
+.patients-edit-child-modal > select:hover {
+  border-color: #c5ccd8;
+}
+
+.patients-edit-child-modal > input:focus,
+.patients-edit-child-modal > select:focus {
+  border-color: #21457b;
+  box-shadow: 0 0 0 2px rgba(33, 69, 123, 0.08);
+}
+
+.patients-edit-child-modal > input::placeholder {
+  color: #9aa3af;
+}
+
+.patients-edit-child-modal > select {
+  cursor: pointer;
+}
+
+
+/* ==========================================
+   CALCULATED AGE
+   ========================================== */
+
+.patient-selected-user {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 13px;
+  margin: -4px 0 16px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.patient-selected-user span {
+  color: #718096;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.patient-selected-user strong {
+  color: #21457b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+
+/* ==========================================
+   EDIT BUTTONS
+   ========================================== */
+
+.patients-add-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.patients-add-buttons button {
+  min-width: 100px;
+  height: 40px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.patients-add-buttons button:first-child {
+  background: #f1f3f5;
+  color: #4a5568;
+}
+
+.patients-add-buttons button:first-child:hover {
+  background: #e5e7eb;
+}
+
+.patients-add-buttons button:last-child {
+  background: #21457b;
+  color: #ffffff;
+}
+
+.patients-add-buttons button:last-child:hover {
+  background: #193961;
+}
+
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+
+@media (max-width: 700px) {
+  .patients-edit-child-modal {
+    width: 100%;
+    max-width: 100%;
+    padding: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .patients-edit-child-modal {
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  .patient-step-header {
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .patient-step-header h2 {
+    font-size: 18px;
+  }
+
+  .patient-step-header p {
+    font-size: 12px;
+  }
+
+  .patient-step-number {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  .patients-add-buttons {
+    margin-top: 4px;
+  }
+
+  .patients-add-buttons button {
+    flex: 1;
+  }
+}
+/* ==========================================
+   EDIT CHILD MODAL
+   ========================================== */
+
+.patients-edit-child-modal {
+  width: 640px;
+  max-width: 92%;
+  max-height: 90vh;
+
+  background: #ffffff;
+  border-radius: 12px;
+
+  padding: 28px 32px;
+
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+
+  overflow-y: auto;
+}
+
+.patients-edit-child-modal::-webkit-scrollbar {
+  width: 7px;
+}
+
+.patients-edit-child-modal::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.patients-edit-child-modal::-webkit-scrollbar-thumb {
+  background: #d1d7e0;
+  border-radius: 10px;
+}
+
+
+/* ==========================================
+   EDIT CHILD HEADER
+   ========================================== */
+
+.edit-child-header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 22px;
+}
+
+.edit-child-header h2 {
+  margin: 0;
+  color: #21457b;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.edit-child-header p {
+  margin: 4px 0 0;
+  color: #777;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.edit-child-step-number {
+  width: 36px;
+  height: 36px;
+
+  border-radius: 50%;
+
+  background: #2e86de;
+  color: #ffffff;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  flex-shrink: 0;
+}
+
+
+/* ==========================================
+   PARENT / GUARDIAN
+   ========================================== */
+
+.edit-child-connected-user {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  padding: 12px 14px;
+  margin-bottom: 22px;
+
+  border-radius: 8px;
+
+  background: #f4f8fd;
+  border: 1px solid #dbe8f7;
+}
+
+.edit-child-connected-user > svg {
+  color: #2e86de;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.edit-child-connected-user > div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.edit-child-connected-user small {
+  color: #8a94a6;
+
+  font-size: 10px;
+  font-weight: 600;
+
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.edit-child-connected-user strong {
+  color: #21457b;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+
+/* ==========================================
+   EDIT CHILD FORM
+   ========================================== */
+
+.edit-child-form {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  column-gap: 16px;
+  row-gap: 16px;
+}
+
+.edit-child-field {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.edit-child-field-full {
+  grid-column: 1 / -1;
+}
+
+
+/* ==========================================
+   EDIT CHILD LABEL
+   ========================================== */
+
+.edit-child-field label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #444;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+/* ==========================================
+   EDIT CHILD INPUTS
+   ========================================== */
+
+.edit-child-input {
+  width: 100%;
+  height: 48px;
+
+  padding: 0 14px;
+
+  border: 1px solid #d9dee7;
+  border-radius: 8px;
+
+  outline: none;
+
+  background: #ffffff;
+  color: #333333;
+
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+
+  box-sizing: border-box;
+
+  transition: 0.2s ease;
+}
+
+.edit-child-input:hover {
+  border-color: #c5ccd8;
+}
+
+.edit-child-input:focus {
+  border-color: #21457b;
+
+  box-shadow:
+    0 0 0 2px rgba(33, 69, 123, 0.08);
+}
+
+.edit-child-input::placeholder {
+  color: #9aa3af;
+}
+
+
+/* ==========================================
+   EDIT CHILD SELECT
+   ========================================== */
+
+.edit-child-select {
+  cursor: pointer;
+}
+
+
+/* ==========================================
+   CALCULATED AGE
+   ========================================== */
+
+.edit-child-age {
+  grid-column: 1 / -1;
+
+  min-height: 46px;
+
+  padding: 10px 13px;
+
+  border-radius: 8px;
+
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  box-sizing: border-box;
+}
+
+.edit-child-age span {
+  color: #718096;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.edit-child-age strong {
+  color: #21457b;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+
+/* ==========================================
+   EDIT CHILD BUTTONS
+   ========================================== */
+
+.edit-child-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  margin-top: 24px;
+}
+
+.edit-child-buttons button {
+  min-width: 100px;
+  height: 40px;
+
+  padding: 0 16px;
+
+  border: none;
+  border-radius: 7px;
+
+  cursor: pointer;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  transition: 0.2s ease;
+}
+
+.edit-child-cancel {
+  background: #f1f3f5;
+  color: #4a5568;
+}
+
+.edit-child-cancel:hover {
+  background: #e5e7eb;
+}
+
+.edit-child-update {
+  background: #21457b;
+  color: #ffffff;
+}
+
+.edit-child-update:hover {
+  background: #193961;
+}
+
+
+/* ==========================================
+   EDIT CHILD RESPONSIVE
+   ========================================== */
+
+@media (max-width: 700px) {
+  .patients-edit-child-modal {
+    width: 100%;
+    max-width: 100%;
+    padding: 24px;
+  }
+
+  .edit-child-form {
+    grid-template-columns: 1fr;
+    row-gap: 14px;
+  }
+
+  .edit-child-field-full,
+  .edit-child-age {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .patients-edit-child-modal {
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  .edit-child-header {
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .edit-child-header h2 {
+    font-size: 18px;
+  }
+
+  .edit-child-header p {
+    font-size: 12px;
+  }
+
+  .edit-child-step-number {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  .edit-child-buttons {
+    margin-top: 20px;
+  }
+
+  .edit-child-buttons button {
+    flex: 1;
+  }
+}

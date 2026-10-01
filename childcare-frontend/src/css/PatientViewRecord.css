@@ -551,6 +551,26 @@ body,
     font-weight: 600;
     cursor: pointer;
 }
+/* Download Vaccine Card Button */
+.download-vaccine-card-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #2e86de;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.download-vaccine-card-btn:hover {
+  background: #1f6fbd;
+}
+
+.download-vaccine-card-btn:active {
+  transform: scale(0.98);
+}
 
 
 /* =========================

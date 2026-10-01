@@ -1171,17 +1171,16 @@ function Patients() {
 
             {isEditingPatient ? (
               <>
-                <div className="patient-step-header">
-                  <span className="patient-step-number">✎</span>
+                <div className="edit-child-header">
+                  <span className="edit-child-step-number">✎</span>
 
                   <div>
                     <h2>Edit Child</h2>
-
                     <p>Update the child's information.</p>
                   </div>
                 </div>
 
-                <div className="patient-connected-user">
+                <div className="edit-child-connected-user">
                   <FaUserCircle />
 
                   <div>
@@ -1195,87 +1194,120 @@ function Patients() {
                   </div>
                 </div>
 
-                <label className="patient-form-label">Child's Name</label>
+                <div className="edit-child-form">
+                  {/* CHILD NAME */}
+                  <div className="edit-child-field edit-child-field-full">
+                    <label>Child's Name</label>
 
-                <input
-                  type="text"
-                  placeholder="Child's Name"
-                  value={childName}
-                  onChange={(e) => setChildName(e.target.value)}
-                />
-
-                <label className="patient-form-label">Birthdate</label>
-
-                <input
-                  type="date"
-                  value={birthdate}
-                  onChange={(e) => setBirthdate(e.target.value)}
-                />
-
-                {birthdate && (
-                  <div className="patient-selected-user">
-                    <span>Calculated Age</span>
-
-                    <strong>{calculateAge(birthdate)}</strong>
+                    <input
+                      className="edit-child-input"
+                      type="text"
+                      placeholder="Child's Name"
+                      value={childName}
+                      onChange={(e) => setChildName(e.target.value)}
+                    />
                   </div>
-                )}
 
-                <label className="patient-form-label">Gender</label>
+                  {/* BIRTHDATE */}
+                  <div className="edit-child-field">
+                    <label>Birthdate</label>
 
-                <select value={sex} onChange={(e) => setSex(e.target.value)}>
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
+                    <input
+                      className="edit-child-input"
+                      type="date"
+                      value={birthdate}
+                      onChange={(e) => setBirthdate(e.target.value)}
+                    />
+                  </div>
 
-                <label className="patient-form-label">
-                  Relationship to Child
-                </label>
+                  {/* GENDER */}
+                  <div className="edit-child-field">
+                    <label>Gender</label>
 
-                <select
-                  value={relationship}
-                  onChange={(e) => setRelationship(e.target.value)}
-                >
-                  <option value="">Select Relationship</option>
-                  <option value="Mother">Mother</option>
-                  <option value="Father">Father</option>
-                  <option value="Guardian">Guardian</option>
-                </select>
+                    <select
+                      className="edit-child-input edit-child-select"
+                      value={sex}
+                      onChange={(e) => setSex(e.target.value)}
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
 
-                <label className="patient-form-label">Height (cm)</label>
+                  {/* CALCULATED AGE */}
+                  {birthdate && (
+                    <div className="edit-child-age">
+                      <span>Calculated Age</span>
 
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="e.g. 85.5"
-                  value={height}
-                  onChange={(e) => setHeight(e.target.value)}
-                />
+                      <strong>{calculateAge(birthdate)}</strong>
+                    </div>
+                  )}
 
-                <label className="patient-form-label">Weight (kg)</label>
+                  {/* RELATIONSHIP */}
+                  <div className="edit-child-field">
+                    <label>Relationship to Child</label>
 
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="e.g. 12.5"
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                />
+                    <select
+                      className="edit-child-input edit-child-select"
+                      value={relationship}
+                      onChange={(e) => setRelationship(e.target.value)}
+                    >
+                      <option value="">Select Relationship</option>
+                      <option value="Mother">Mother</option>
+                      <option value="Father">Father</option>
+                      <option value="Guardian">Guardian</option>
+                    </select>
+                  </div>
 
-                <label className="patient-form-label">Address</label>
+                  {/* HEIGHT */}
+                  <div className="edit-child-field">
+                    <label>Height (cm)</label>
 
-                <input
-                  type="text"
-                  placeholder="Child's Address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                />
+                    <input
+                      className="edit-child-input"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="e.g. 85.5"
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
+                    />
+                  </div>
 
-                <div className="patients-add-buttons">
+                  {/* WEIGHT */}
+                  <div className="edit-child-field">
+                    <label>Weight (kg)</label>
+
+                    <input
+                      className="edit-child-input"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="e.g. 12.5"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                    />
+                  </div>
+
+                  {/* ADDRESS */}
+                  <div className="edit-child-field edit-child-field-full">
+                    <label>Address</label>
+
+                    <input
+                      className="edit-child-input"
+                      type="text"
+                      placeholder="Child's Address"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="edit-child-buttons">
                   <button
                     type="button"
+                    className="edit-child-cancel"
                     onClick={() => {
                       setShowAddPatient(false);
                       resetAddPatientForm();
@@ -1284,7 +1316,11 @@ function Patients() {
                     Cancel
                   </button>
 
-                  <button type="button" onClick={handleEditPatient}>
+                  <button
+                    type="button"
+                    className="edit-child-update"
+                    onClick={handleEditPatient}
+                  >
                     Update Child
                   </button>
                 </div>
@@ -1318,6 +1354,7 @@ function Patients() {
                       <FaSearch />
 
                       <input
+                        className="patient-form-input"
                         type="text"
                         placeholder="Search registered user..."
                         value={userSearch}

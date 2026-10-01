@@ -1,7 +1,11 @@
 import "../css/PatientViewRecord.css";
 
 import { useState, useEffect } from "react";
+import { bmi as calculateWHO_BMI, bmiForAge } from "who-growth-standards";
 import { FaUserCircle, FaArrowLeft, FaEdit } from "react-icons/fa";
+
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 
@@ -49,6 +53,8 @@ function PatientViewRecord() {
   // ==========================================
   // GROWTH RECORD
   // ==========================================
+
+  const [growthRecords, setGrowthRecords] = useState([]);
 
   const [showAddGrowth, setShowAddGrowth] = useState(false);
 
@@ -98,7 +104,6 @@ function PatientViewRecord() {
 
       const normalizedChild = {
         ...data,
-        growthRecords: data.growth_records || data.growthRecords || [],
         appointments: data.appointments || [],
         patientRecords: data.patient_records || data.patientRecords || [],
       };
@@ -106,6 +111,37 @@ function PatientViewRecord() {
       setChild(normalizedChild);
     } catch (error) {
       console.error("Error fetching child:", error);
+    }
+  };
+
+  // ==========================================
+  // FETCH GROWTH RECORDS
+  // ==========================================
+
+  const fetchGrowthRecords = async () => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/growth-records/${child_id}?_=${Date.now()}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Cache-Control": "no-cache",
+          },
+          cache: "no-store",
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Error fetching growth records:", data);
+        return;
+      }
+
+      setGrowthRecords(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error fetching growth records:", error);
     }
   };
 
@@ -128,6 +164,7 @@ function PatientViewRecord() {
       );
 
       const data = await response.json();
+      console.log("PatientViewRecord vaccination data:", data);
 
       console.log("Vaccination records from server:", data);
 
@@ -180,6 +217,7 @@ function PatientViewRecord() {
 
   useEffect(() => {
     fetchChild();
+    fetchGrowthRecords();
     fetchVaccinationRecords();
     fetchVaccineInventory();
   }, [child_id]);
@@ -226,12 +264,130 @@ function PatientViewRecord() {
   };
 
   // ==========================================
-  // GROWTH DATA
+  // CALCULATE BMI
   // ==========================================
 
-  const growthRecords = Array.isArray(child?.growthRecords)
-    ? child.growthRecords
-    : [];
+  const calculateBMI = (weightKg, heightCm) => {
+    const weight = Number(weightKg);
+    const height = Number(heightCm);
+
+    if (
+      !Number.isFinite(weight) ||
+      !Number.isFinite(height) ||
+      weight <= 0 ||
+      height <= 0
+    ) {
+      return "—";
+    }
+
+    const heightInMeters = height / 100;
+    const bmi = weight / (heightInMeters * heightInMeters);
+
+    return bmi.toFixed(2);
+  };
+
+  // ==========================================
+  // GROWTH ASSESSMENT
+  // ==========================================
+
+  const getGrowthAssessment = (growth) => {
+    const weight = Number(growth?.weight_kg);
+    const height = Number(growth?.height_cm);
+
+    if (
+      !Number.isFinite(weight) ||
+      !Number.isFinite(height) ||
+      weight <= 0 ||
+      height <= 0
+    ) {
+      return "—";
+    }
+
+    if (!child?.birthdate || !child?.gender || !growth?.date) {
+      return "Needs assessment";
+    }
+
+    const birthDate = new Date(child.birthdate);
+    const measurementDate = new Date(growth.date);
+
+    if (
+      Number.isNaN(birthDate.getTime()) ||
+      Number.isNaN(measurementDate.getTime())
+    ) {
+      return "Needs assessment";
+    }
+
+    const ageInDays = Math.floor(
+      (measurementDate.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    if (ageInDays < 0) {
+      return "Invalid age";
+    }
+
+    if (ageInDays > 1856) {
+      return "Age outside WHO 0–5 reference";
+    }
+
+    const sex =
+      String(child.gender).toLowerCase() === "female"
+        ? "female"
+        : String(child.gender).toLowerCase() === "male"
+          ? "male"
+          : null;
+
+    if (!sex) {
+      return "Needs assessment";
+    }
+
+    const bmi = calculateWHO_BMI(weight, height);
+
+    if (!Number.isFinite(bmi) || bmi <= 0) {
+      return "—";
+    }
+
+    try {
+      const result = bmiForAge(bmi, {
+        sex,
+        ageDays: ageInDays,
+      });
+
+      const zScore = Number(result?.zScore);
+
+      if (!Number.isFinite(zScore)) {
+        return "Needs assessment";
+      }
+
+      if (zScore < -3) {
+        return "Severely underweight";
+      }
+
+      if (zScore < -2) {
+        return "Underweight";
+      }
+
+      if (zScore <= 1) {
+        return "Normal";
+      }
+
+      if (zScore <= 2) {
+        return "At risk of overweight";
+      }
+
+      if (zScore <= 3) {
+        return "Overweight";
+      }
+
+      return "Obese";
+    } catch (error) {
+      console.error("WHO growth assessment error:", error);
+      return "Needs assessment";
+    }
+  };
+
+  // ==========================================
+  // GROWTH DATA
+  // ==========================================
 
   const sortedGrowthRecords = [...growthRecords].sort((a, b) => {
     const dateA = new Date(a.date || 0).getTime();
@@ -260,29 +416,6 @@ function PatientViewRecord() {
     latestGrowth?.weight_kg !== ""
       ? `${latestGrowth.weight_kg} kg`
       : "—";
-
-  // ==========================================
-  // CALCULATE BMI
-  // ==========================================
-
-  const calculateBMI = (weightKg, heightCm) => {
-    const weight = Number(weightKg);
-    const height = Number(heightCm);
-
-    if (
-      !Number.isFinite(weight) ||
-      !Number.isFinite(height) ||
-      weight <= 0 ||
-      height <= 0
-    ) {
-      return "—";
-    }
-
-    const heightInMeters = height / 100;
-    const bmi = weight / (heightInMeters * heightInMeters);
-
-    return bmi.toFixed(2);
-  };
 
   // ==========================================
   // CALCULATE GROWTH CHANGE
@@ -367,11 +500,7 @@ function PatientViewRecord() {
   // ==========================================
 
   const handleSaveGrowth = async () => {
-    if (
-      !growthForm.date ||
-      !growthForm.weight_kg ||
-      !growthForm.height_cm
-    ) {
+    if (!growthForm.date || !growthForm.weight_kg || !growthForm.height_cm) {
       alert("Please complete the date, weight, and height.");
       return;
     }
@@ -390,22 +519,19 @@ function PatientViewRecord() {
     }
 
     try {
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/growth-records",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            child_id: child_id,
-            date: growthForm.date,
-            weight_kg: weight,
-            height_cm: height,
-          }),
+      const response = await fetch("http://127.0.0.1:8000/api/growth-records", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      );
+        body: JSON.stringify({
+          child_id: child_id,
+          date: growthForm.date,
+          weight_kg: weight,
+          height_cm: height,
+        }),
+      });
 
       const data = await response.json();
 
@@ -413,15 +539,14 @@ function PatientViewRecord() {
         console.error("Laravel growth record error:", data);
 
         alert(
-          data.message ||
-            data.error ||
-            "Failed to save the growth record.",
+          data.message || data.error || "Failed to save the growth record.",
         );
 
         return;
       }
 
-      await fetchChild();
+      // Refresh growth records directly from the growth-records endpoint.
+      await fetchGrowthRecords();
 
       alert("Growth record added successfully!");
 
@@ -515,9 +640,7 @@ function PatientViewRecord() {
         console.error("Laravel error:", data);
 
         alert(
-          data.message ||
-            data.error ||
-            "Failed to update child information.",
+          data.message || data.error || "Failed to update child information.",
         );
 
         return;
@@ -720,9 +843,7 @@ function PatientViewRecord() {
         setVaccines(previousVaccines);
 
         alert(
-          data.message ||
-            data.error ||
-            "Failed to update vaccination status.",
+          data.message || data.error || "Failed to update vaccination status.",
         );
 
         return;
@@ -805,10 +926,188 @@ function PatientViewRecord() {
   const parentPhone = child?.user?.mobile_number || "—";
 
   const parentEmail = child?.user?.email || "—";
+  // Earliest growth record is treated as the birth measurement
+  const sortedGrowthForBirth = [...growthRecords].sort((a, b) => {
+    const dateA = new Date(a.date || 0).getTime();
+    const dateB = new Date(b.date || 0).getTime();
+
+    if (dateA !== dateB) {
+      return dateA - dateB;
+    }
+
+    return Number(a.growth_id || 0) - Number(b.growth_id || 0);
+  });
+
+  const birthGrowthRecord =
+    sortedGrowthForBirth.length > 0 ? sortedGrowthForBirth[0] : null;
+
+  const birthHeight =
+    birthGrowthRecord?.height_cm !== null &&
+    birthGrowthRecord?.height_cm !== undefined &&
+    birthGrowthRecord?.height_cm !== ""
+      ? `${birthGrowthRecord.height_cm} cm`
+      : "—";
+
+  const birthWeight =
+    birthGrowthRecord?.weight_kg !== null &&
+    birthGrowthRecord?.weight_kg !== undefined &&
+    birthGrowthRecord?.weight_kg !== ""
+      ? `${birthGrowthRecord.weight_kg} kg`
+      : "—";
+
+  // Use the earliest vaccination record with a recorded place
+  const sortedVaccinationsForHealthCenter = [...vaccines]
+    .filter((record) => record.place)
+    .sort((a, b) => {
+      const dateA = new Date(a.date_taken || 0).getTime();
+      const dateB = new Date(b.date_taken || 0).getTime();
+
+      return dateA - dateB;
+    });
+
+  const healthCenter = sortedVaccinationsForHealthCenter[0]?.place || "—";
 
   // ==========================================
   // RENDER
   // ==========================================
+
+  const downloadVaccineCard = () => {
+    if (!child) {
+      alert("Child information is not available yet.");
+      return;
+    }
+
+    const doc = new jsPDF("p", "mm", "a4");
+
+    // -----------------------------
+    // TITLE
+    // -----------------------------
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("CHILD IMMUNIZATION RECORD", 105, 20, {
+      align: "center",
+    });
+
+    // -----------------------------
+    // CHILD INFORMATION
+    // -----------------------------
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+
+    const leftX = 20;
+    const rightX = 110;
+
+    let leftY = 35;
+    let rightY = 35;
+
+    const addInfo = (label, value, x, y) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(`${label}:`, x, y);
+
+      doc.setFont("helvetica", "normal");
+      doc.text(String(value || "—"), x + 35, y);
+    };
+
+    // LEFT COLUMN
+    addInfo("Child Name", child.child_name || "—", leftX, leftY);
+
+    leftY += 10;
+
+    addInfo("Date of Birth", child.birthdate || "—", leftX, leftY);
+
+    leftY += 10;
+
+    addInfo("Address", child.address || "—", leftX, leftY);
+
+    leftY += 10;
+
+    addInfo("Gender", child.gender || "—", leftX, leftY);
+
+    // RIGHT COLUMN
+    addInfo("Parent/Guardian", parentName, rightX, rightY);
+
+    rightY += 10;
+
+    addInfo("Birth Height", birthHeight, rightX, rightY);
+
+    rightY += 10;
+
+    addInfo("Birth Weight", birthWeight, rightX, rightY);
+
+    rightY += 10;
+
+    addInfo("Health Center", healthCenter, rightX, rightY);
+
+    // -----------------------------
+    // VACCINATION TABLE
+    // -----------------------------
+    const vaccinationRows = [...vaccines]
+      .sort((a, b) => {
+        const dateA = new Date(a.date_taken || a.date || 0).getTime();
+
+        const dateB = new Date(b.date_taken || b.date || 0).getTime();
+
+        return dateA - dateB;
+      })
+      .map((record) => [
+        record.vaccine || getVaccineName(record.vaccine_id) || "—",
+
+        record.dose_number || record.dose || "—",
+
+        record.date_taken || record.date || "—",
+      ]);
+
+    autoTable(doc, {
+      startY: 80,
+
+      head: [["Vaccine", "Dose", "Date of Vaccination"]],
+
+      body: vaccinationRows,
+
+      theme: "grid",
+
+      styles: {
+        font: "helvetica",
+        fontSize: 10,
+        cellPadding: 4,
+        valign: "middle",
+      },
+
+      headStyles: {
+        fontStyle: "bold",
+        halign: "center",
+      },
+
+      columnStyles: {
+        0: {
+          cellWidth: 65,
+        },
+        1: {
+          cellWidth: 35,
+          halign: "center",
+        },
+        2: {
+          cellWidth: 65,
+          halign: "center",
+        },
+      },
+
+      margin: {
+        left: 20,
+        right: 20,
+      },
+    });
+
+    // -----------------------------
+    // DOWNLOAD
+    // -----------------------------
+    const safeChildName = (child.child_name || "Child").replace(
+      /[^a-z0-9]/gi,
+      "_",
+    );
+
+    doc.save(`Child_Immunization_Record_${safeChildName}.pdf`);
+  };
 
   return (
     <div className="viewRecord-dashboard">
@@ -905,6 +1204,14 @@ function PatientViewRecord() {
               <strong>{child?.address || "—"}</strong>
             </div>
           </div>
+
+          <button
+            type="button"
+            className="download-vaccine-card-btn"
+            onClick={downloadVaccineCard}
+          >
+            Download Vaccine Card
+          </button>
 
           {hasPermission("edit_patients") && (
             <button
@@ -1050,6 +1357,7 @@ function PatientViewRecord() {
                   <th>Height</th>
                   <th>Growth Change</th>
                   <th>BMI</th>
+                  <th>Assessment</th>
                 </tr>
               </thead>
 
@@ -1080,11 +1388,13 @@ function PatientViewRecord() {
                       <td>
                         {calculateBMI(growth.weight_kg, growth.height_cm)}
                       </td>
+
+                      <td>{getGrowthAssessment(growth)}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="viewRecord-empty">
+                    <td colSpan="6" className="viewRecord-empty">
                       No growth records available.
                     </td>
                   </tr>
@@ -1234,10 +1544,7 @@ function PatientViewRecord() {
                   background: "#f5f6f8",
                 }}
               >
-                {calculateBMI(
-                  growthForm.weight_kg,
-                  growthForm.height_cm,
-                )}
+                {calculateBMI(growthForm.weight_kg, growthForm.height_cm)}
               </div>
 
               <small
@@ -1575,9 +1882,7 @@ function PatientViewRecord() {
                   <div className="delete-vaccination-details">
                     <strong>
                       {selectedDeleteVaccination.vaccine ||
-                        getVaccineName(
-                          selectedDeleteVaccination.vaccine_id,
-                        )}
+                        getVaccineName(selectedDeleteVaccination.vaccine_id)}
                     </strong>
 
                     <span>
@@ -1619,3 +1924,36 @@ function PatientViewRecord() {
 }
 
 export default PatientViewRecord;
+// ```
+
+// Now test **only this**:
+
+// 1. Make sure Laravel is running:
+
+//    ```bash
+//    php artisan serve
+//    ```
+// 2. Refresh the child record page.
+// 3. Check **Growth History**.
+
+// You should now see the existing records from `/api/growth-records/30`, including the records created through **Add Growth Record**.
+
+// The key change is that growth history now has its own state:
+
+// ```js
+// const [growthRecords, setGrowthRecords] = useState([]);
+// ```
+
+// and the Add button refreshes that exact state with:
+
+// ```js
+// await fetchGrowthRecords();
+// ```
+
+// instead of doing:
+
+// ```js
+// await fetchChild();
+// ```
+
+// That separates **child information retrieval** from **growth history retrieval**, which is much more reliable for this page.

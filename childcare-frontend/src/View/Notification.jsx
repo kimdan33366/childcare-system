@@ -869,7 +869,7 @@ function Notification() {
           <div>
             <h1>Reminders</h1>
             <p>
-              Send appointment reminders and manage parent
+              Send Appointment reminders and manage parent
               notifications.
             </p>
           </div>
@@ -1232,7 +1232,7 @@ function Notification() {
               }
             >
               <div className="notification-compose-header">
-                <h2>Send Notification</h2>
+                <h2>Send Reminder</h2>
 
                 <p>
                   Send an email notification to selected
@@ -1629,7 +1629,7 @@ function Notification() {
 
                 {selectedNotification.appointment_id && (
                   <div className="notification-detail-row">
-                    <span>Appointment</span>
+                    <span>Reminder</span>
 
                     <strong>
                       #
@@ -1716,7 +1716,7 @@ function Notification() {
                 <FaTrash />
               </div>
 
-              <h2>Delete Notification</h2>
+              <h2>Delete Reminder</h2>
 
               <p>
                 Are you sure you want to delete this

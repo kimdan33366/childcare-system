@@ -54,6 +54,7 @@ function Appointments() {
 
   const [showPopup, setShowPopup] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [editingStatus, setEditingStatus] = useState(null);
   const [showChildSelection, setShowChildSelection] = useState(false);
   const [selectedHistoryAppointment, setSelectedHistoryAppointment] =
     useState(null);
@@ -527,7 +528,7 @@ function Appointments() {
       appointment_time: time,
       address: address,
       appointment_type: appointmentType,
-      status: existingAppointment?.status || "Pending",
+      status: editingStatus || existingAppointment?.status || "Pending",
       child_ids: selectedChildren,
       vaccines: selectedVaccines,
     };
@@ -717,6 +718,16 @@ function Appointments() {
     }
   };
 
+  const handleStatusChange = (appointment, newStatus) => {
+    // Selecting Pending should open the appointment editor first.
+    if (newStatus === "Pending") {
+      openEditAppointment(appointment.appointment_id, "Pending");
+      return;
+    }
+
+    updateAppointmentStatus(appointment.appointment_id, newStatus);
+  };
+
   // ==============================
   // UPDATE STATUS
   // ==============================
@@ -795,7 +806,9 @@ function Appointments() {
   // EDIT APPOINTMENT
   // ==============================
 
-  const openEditAppointment = (appointment) => {
+  const openEditAppointment = (appointmentId, statusOverride = null) => {
+    const appointment = appointments.find((item) => item.appointment_id === appointmentId);
+
     if (!hasPermission("edit_appointments")) {
       alert("You do not have permission to edit appointments.");
       return;
@@ -803,12 +816,12 @@ function Appointments() {
 
     setEditingId(appointment.appointment_id);
 
+    // Keep the requested status when reopening an old appointment as Pending.
+    setEditingStatus(statusOverride || appointment.status || "Pending");
+
     setDate(appointment.appointment_date || "");
-
     setTime(appointment.appointment_time || "");
-
     setAddress(appointment.address || "Barangay Health Center");
-
     setAppointmentType(appointment.appointment_type || "Vaccination");
 
     const appointmentChildren = appointment.children || [];
@@ -817,22 +830,29 @@ function Appointments() {
 
     const parentIds = [
       ...new Set(
-        appointmentChildren.map((child) => child.user_id).filter(Boolean),
+        appointmentChildren
+          .map((child) => Number(child.user_id))
+          .filter(Boolean),
       ),
     ];
 
-    setSelectedChildren(childIds);
     setSelectedParents(parentIds);
+    setSelectedChildren(childIds);
 
     const appointmentVaccines = appointment.vaccines || [];
 
     setSelectedVaccines(
       appointmentVaccines.map((item) => ({
-        vaccine_id: item.vaccine_id,
+        vaccine_id:
+          item.vaccine_id ||
+          item.vaccine?.vaccine_ID ||
+          item.vaccine?.vaccine_id,
         dose_number: item.dose_number || 1,
       })),
     );
 
+    setParentSearch("");
+    setShowChildSelection(false);
     setShowPopup(true);
   };
 
@@ -855,6 +875,7 @@ function Appointments() {
     setParentSearch("");
 
     setEditingId(null);
+    setEditingStatus(null);
     setShowPopup(false);
   };
 
@@ -871,18 +892,18 @@ function Appointments() {
   // ==============================
 
   const viewAppointment = (appointment) => {
-  if (appointment.children?.length === 1) {
-    navigate(`/patient_viewrecord/${appointment.children[0].child_id}`, {
-      state: {
-        from: "/appointments",
-        fromLabel: "Back to Appointments",
-      },
-    });
-  } else if (appointment.children?.length > 1) {
-    setSelectedHistoryAppointment(appointment);
-    setShowChildSelection(true);
-  }
-};
+    if (appointment.children?.length === 1) {
+      navigate(`/patient_viewrecord/${appointment.children[0].child_id}`, {
+        state: {
+          from: "/appointments",
+          fromLabel: "Back to Appointments",
+        },
+      });
+    } else if (appointment.children?.length > 1) {
+      setSelectedHistoryAppointment(appointment);
+      setShowChildSelection(true);
+    }
+  };
 
   // ==============================
   // APPOINTMENT ROW
@@ -960,18 +981,11 @@ function Appointments() {
 
         {/* STATUS */}
         <div className="appointment-table-cell appointment-table-status">
-          {hasPermission("edit_appointments") ? (
+          {hasPermission("edit_appointments") && status !== "Completed" ? (
             <select
-              className={`appointment-table-status-select ${getStatusClass(
-                status,
-              )}`}
+              className={`appointment-table-status-select ${getStatusClass(status)}`}
               value={status}
-              onChange={(e) =>
-                updateAppointmentStatus(
-                  appointment.appointment_id,
-                  e.target.value,
-                )
-              }
+              onChange={(e) => handleStatusChange(appointment, e.target.value)}
               title="Change appointment status"
             >
               <option value="Pending">Pending</option>
@@ -994,7 +1008,7 @@ function Appointments() {
               title="Edit appointment"
               onClick={(e) => {
                 e.stopPropagation();
-                openEditAppointment(appointment);
+                openEditAppointment(appointment.appointment_id);
               }}
             >
               <FaPen />
@@ -1021,7 +1035,6 @@ function Appointments() {
               e.stopPropagation();
               viewAppointment(appointment);
             }}
-            
           >
             <FaEye />
           </button>
