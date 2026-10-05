@@ -25,6 +25,9 @@ function Vaccine() {
     statusFilter,
     setStatusFilter,
 
+    expirationFilter,
+    setExpirationFilter,
+
     showModal,
 
     editingId,
@@ -101,41 +104,42 @@ function Vaccine() {
   // NORMALIZE VACCINE DATA
   // =========================================================
 
-  const normalizedVaccines = filteredVaccines.map(
-    (vaccine) => {
-      const stock = Number(
-        vaccine.stock ??
-          vaccine.quantity ??
-          vaccine.stock_quantity ??
-          0
-      );
+  const normalizedVaccines =
+    filteredVaccines.map(
+      (vaccine) => {
+        const stock = Number(
+          vaccine.stock ??
+            vaccine.quantity ??
+            vaccine.stock_quantity ??
+            0
+        );
 
-      return {
-        ...vaccine,
+        return {
+          ...vaccine,
 
-        id:
-          vaccine.vaccine_ID ??
-          vaccine.id,
+          id:
+            vaccine.vaccine_ID ??
+            vaccine.id,
 
-        name:
-          vaccine.name ??
-          vaccine.vaccine_name ??
-          "Unknown Vaccine",
+          name:
+            vaccine.name ??
+            vaccine.vaccine_name ??
+            "Unknown Vaccine",
 
-        stock,
+          stock,
 
-        production:
-          vaccine.production_date ??
-          vaccine.production ??
-          "",
+          production:
+            vaccine.production_date ??
+            vaccine.production ??
+            "",
 
-        expiration:
-          vaccine.expiration_date ??
-          vaccine.expiration ??
-          "",
-      };
-    }
-  );
+          expiration:
+            vaccine.expiration_date ??
+            vaccine.expiration ??
+            "",
+        };
+      }
+    );
 
   // =========================================================
   // SUMMARY VALUES
@@ -151,11 +155,18 @@ function Vaccine() {
       0
     );
 
+  /*
+   * STOCK RULES
+   * 0       = Out of Stock
+   * 1 - 10  = Low Stock
+   * 11+     = In Stock
+   */
+
   const lowStockCount =
     normalizedVaccines.filter(
       (vaccine) =>
         vaccine.stock > 0 &&
-        vaccine.stock <= 5
+        vaccine.stock <= 10
     ).length;
 
   const outOfStockCount =
@@ -176,7 +187,7 @@ function Vaccine() {
       };
     }
 
-    if (stock <= 5) {
+    if (stock <= 10) {
       return {
         label: "Low Stock",
         className: "low-stock",
@@ -233,23 +244,6 @@ function Vaccine() {
         =================================================== */}
 
         <div className="vaccine-summary">
-
-          {/* <div className="vaccine-summary-card">
-
-            <div className="vaccine-summary-icon">
-              <FaCapsules />
-            </div>
-
-            <div>
-              <span>Vaccine Types</span>
-
-              <strong>
-                {totalVaccineTypes}
-              </strong>
-            </div>
-
-          </div> */}
-
 
           <div className="vaccine-summary-card">
 
@@ -326,11 +320,15 @@ function Vaccine() {
           </div>
 
 
+          {/* STOCK STATUS FILTER */}
+
           <select
             className="vaccine-filter"
             value={statusFilter}
             onChange={(event) =>
-              setStatusFilter(event.target.value)
+              setStatusFilter(
+                event.target.value
+              )
             }
           >
             <option value="All">
@@ -348,6 +346,37 @@ function Vaccine() {
             <option value="Out of Stock">
               Out of Stock
             </option>
+
+          </select>
+
+
+          {/* EXPIRATION FILTER */}
+
+          <select
+            className="vaccine-filter"
+            value={expirationFilter}
+            onChange={(event) =>
+              setExpirationFilter(
+                event.target.value
+              )
+            }
+          >
+            <option value="All">
+              All Expiration Dates
+            </option>
+
+            <option value="Expired">
+              Expired
+            </option>
+
+            <option value="Expiring Soon">
+              Expiring Soon
+            </option>
+
+            <option value="Not Expired">
+              Not Expired
+            </option>
+
           </select>
 
         </div>
@@ -362,6 +391,7 @@ function Vaccine() {
           <table className="vaccine-table">
 
             <thead>
+
               <tr>
                 <th>Vaccine</th>
                 <th>Stock</th>
@@ -370,6 +400,7 @@ function Vaccine() {
                 <th>Status</th>
                 <th>Action</th>
               </tr>
+
             </thead>
 
 

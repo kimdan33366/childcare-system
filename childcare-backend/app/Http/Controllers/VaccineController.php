@@ -92,20 +92,68 @@ class VaccineController extends Controller
     }
 
     // DELETE /api/vaccines/{id}
-    public function destroy($id)
-    {
-        $vaccine = Vaccine::find($id);
+   // DELETE /api/vaccines/{id}
+// DELETE /api/vaccines/{id}
+// DELETE /api/vaccines/{id}
+public function destroy($id)
+{
+    $vaccine = Vaccine::find($id);
 
-        if (!$vaccine) {
-            return response()->json([
-                'message' => 'Vaccine not found.'
-            ], 404);
-        }
+    if (!$vaccine) {
+        return response()->json([
+            'message' => 'Vaccine not found.'
+        ], 404);
+    }
+
+    try {
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($vaccine) {
+
+            // ==========================================
+            // DELETE APPOINTMENT VACCINE REFERENCES
+            // ==========================================
+
+            \Illuminate\Support\Facades\DB::table('appointment_vaccines')
+                ->where('vaccine_id', $vaccine->vaccine_ID)
+                ->delete();
+
+
+            // ==========================================
+            // DELETE PATIENT RECORD REFERENCES
+            // ==========================================
+
+            \Illuminate\Support\Facades\DB::table('patient_records')
+                ->where('vaccine_id', $vaccine->vaccine_ID)
+                ->delete();
+
+
+            // ==========================================
+            // DELETE THE VACCINE
+            // ==========================================
+
+            $vaccine->delete();
+        });
 
         return response()->json([
-            'message' => 'Vaccines cannot be deleted because vaccination and appointment history must be preserved. Set the stock to 0 instead.'
-        ], 403);
+            'message' => 'Vaccine deleted successfully.'
+        ], 200);
+
+    } catch (\Exception $e) {
+
+        \Illuminate\Support\Facades\Log::error(
+            'Failed to delete vaccine',
+            [
+                'vaccine_id' => $id,
+                'error' => $e->getMessage(),
+            ]
+        );
+
+        return response()->json([
+            'message' => 'Failed to delete vaccine.',
+            'error' => $e->getMessage(),
+        ], 500);
     }
+}
 
     // Automatically determine vaccine status
     private function calculateStatus($expirationDate, $stockQuantity)

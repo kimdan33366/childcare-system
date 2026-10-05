@@ -37,6 +37,7 @@ function Patients() {
   const [patients, setPatients] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [genderFilter, setGenderFilter] = useState("All");
 
   const [showAddPatient, setShowAddPatient] = useState(false);
   const [isEditingPatient, setIsEditingPatient] = useState(false);
@@ -233,11 +234,13 @@ function Patients() {
   // ==========================================
 
   const filteredPatients = searchedPatients.filter((patient) => {
-    if (statusFilter === "All") {
-      return true;
-    }
+    const matchesStatus =
+      statusFilter === "All" || getPatientStatus(patient) === statusFilter;
 
-    return getPatientStatus(patient) === statusFilter;
+    const matchesGender =
+      genderFilter === "All" || patient.gender === genderFilter;
+
+    return matchesStatus && matchesGender;
   });
 
   // ==========================================
@@ -974,6 +977,19 @@ function Patients() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          <div className="patients-filter">
+            <label htmlFor="patient-gender-filter">Filter</label>
+
+            <select
+              id="patient-gender-filter"
+              value={genderFilter}
+              onChange={(e) => setGenderFilter(e.target.value)}
+            >
+              <option value="All">All GENDER</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
 
           <div className="patients-filter">
             <label htmlFor="patient-status-filter">Filter</label>
@@ -983,7 +999,7 @@ function Patients() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="All">All</option>
+              <option value="All">All STATUS</option>
               <option value="Pending">Pending</option>
               <option value="Completed">Completed</option>
               <option value="Deactivated">Deactivated</option>

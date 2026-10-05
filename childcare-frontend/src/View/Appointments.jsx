@@ -47,6 +47,7 @@ function Appointments() {
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [appointmentTypeFilter, setAppointmentTypeFilter] = useState("All");
 
   // ==============================
   // POPUP
@@ -252,13 +253,25 @@ function Appointments() {
 
     const matchesStatus = statusFilter === "All" || status === statusFilter;
 
+    const appointmentType = appointment.appointment_type || "Vaccination";
+
+    const matchesAppointmentType =
+      appointmentTypeFilter === "All" ||
+      appointmentType === appointmentTypeFilter;
+
     const matchesChild =
       !childFilterId ||
       appointmentChildren.some(
         (child) => String(child.child_id) === String(childFilterId),
       );
 
-    return matchesSearch && matchesDate && matchesStatus && matchesChild;
+    return (
+      matchesSearch &&
+      matchesDate &&
+      matchesStatus &&
+      matchesAppointmentType &&
+      matchesChild
+    );
   });
 
   // ==============================
@@ -320,7 +333,8 @@ function Appointments() {
 
   const availableChildren = children.filter(
     (child) =>
-      selectedParents.includes(child.user_id) && child.status === "Continuing",
+      selectedParents.map(Number).includes(Number(child.user_id)) &&
+      child.status === "Continuing",
   );
 
   // ==============================
@@ -342,16 +356,32 @@ function Appointments() {
   });
 
   const toggleParent = (parentId) => {
+    // General appointments automatically include everyone.
+    if (appointmentType === "General") {
+      return;
+    }
+
+    const normalizedParentId = Number(parentId);
+
     setSelectedParents((previous) => {
-      const newSelectedParents = previous.includes(parentId)
-        ? previous.filter((id) => id !== parentId)
-        : [...previous, parentId];
+      const normalizedPrevious = previous.map(Number);
+
+      const newSelectedParents = normalizedPrevious.includes(
+        normalizedParentId,
+      )
+        ? normalizedPrevious.filter((id) => id !== normalizedParentId)
+        : [...normalizedPrevious, normalizedParentId];
 
       setSelectedChildren((currentChildren) =>
         currentChildren.filter((childId) => {
-          const child = children.find((item) => item.child_id === childId);
+          const child = children.find(
+            (item) => Number(item.child_id) === Number(childId),
+          );
 
-          return child && newSelectedParents.includes(child.user_id);
+          return (
+            child &&
+            newSelectedParents.includes(Number(child.user_id))
+          );
         }),
       );
 
@@ -360,10 +390,54 @@ function Appointments() {
   };
 
   // ==============================
+  // APPOINTMENT TYPE CHANGE
+  // ==============================
+
+  const handleAppointmentTypeChange = (type) => {
+    setAppointmentType(type);
+
+    if (type === "General") {
+      // Select ALL active parents.
+      const allParentIds = parents.map((parent) => Number(parent.user_id));
+
+      // Select ALL continuing children belonging to those active parents.
+      const allChildIds = children
+        .filter(
+          (child) =>
+            allParentIds.includes(Number(child.user_id)) &&
+            child.status === "Continuing",
+        )
+        .map((child) => child.child_id);
+
+      setSelectedParents(allParentIds);
+      setSelectedChildren(allChildIds);
+
+      // IMPORTANT:
+      // Do NOT clear vaccines.
+      // General appointments can still use the vaccine section.
+
+      // Clear parent search so the full selected list is visible.
+      setParentSearch("");
+    } else {
+      // Switching back to Vaccination allows manual parent/child selection.
+      setSelectedParents([]);
+      setSelectedChildren([]);
+
+      // Vaccines can be selected again manually.
+      setSelectedVaccines([]);
+    }
+  };
+
+  // ==============================
   // CHILD SELECTION
   // ==============================
 
   const toggleChild = (childId) => {
+    // General appointments automatically include everyone.
+    if (appointmentType === "General") {
+      return;
+    }
+
     setSelectedChildren((previous) => {
       const isAlreadySelected = previous.includes(childId);
 
@@ -412,7 +486,9 @@ function Appointments() {
   // ==============================
 
   const toggleVaccine = (vaccineId) => {
-    const vaccine = vaccines.find((item) => item.vaccine_ID === vaccineId);
+    const vaccine = vaccines.find(
+      (item) => Number(item.vaccine_ID) === Number(vaccineId),
+    );
 
     if (!vaccine) {
       return;
@@ -422,10 +498,14 @@ function Appointments() {
     const availableStock = Number(vaccine.stock_quantity || 0);
 
     setSelectedVaccines((previous) => {
-      const existing = previous.find((item) => item.vaccine_id === vaccineId);
+      const existing = previous.find(
+        (item) => Number(item.vaccine_id) === Number(vaccineId),
+      );
 
       if (existing) {
-        return previous.filter((item) => item.vaccine_id !== vaccineId);
+        return previous.filter(
+          (item) => Number(item.vaccine_id) !== Number(vaccineId),
+        );
       }
 
       if (requiredStock === 0) {
@@ -459,7 +539,7 @@ function Appointments() {
   const changeDose = (vaccineId, dose) => {
     setSelectedVaccines((previous) =>
       previous.map((item) =>
-        item.vaccine_id === vaccineId
+        Number(item.vaccine_id) === Number(vaccineId)
           ? {
               ...item,
               dose_number: Number(dose),
@@ -509,6 +589,7 @@ function Appointments() {
       return;
     }
 
+    // Both Vaccination and General appointments can use vaccines.
     if (selectedVaccines.length === 0) {
       alert("Please select at least one vaccine and dose.");
       return;
@@ -807,7 +888,13 @@ function Appointments() {
   // ==============================
 
   const openEditAppointment = (appointmentId, statusOverride = null) => {
-    const appointment = appointments.find((item) => item.appointment_id === appointmentId);
+    const appointment = appointments.find(
+      (item) => item.appointment_id === appointmentId,
+    );
+
+    if (!appointment) {
+      return;
+    }
 
     if (!hasPermission("edit_appointments")) {
       alert("You do not have permission to edit appointments.");
@@ -816,7 +903,6 @@ function Appointments() {
 
     setEditingId(appointment.appointment_id);
 
-    // Keep the requested status when reopening an old appointment as Pending.
     setEditingStatus(statusOverride || appointment.status || "Pending");
 
     setDate(appointment.appointment_date || "");
@@ -983,7 +1069,9 @@ function Appointments() {
         <div className="appointment-table-cell appointment-table-status">
           {hasPermission("edit_appointments") && status !== "Completed" ? (
             <select
-              className={`appointment-table-status-select ${getStatusClass(status)}`}
+              className={`appointment-table-status-select ${getStatusClass(
+                status,
+              )}`}
               value={status}
               onChange={(e) => handleStatusChange(appointment, e.target.value)}
               title="Change appointment status"
@@ -1169,6 +1257,16 @@ function Appointments() {
             <option value="Completed">Completed</option>
           </select>
 
+          <select
+            className="appointment-filter"
+            value={appointmentTypeFilter}
+            onChange={(e) => setAppointmentTypeFilter(e.target.value)}
+          >
+            <option value="All">Appointment Types</option>
+            <option value="Vaccination">Vaccination</option>
+            <option value="General">General</option>
+          </select>
+
           {hasPermission("add_appointments") && (
             <button
               className="appointment-button"
@@ -1325,10 +1423,11 @@ function Appointments() {
 
                         <select
                           value={appointmentType}
-                          onChange={(e) => setAppointmentType(e.target.value)}
+                          onChange={(e) =>
+                            handleAppointmentTypeChange(e.target.value)
+                          }
                         >
                           <option value="Vaccination">Vaccination</option>
-
                           <option value="General">General</option>
                         </select>
                       </div>
@@ -1345,7 +1444,11 @@ function Appointments() {
                       <div>
                         <h4>Parent / Guardian</h4>
 
-                        <span>Select one or more parents or guardians.</span>
+                        <span>
+                          {appointmentType === "General"
+                            ? "All active parents are automatically selected for a General appointment."
+                            : "Select one or more parents or guardians."}
+                        </span>
                       </div>
 
                       <span className="appointment-selection-count">
@@ -1360,12 +1463,19 @@ function Appointments() {
                         </div>
                       ) : (
                         <>
+                          {appointmentType === "General" && (
+                            <div className="appointment-no-data">
+                              All active parents are selected automatically.
+                            </div>
+                          )}
+
                           <div className="appointment-parent-search">
                             <input
                               type="text"
                               value={parentSearch}
                               onChange={(e) => setParentSearch(e.target.value)}
                               placeholder="Search parent by name, email, or phone..."
+                              disabled={appointmentType === "General"}
                             />
                           </div>
 
@@ -1376,9 +1486,9 @@ function Appointments() {
                           ) : (
                             <div className="appointment-parent-grid">
                               {filteredParents.map((parent) => {
-                                const selected = selectedParents.includes(
-                                  parent.user_id,
-                                );
+                                const selected = selectedParents
+                                  .map(Number)
+                                  .includes(Number(parent.user_id));
 
                                 return (
                                   <button
@@ -1387,7 +1497,10 @@ function Appointments() {
                                     className={`appointment-select-card ${
                                       selected ? "selected" : ""
                                     }`}
-                                    onClick={() => toggleParent(parent.user_id)}
+                                    disabled={appointmentType === "General"}
+                                    onClick={() =>
+                                      toggleParent(parent.user_id)
+                                    }
                                   >
                                     <span className="appointment-card-checkbox">
                                       {selected ? "✓" : ""}
@@ -1423,7 +1536,9 @@ function Appointments() {
                         <h4>Children</h4>
 
                         <span>
-                          Select the continuing children for this appointment.
+                          {appointmentType === "General"
+                            ? "All continuing children of active parents are automatically selected."
+                            : "Select the continuing children for this appointment."}
                         </span>
                       </div>
 
@@ -1443,46 +1558,58 @@ function Appointments() {
                           parent(s).
                         </div>
                       ) : (
-                        <div className="appointment-child-grid">
-                          {availableChildren.map((child) => {
-                            const selected = selectedChildren.includes(
-                              child.child_id,
-                            );
+                        <>
+                          {appointmentType === "General" && (
+                            <div className="appointment-no-data">
+                              All continuing children of active parents are
+                              selected automatically.
+                            </div>
+                          )}
 
-                            return (
-                              <button
-                                type="button"
-                                key={child.child_id}
-                                className={`appointment-select-card ${
-                                  selected ? "selected" : ""
-                                }`}
-                                onClick={() => toggleChild(child.child_id)}
-                              >
-                                <span className="appointment-card-checkbox">
-                                  {selected ? "✓" : ""}
-                                </span>
+                          <div className="appointment-child-grid">
+                            {availableChildren.map((child) => {
+                              const selected = selectedChildren.includes(
+                                child.child_id,
+                              );
 
-                                <span className="appointment-select-card-icon child-icon">
-                                  <FaChild />
-                                </span>
+                              return (
+                                <button
+                                  type="button"
+                                  key={child.child_id}
+                                  className={`appointment-select-card ${
+                                    selected ? "selected" : ""
+                                  }`}
+                                  disabled={appointmentType === "General"}
+                                  onClick={() => toggleChild(child.child_id)}
+                                >
+                                  <span className="appointment-card-checkbox">
+                                    {selected ? "✓" : ""}
+                                  </span>
 
-                                <span className="appointment-select-card-text">
-                                  <strong>{child.child_name}</strong>
+                                  <span className="appointment-select-card-icon child-icon">
+                                    <FaChild />
+                                  </span>
 
-                                  <small>
-                                    {child.user?.user_fullname ||
-                                      "Parent / Guardian"}
-                                  </small>
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                                  <span className="appointment-select-card-text">
+                                    <strong>{child.child_name}</strong>
+
+                                    <small>
+                                      {child.user?.user_fullname ||
+                                        "Parent / Guardian"}
+                                    </small>
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
 
                   {/* VACCINES */}
+                  {/* IMPORTANT: This section is available for BOTH
+                      Vaccination and General appointments. */}
                   <div className="appointment-form-section">
                     <div className="appointment-form-section-heading">
                       <div className="appointment-form-section-icon">
@@ -1510,7 +1637,9 @@ function Appointments() {
                       ) : (
                         vaccines.map((vaccine) => {
                           const selected = selectedVaccines.find(
-                            (item) => item.vaccine_id === vaccine.vaccine_ID,
+                            (item) =>
+                              Number(item.vaccine_id) ===
+                              Number(vaccine.vaccine_ID),
                           );
 
                           return (
@@ -1561,13 +1690,9 @@ function Appointments() {
                                   }
                                 >
                                   <option value="1">Dose 1</option>
-
                                   <option value="2">Dose 2</option>
-
                                   <option value="3">Dose 3</option>
-
                                   <option value="4">Dose 4</option>
-
                                   <option value="5">Dose 5</option>
                                 </select>
                               )}
@@ -1639,7 +1764,9 @@ function Appointments() {
                   <div>
                     <h3>Complete Appointment</h3>
 
-                    <p>Record the provider and current child measurements.</p>
+                    <p>
+                      Record the provider and current child measurements.
+                    </p>
                   </div>
                 </div>
 
@@ -1699,7 +1826,9 @@ function Appointments() {
                     <div>
                       <h4>Child Measurements</h4>
 
-                      <span>Enter the child's current height and weight.</span>
+                      <span>
+                        Enter the child's current height and weight.
+                      </span>
                     </div>
                   </div>
 
@@ -1853,7 +1982,9 @@ function Appointments() {
             >
               <div className="history-child-popup-header">
                 <div>
-                  <span className="history-child-popup-label">APPOINTMENT</span>
+                  <span className="history-child-popup-label">
+                    APPOINTMENT
+                  </span>
 
                   <h3>Select Child</h3>
 

@@ -8,13 +8,17 @@ function VaccineController() {
 
   const [statusFilter, setStatusFilter] = useState("All");
 
+  const [expirationFilter, setExpirationFilter] =
+    useState("All");
+
   const [showModal, setShowModal] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
 
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  const [newVaccine, setNewVaccine] = useState(emptyVaccine);
+  const [newVaccine, setNewVaccine] =
+    useState(emptyVaccine);
 
   // =========================================================
   // HANDLE INPUT CHANGE
@@ -28,6 +32,65 @@ function VaccineController() {
   };
 
   // =========================================================
+  // GET VACCINE STATUS
+  // =========================================================
+
+  const getVaccineStatus = (quantity) => {
+    const stock = Number(quantity || 0);
+
+    if (stock === 0) {
+      return "Out of Stock";
+    }
+
+    if (stock <= 10) {
+      return "Low Stock";
+    }
+
+    return "In Stock";
+  };
+
+  // =========================================================
+  // GET EXPIRATION STATUS
+  // =========================================================
+
+  const getExpirationStatus = (expirationDate) => {
+    if (!expirationDate) {
+      return "No Date";
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const expiration = new Date(
+      `${expirationDate}T00:00:00`
+    );
+
+    if (Number.isNaN(expiration.getTime())) {
+      return "No Date";
+    }
+
+    expiration.setHours(0, 0, 0, 0);
+
+    // Already expired
+    if (expiration < today) {
+      return "Expired";
+    }
+
+    // 30 days from today
+    const thirtyDaysFromNow = new Date(today);
+
+    thirtyDaysFromNow.setDate(
+      thirtyDaysFromNow.getDate() + 30
+    );
+
+    if (expiration <= thirtyDaysFromNow) {
+      return "Expiring Soon";
+    }
+
+    return "Not Expired";
+  };
+
+  // =========================================================
   // FETCH VACCINES
   // =========================================================
 
@@ -35,29 +98,38 @@ function VaccineController() {
     fetch("http://127.0.0.1:8000/api/vaccines")
       .then((response) => response.json())
       .then((data) => {
-        const formattedVaccines = data.map((vaccine) => ({
-          id: vaccine.vaccine_ID,
+        const formattedVaccines = data.map(
+          (vaccine) => ({
+            id: vaccine.vaccine_ID,
 
-          name: vaccine.vaccine_name,
+            name: vaccine.vaccine_name,
 
-          dateStored: vaccine.date_stored || "",
+            dateStored:
+              vaccine.date_stored || "",
 
-          production: vaccine.production_date || "",
+            production:
+              vaccine.production_date || "",
 
-          expiration: vaccine.expiration_date || "",
+            expiration:
+              vaccine.expiration_date || "",
 
-          quantity: vaccine.stock_quantity,
+            quantity: Number(
+              vaccine.stock_quantity || 0
+            ),
 
-          status:
-            vaccine.stock_quantity > 0
-              ? "In Stock"
-              : "Out of Stock",
-        }));
+            status: getVaccineStatus(
+              vaccine.stock_quantity
+            ),
+          })
+        );
 
         setVaccines(formattedVaccines);
       })
       .catch((error) => {
-        console.error("Error fetching vaccines:", error);
+        console.error(
+          "Error fetching vaccines:",
+          error
+        );
       });
   }, []);
 
@@ -85,11 +157,14 @@ function VaccineController() {
     setNewVaccine({
       name: vaccine.name,
 
-      dateStored: vaccine.dateStored || "",
+      dateStored:
+        vaccine.dateStored || "",
 
-      production: vaccine.production || "",
+      production:
+        vaccine.production || "",
 
-      expiration: vaccine.expiration || "",
+      expiration:
+        vaccine.expiration || "",
 
       quantity: vaccine.quantity,
     });
@@ -116,41 +191,61 @@ function VaccineController() {
   // =========================================================
 
   const saveVaccine = async () => {
-    const quantity = Number(newVaccine.quantity);
+    const quantity = Number(
+      newVaccine.quantity
+    );
 
-    if (!newVaccine.name || !newVaccine.expiration) {
-      alert("Please complete all required fields.");
+    if (
+      !newVaccine.name ||
+      !newVaccine.expiration
+    ) {
+      alert(
+        "Please complete all required fields."
+      );
+
       return;
     }
 
     try {
-      const isEditing = editingId !== null;
+      const isEditing =
+        editingId !== null;
 
       const url = isEditing
         ? `http://127.0.0.1:8000/api/vaccines/${editingId}`
         : "http://127.0.0.1:8000/api/vaccines";
 
       const response = await fetch(url, {
-        method: isEditing ? "PUT" : "POST",
+        method: isEditing
+          ? "PUT"
+          : "POST",
 
         headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
+          "Content-Type":
+            "application/json",
+
+          Accept:
+            "application/json",
         },
 
         body: JSON.stringify({
-          vaccine_name: newVaccine.name,
+          vaccine_name:
+            newVaccine.name,
 
           date_stored:
             newVaccine.dateStored ||
-            new Date().toISOString().split("T")[0],
+            new Date()
+              .toISOString()
+              .split("T")[0],
 
           production_date:
-            newVaccine.production || null,
+            newVaccine.production ||
+            null,
 
-          expiration_date: newVaccine.expiration,
+          expiration_date:
+            newVaccine.expiration,
 
-          stock_quantity: quantity,
+          stock_quantity:
+            quantity,
 
           status:
             quantity > 0
@@ -159,7 +254,8 @@ function VaccineController() {
         }),
       });
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         console.error(data);
@@ -173,56 +269,77 @@ function VaccineController() {
         return;
       }
 
-      // Laravel returns the vaccine inside data.vaccine
-      const savedVaccine = data.vaccine;
+      const savedVaccine =
+        data.vaccine;
 
       const vaccineData = {
-        id: savedVaccine.vaccine_ID,
+        id:
+          savedVaccine.vaccine_ID,
 
-        name: savedVaccine.vaccine_name,
+        name:
+          savedVaccine.vaccine_name,
 
         dateStored:
-          savedVaccine.date_stored || "",
+          savedVaccine.date_stored ||
+          "",
 
         production:
-          savedVaccine.production_date || "",
+          savedVaccine.production_date ||
+          "",
 
         expiration:
-          savedVaccine.expiration_date || "",
+          savedVaccine.expiration_date ||
+          "",
 
-        quantity:
-          savedVaccine.stock_quantity,
+        quantity: Number(
+          savedVaccine.stock_quantity ||
+          0
+        ),
 
         status:
-          savedVaccine.stock_quantity > 0
-            ? "In Stock"
-            : "Out of Stock",
+          getVaccineStatus(
+            savedVaccine.stock_quantity
+          ),
       };
 
       if (isEditing) {
-        setVaccines((previous) =>
-          previous.map((vaccine) =>
-            vaccine.id === editingId
-              ? vaccineData
-              : vaccine
-          )
+        setVaccines(
+          (previous) =>
+            previous.map(
+              (vaccine) =>
+                vaccine.id ===
+                editingId
+                  ? vaccineData
+                  : vaccine
+            )
         );
 
-        alert("Vaccine updated successfully!");
+        alert(
+          "Vaccine updated successfully!"
+        );
       } else {
-        setVaccines((previous) => [
-          ...previous,
-          vaccineData,
-        ]);
+        setVaccines(
+          (previous) => [
+            ...previous,
+            vaccineData,
+          ]
+        );
 
-        alert("Vaccine added successfully!");
+        alert(
+          "Vaccine added successfully!"
+        );
       }
 
       closeModal();
     } catch (error) {
-      console.error("Error saving vaccine:", error);
+      console.error(
+        "Error saving vaccine:",
+        error
+      );
 
-      alert("Could not connect to the server.");
+      alert(
+        "Could not connect to the server."
+      );
     }
   };
 
@@ -231,9 +348,10 @@ function VaccineController() {
   // =========================================================
 
   const deleteVaccine = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this vaccine?"
-    );
+    const confirmDelete =
+      window.confirm(
+        "Are you sure you want to permanently delete this vaccine?\n\nThis action cannot be undone."
+      );
 
     if (!confirmDelete) return;
 
@@ -244,22 +362,41 @@ function VaccineController() {
           method: "DELETE",
 
           headers: {
-            Accept: "application/json",
+            Accept:
+              "application/json",
           },
         }
       );
 
+      const data =
+        await response.json();
+
       if (!response.ok) {
-        throw new Error("Failed to delete vaccine");
+        console.error(
+          "Delete vaccine error:",
+          data
+        );
+
+        alert(
+          data.message ||
+            "Failed to delete vaccine. Please try again."
+        );
+
+        return;
       }
 
-      setVaccines((previous) =>
-        previous.filter(
-          (vaccine) => vaccine.id !== id
-        )
+      setVaccines(
+        (previous) =>
+          previous.filter(
+            (vaccine) =>
+              vaccine.id !== id
+          )
       );
 
-      alert("Vaccine deleted successfully.");
+      alert(
+        data.message ||
+          "Vaccine deleted successfully."
+      );
     } catch (error) {
       console.error(
         "Delete vaccine error:",
@@ -267,7 +404,7 @@ function VaccineController() {
       );
 
       alert(
-        "Failed to delete vaccine. Please try again."
+        "Could not connect to the server. Please try again."
       );
     }
   };
@@ -277,16 +414,42 @@ function VaccineController() {
   // =========================================================
 
   const filteredVaccines = vaccines
+    // SEARCH FILTER
     .filter((vaccine) =>
       vaccine.name
         .toLowerCase()
-        .includes(search.toLowerCase())
+        .includes(
+          search.toLowerCase()
+        )
     )
+
+    // STOCK STATUS FILTER
     .filter((vaccine) =>
       statusFilter === "All"
         ? true
-        : vaccine.status === statusFilter
-    );
+        : vaccine.status ===
+          statusFilter
+    )
+
+    // EXPIRATION FILTER
+    .filter((vaccine) => {
+      if (
+        expirationFilter ===
+        "All"
+      ) {
+        return true;
+      }
+
+      const expirationStatus =
+        getExpirationStatus(
+          vaccine.expiration
+        );
+
+      return (
+        expirationStatus ===
+        expirationFilter
+      );
+    });
 
   // =========================================================
   // RETURN
@@ -300,6 +463,9 @@ function VaccineController() {
 
     statusFilter,
     setStatusFilter,
+
+    expirationFilter,
+    setExpirationFilter,
 
     showModal,
 

@@ -48,11 +48,11 @@ class UserController extends Controller
             // PARENT INFORMATION
             // ==============================
             'user_fullname' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255|unique:user,email',
+            'email' => ['required','email','regex:/^[^@\s]+@gmail\.com$/i','max:255','unique:user,email',],
             'date_of_birth' => 'nullable|date',
             'gender' => 'nullable|string|max:255',
             'address' => 'required|string|max:255',
-            'mobile_number' => 'required|string|max:20',
+            'mobile_number' => ['required','digits:11',],
             'password' => 'required|string|min:6',
             'status' => 'nullable|in:Active,Inactive',
 
@@ -146,11 +146,11 @@ class UserController extends Controller
 
         $request->validate([
             'user_fullname' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255|unique:user,email,' . $id . ',user_id',
+            'email' => ['required','email','regex:/^[^@\s]+@gmail\.com$/i','max:255','unique:user,email,' . $id . ',user_id',],
             'date_of_birth' => 'nullable|date',
             'gender' => 'nullable|string|max:255',
             'address' => 'required|string|max:255',
-            'mobile_number' => 'required|string|max:20',
+            'mobile_number' => ['required', 'digits:11'],
             'password' => 'nullable|string|min:6',
             'status' => 'required|in:Active,Inactive',
         ]);
