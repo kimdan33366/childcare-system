@@ -1,3 +1,4 @@
+
 import "../css/PatientViewRecord.css";
 
 import { useState, useEffect } from "react";
@@ -16,6 +17,8 @@ function PatientViewRecord() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const [showVaccineCardPreview, setShowVaccineCardPreview] = useState(false);
+
   const backPath = location.state?.from || "/patients";
   const backLabel = location.state?.fromLabel || "Back to Children";
 
@@ -23,14 +26,10 @@ function PatientViewRecord() {
   const isAdmin = currentUser?.user_type === "Admin";
   const permissions = currentUser?.permissions || [];
 
-  const hasPermission = (permission) => {
-    return (
-      isAdmin || permissions.includes("all") || permissions.includes(permission)
-    );
-  };
+  const hasPermission = (permission) =>
+    isAdmin || permissions.includes("all") || permissions.includes(permission);
 
   const [child, setChild] = useState(null);
-
   const [showDeleteVaccination, setShowDeleteVaccination] = useState(false);
   const [selectedDeleteVaccination, setSelectedDeleteVaccination] =
     useState(null);
@@ -50,12 +49,9 @@ function PatientViewRecord() {
     provider: "",
   });
 
-  // ==========================================
   // GROWTH RECORD
-  // ==========================================
 
   const [growthRecords, setGrowthRecords] = useState([]);
-
   const [showAddGrowth, setShowAddGrowth] = useState(false);
 
   const [growthForm, setGrowthForm] = useState({
@@ -64,9 +60,7 @@ function PatientViewRecord() {
     height_cm: "",
   });
 
-  // ==========================================
   // EDIT CHILD
-  // ==========================================
 
   const [showEditChild, setShowEditChild] = useState(false);
 
@@ -79,9 +73,7 @@ function PatientViewRecord() {
     status: "Continuing",
   });
 
-  // ==========================================
   // FETCH CHILD
-  // ==========================================
 
   const fetchChild = async () => {
     try {
@@ -102,21 +94,17 @@ function PatientViewRecord() {
         return;
       }
 
-      const normalizedChild = {
+      setChild({
         ...data,
         appointments: data.appointments || [],
         patientRecords: data.patient_records || data.patientRecords || [],
-      };
-
-      setChild(normalizedChild);
+      });
     } catch (error) {
       console.error("Error fetching child:", error);
     }
   };
 
-  // ==========================================
   // FETCH GROWTH RECORDS
-  // ==========================================
 
   const fetchGrowthRecords = async () => {
     try {
@@ -145,9 +133,7 @@ function PatientViewRecord() {
     }
   };
 
-  // ==========================================
   // FETCH VACCINATION RECORDS
-  // ==========================================
 
   const fetchVaccinationRecords = async () => {
     try {
@@ -164,9 +150,6 @@ function PatientViewRecord() {
       );
 
       const data = await response.json();
-      console.log("PatientViewRecord vaccination data:", data);
-
-      console.log("Vaccination records from server:", data);
 
       if (!response.ok) {
         console.error("Failed to fetch vaccination records:", data);
@@ -179,9 +162,7 @@ function PatientViewRecord() {
     }
   };
 
-  // ==========================================
   // FETCH VACCINE INVENTORY
-  // ==========================================
 
   const fetchVaccineInventory = async () => {
     try {
@@ -198,8 +179,6 @@ function PatientViewRecord() {
 
       const data = await response.json();
 
-      console.log("Vaccine inventory:", data);
-
       if (!response.ok) {
         console.error("Failed to fetch vaccine inventory:", data);
         return;
@@ -211,9 +190,7 @@ function PatientViewRecord() {
     }
   };
 
-  // ==========================================
   // INITIAL LOAD
-  // ==========================================
 
   useEffect(() => {
     fetchChild();
@@ -222,9 +199,7 @@ function PatientViewRecord() {
     fetchVaccineInventory();
   }, [child_id]);
 
-  // ==========================================
   // CALCULATE AGE
-  // ==========================================
 
   const calculateAge = (birthdate) => {
     if (!birthdate) return "—";
@@ -232,25 +207,19 @@ function PatientViewRecord() {
     const birth = new Date(birthdate);
     const today = new Date();
 
-    if (Number.isNaN(birth.getTime())) {
-      return "—";
-    }
+    if (Number.isNaN(birth.getTime())) return "—";
 
     let years = today.getFullYear() - birth.getFullYear();
     let months = today.getMonth() - birth.getMonth();
 
-    if (today.getDate() < birth.getDate()) {
-      months--;
-    }
+    if (today.getDate() < birth.getDate()) months--;
 
     if (months < 0) {
       years--;
       months += 12;
     }
 
-    if (years < 0) {
-      return "—";
-    }
+    if (years < 0) return "—";
 
     if (years === 0) {
       return `${months} month${months !== 1 ? "s" : ""}`;
@@ -263,9 +232,7 @@ function PatientViewRecord() {
     return `${years}y ${months}m`;
   };
 
-  // ==========================================
   // CALCULATE BMI
-  // ==========================================
 
   const calculateBMI = (weightKg, heightCm) => {
     const weight = Number(weightKg);
@@ -281,14 +248,10 @@ function PatientViewRecord() {
     }
 
     const heightInMeters = height / 100;
-    const bmi = weight / (heightInMeters * heightInMeters);
-
-    return bmi.toFixed(2);
+    return (weight / (heightInMeters * heightInMeters)).toFixed(2);
   };
 
-  // ==========================================
   // GROWTH ASSESSMENT
-  // ==========================================
 
   const getGrowthAssessment = (growth) => {
     const weight = Number(growth?.weight_kg);
@@ -318,16 +281,12 @@ function PatientViewRecord() {
     }
 
     const ageInDays = Math.floor(
-      (measurementDate.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24),
+      (measurementDate.getTime() - birthDate.getTime()) /
+        (1000 * 60 * 60 * 24),
     );
 
-    if (ageInDays < 0) {
-      return "Invalid age";
-    }
-
-    if (ageInDays > 1856) {
-      return "Age outside WHO 0–5 reference";
-    }
+    if (ageInDays < 0) return "Invalid age";
+    if (ageInDays > 1856) return "Age outside WHO 0–5 reference";
 
     const sex =
       String(child.gender).toLowerCase() === "female"
@@ -336,15 +295,11 @@ function PatientViewRecord() {
           ? "male"
           : null;
 
-    if (!sex) {
-      return "Needs assessment";
-    }
+    if (!sex) return "Needs assessment";
 
     const bmi = calculateWHO_BMI(weight, height);
 
-    if (!Number.isFinite(bmi) || bmi <= 0) {
-      return "—";
-    }
+    if (!Number.isFinite(bmi) || bmi <= 0) return "—";
 
     try {
       const result = bmiForAge(bmi, {
@@ -354,29 +309,12 @@ function PatientViewRecord() {
 
       const zScore = Number(result?.zScore);
 
-      if (!Number.isFinite(zScore)) {
-        return "Needs assessment";
-      }
-
-      if (zScore < -3) {
-        return "Severely underweight";
-      }
-
-      if (zScore < -2) {
-        return "Underweight";
-      }
-
-      if (zScore <= 1) {
-        return "Normal";
-      }
-
-      if (zScore <= 2) {
-        return "At risk of overweight";
-      }
-
-      if (zScore <= 3) {
-        return "Overweight";
-      }
+      if (!Number.isFinite(zScore)) return "Needs assessment";
+      if (zScore < -3) return "Severely underweight";
+      if (zScore < -2) return "Underweight";
+      if (zScore <= 1) return "Normal";
+      if (zScore <= 2) return "At risk of overweight";
+      if (zScore <= 3) return "Overweight";
 
       return "Obese";
     } catch (error) {
@@ -385,17 +323,13 @@ function PatientViewRecord() {
     }
   };
 
-  // ==========================================
   // GROWTH DATA
-  // ==========================================
 
   const sortedGrowthRecords = [...growthRecords].sort((a, b) => {
     const dateA = new Date(a.date || 0).getTime();
     const dateB = new Date(b.date || 0).getTime();
 
-    if (dateB !== dateA) {
-      return dateB - dateA;
-    }
+    if (dateB !== dateA) return dateB - dateA;
 
     return Number(b.growth_id || 0) - Number(a.growth_id || 0);
   });
@@ -417,61 +351,57 @@ function PatientViewRecord() {
       ? `${latestGrowth.weight_kg} kg`
       : "—";
 
-  // ==========================================
   // CALCULATE GROWTH CHANGE
-  // ==========================================
 
   const getGrowthChange = (index) => {
     const current = sortedGrowthRecords[index];
 
-    if (!current) {
-      return "—";
-    }
+    if (!current) return "—";
 
     const previous = sortedGrowthRecords[index + 1];
 
-    if (!previous) {
-      return "Baseline";
-    }
+    if (!previous) return "Baseline";
 
     const currentWeight = Number(current.weight_kg);
     const previousWeight = Number(previous.weight_kg);
-
     const currentHeight = Number(current.height_cm);
     const previousHeight = Number(previous.height_cm);
 
     const changes = [];
 
     if (Number.isFinite(currentWeight) && Number.isFinite(previousWeight)) {
-      const weightChange = currentWeight - previousWeight;
-
-      if (weightChange > 0) {
-        changes.push(`+${weightChange.toFixed(2)} kg`);
-      } else if (weightChange < 0) {
-        changes.push(`${weightChange.toFixed(2)} kg`);
-      } else {
-        changes.push("0.00 kg");
-      }
+      const change = currentWeight - previousWeight;
+      changes.push(
+        change > 0
+          ? `+${change.toFixed(2)} kg`
+          : `${change.toFixed(2)} kg`,
+      );
     }
 
     if (Number.isFinite(currentHeight) && Number.isFinite(previousHeight)) {
-      const heightChange = currentHeight - previousHeight;
-
-      if (heightChange > 0) {
-        changes.push(`+${heightChange.toFixed(2)} cm`);
-      } else if (heightChange < 0) {
-        changes.push(`${heightChange.toFixed(2)} cm`);
-      } else {
-        changes.push("0.00 cm");
-      }
+      const change = currentHeight - previousHeight;
+      changes.push(
+        change > 0
+          ? `+${change.toFixed(2)} cm`
+          : `${change.toFixed(2)} cm`,
+      );
     }
 
-    return changes.length > 0 ? changes.join(" · ") : "—";
+    return changes.length ? changes.join(" · ") : "—";
   };
 
-  // ==========================================
-  // VACCINE HELPERS
-  // ==========================================
+  // FIXED VACCINATION SCHEDULE
+
+  const VACCINE_SCHEDULE = [
+    { name: "BCG Vaccine", doses: 1 },
+    { name: "Hepatitis B Vaccine", doses: 1 },
+    { name: "Pentavalent Vaccine", doses: 3 },
+    { name: "Oral Polio Vaccine", doses: 3 },
+    { name: "Inactivated Polio Vaccine", doses: 2 },
+    { name: "Pneumococcal Conjugate Vaccine", doses: 3 },
+    { name: "Measles, Mumps, Rubella Vaccine", doses: 2 },
+    { name: "Vitamin A", doses: 2 },
+  ];
 
   const getVaccineName = (vaccineId) => {
     const vaccine = vaccineInventory.find(
@@ -481,9 +411,62 @@ function PatientViewRecord() {
     return vaccine?.vaccine_name || "Unknown Vaccine";
   };
 
-  // ==========================================
+  // Each vaccine appears once, with completed doses / required doses.
+
+  const getVaccineCardRows = () => {
+    return VACCINE_SCHEDULE.map((scheduledVaccine) => {
+      const matchingRecords = vaccines.filter((record) => {
+        const recordVaccineName =
+          record.vaccine || getVaccineName(record.vaccine_id);
+
+        return (
+          String(recordVaccineName).trim().toLowerCase() ===
+          scheduledVaccine.name.trim().toLowerCase()
+        );
+      });
+
+      const completedDoseNumbers = new Set(
+        matchingRecords
+          .filter((record) => record.status === "Completed")
+          .map((record) => Number(record.dose_number ?? record.dose))
+          .filter(
+            (doseNumber) =>
+              Number.isInteger(doseNumber) &&
+              doseNumber >= 1 &&
+              doseNumber <= scheduledVaccine.doses,
+          ),
+      );
+
+      const completedDoses = completedDoseNumbers.size;
+
+      const doseDates = Array.from(
+        { length: scheduledVaccine.doses },
+        (_, index) => {
+          const doseNumber = index + 1;
+
+          const completedRecord = matchingRecords.find(
+            (record) =>
+              Number(record.dose_number ?? record.dose) === doseNumber &&
+              record.status === "Completed",
+          );
+
+          return completedRecord?.date_taken || completedRecord?.date || "";
+        },
+      );
+
+      return {
+        key: scheduledVaccine.name,
+        vaccineName: scheduledVaccine.name,
+        completedDoses,
+        requiredDoses: scheduledVaccine.doses,
+        doseProgress: `(${completedDoses}/${scheduledVaccine.doses})`,
+        doseDates,
+        matchingRecords,
+      };
+    });
+  };
+
   // OPEN ADD GROWTH RECORD
-  // ==========================================
 
   const handleOpenAddGrowth = () => {
     setGrowthForm({
@@ -495,9 +478,7 @@ function PatientViewRecord() {
     setShowAddGrowth(true);
   };
 
-  // ==========================================
   // SAVE GROWTH RECORD
-  // ==========================================
 
   const handleSaveGrowth = async () => {
     if (!growthForm.date || !growthForm.weight_kg || !growthForm.height_cm) {
@@ -526,7 +507,7 @@ function PatientViewRecord() {
           Accept: "application/json",
         },
         body: JSON.stringify({
-          child_id: child_id,
+          child_id,
           date: growthForm.date,
           weight_kg: weight,
           height_cm: height,
@@ -537,19 +518,12 @@ function PatientViewRecord() {
 
       if (!response.ok) {
         console.error("Laravel growth record error:", data);
-
-        alert(
-          data.message || data.error || "Failed to save the growth record.",
-        );
-
+        alert(data.message || data.error || "Failed to save the growth record.");
         return;
       }
 
-      // Refresh growth records directly from the growth-records endpoint.
       await fetchGrowthRecords();
-
       alert("Growth record added successfully!");
-
       setShowAddGrowth(false);
 
       setGrowthForm({
@@ -559,19 +533,14 @@ function PatientViewRecord() {
       });
     } catch (error) {
       console.error("Error saving growth record:", error);
-
       alert("Failed to save the growth record.");
     }
   };
 
-  // ==========================================
   // OPEN EDIT CHILD
-  // ==========================================
 
   const handleOpenEditChild = () => {
-    if (!child) {
-      return;
-    }
+    if (!child) return;
 
     setEditChildForm({
       child_name: child.child_name || "",
@@ -587,10 +556,6 @@ function PatientViewRecord() {
     setShowEditChild(true);
   };
 
-  // ==========================================
-  // EDIT CHILD FORM CHANGE
-  // ==========================================
-
   const handleEditChildChange = (field, value) => {
     setEditChildForm((prev) => ({
       ...prev,
@@ -598,9 +563,7 @@ function PatientViewRecord() {
     }));
   };
 
-  // ==========================================
   // SAVE CHILD
-  // ==========================================
 
   const handleSaveChild = async () => {
     if (
@@ -638,29 +601,20 @@ function PatientViewRecord() {
 
       if (!response.ok) {
         console.error("Laravel error:", data);
-
-        alert(
-          data.message || data.error || "Failed to update child information.",
-        );
-
+        alert(data.message || data.error || "Failed to update child information.");
         return;
       }
 
       await fetchChild();
-
       alert("Child information updated successfully!");
-
       setShowEditChild(false);
     } catch (error) {
       console.error("Error updating child:", error);
-
       alert("Failed to update child information.");
     }
   };
 
-  // ==========================================
   // EDIT VACCINATION
-  // ==========================================
 
   const handleEditVaccination = (item) => {
     setSelectedVaccination(item);
@@ -677,14 +631,10 @@ function PatientViewRecord() {
     setShowEditVaccination(true);
   };
 
-  // ==========================================
   // UPDATE VACCINATION
-  // ==========================================
 
   const handleSaveEditVaccination = async () => {
-    if (!selectedVaccination) {
-      return;
-    }
+    if (!selectedVaccination) return;
 
     if (
       !editVaccinationForm.vaccine ||
@@ -715,9 +665,7 @@ function PatientViewRecord() {
       editVaccinationForm.status === "Completed" &&
       selectedStock === 0
     ) {
-      alert(
-        "The selected vaccine is out of stock. Please select another vaccine.",
-      );
+      alert("The selected vaccine is out of stock. Please select another vaccine.");
       return;
     }
 
@@ -755,9 +703,7 @@ function PatientViewRecord() {
 
       if (!response.ok) {
         console.error("Laravel error:", data);
-
         alert(data.message || "Failed to update vaccination record.");
-
         return;
       }
 
@@ -765,24 +711,18 @@ function PatientViewRecord() {
       await fetchVaccineInventory();
 
       alert("Vaccination record updated successfully!");
-
       setShowEditVaccination(false);
       setSelectedVaccination(null);
     } catch (error) {
       console.error("Error updating vaccination:", error);
-
       alert("Failed to update vaccination record.");
     }
   };
 
-  // ==========================================
   // UPDATE VACCINATION STATUS
-  // ==========================================
 
   const handleVaccineChange = async (index, field, value) => {
-    if (field !== "status") {
-      return;
-    }
+    if (field !== "status") return;
 
     const selectedRecord = vaccines[index];
 
@@ -794,29 +734,18 @@ function PatientViewRecord() {
     const patientRecordID = selectedRecord.patient_recordID;
 
     if (!patientRecordID) {
-      console.error("Missing patient_recordID:", selectedRecord);
-
       alert("This vaccination record does not have a valid record ID.");
-
       return;
     }
 
     const oldStatus = selectedRecord.status;
-
-    if (oldStatus === value) {
-      return;
-    }
+    if (oldStatus === value) return;
 
     const previousVaccines = [...vaccines];
 
-    setVaccines((prevVaccines) =>
-      prevVaccines.map((item, itemIndex) =>
-        itemIndex === index
-          ? {
-              ...item,
-              status: value,
-            }
-          : item,
+    setVaccines((prev) =>
+      prev.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, status: value } : item,
       ),
     );
 
@@ -831,9 +760,7 @@ function PatientViewRecord() {
             Accept: "application/json",
             "Cache-Control": "no-cache",
           },
-          body: JSON.stringify({
-            status: value,
-          }),
+          body: JSON.stringify({ status: value }),
         },
       );
 
@@ -841,24 +768,15 @@ function PatientViewRecord() {
 
       if (!response.ok) {
         setVaccines(previousVaccines);
-
-        alert(
-          data.message || data.error || "Failed to update vaccination status.",
-        );
-
+        alert(data.message || data.error || "Failed to update vaccination status.");
         return;
       }
 
       const savedStatus = data?.record?.status || value;
 
-      setVaccines((prevVaccines) =>
-        prevVaccines.map((item, itemIndex) =>
-          itemIndex === index
-            ? {
-                ...item,
-                status: savedStatus,
-              }
-            : item,
+      setVaccines((prev) =>
+        prev.map((item, itemIndex) =>
+          itemIndex === index ? { ...item, status: savedStatus } : item,
         ),
       );
 
@@ -866,32 +784,22 @@ function PatientViewRecord() {
       await fetchVaccineInventory();
     } catch (error) {
       console.error("Error updating vaccination status:", error);
-
       setVaccines(previousVaccines);
-
-      alert(
-        "Could not connect to the server while updating the vaccination status.",
-      );
+      alert("Could not connect to the server while updating vaccination status.");
     }
   };
 
-  // ==========================================
   // DELETE VACCINATION
-  // ==========================================
 
   const handleDeleteVaccination = async () => {
-    if (!selectedDeleteVaccination) {
-      return;
-    }
+    if (!selectedDeleteVaccination) return;
 
     try {
       const response = await fetch(
         `http://127.0.0.1:8000/api/patient-records/${selectedDeleteVaccination.patient_recordID}`,
         {
           method: "DELETE",
-          headers: {
-            Accept: "application/json",
-          },
+          headers: { Accept: "application/json" },
         },
       );
 
@@ -899,7 +807,6 @@ function PatientViewRecord() {
 
       if (!response.ok) {
         alert(data.message || "Failed to delete vaccination record.");
-
         return;
       }
 
@@ -907,33 +814,25 @@ function PatientViewRecord() {
       await fetchVaccineInventory();
 
       alert("Vaccination record deleted successfully!");
-
       setShowDeleteVaccination(false);
       setSelectedDeleteVaccination(null);
     } catch (error) {
       console.error("Error deleting vaccination:", error);
-
       alert("Failed to delete vaccination record.");
     }
   };
 
-  // ==========================================
   // PARENT INFORMATION
-  // ==========================================
 
   const parentName = child?.user?.user_fullname || child?.parent_name || "—";
-
   const parentPhone = child?.user?.mobile_number || "—";
-
   const parentEmail = child?.user?.email || "—";
-  // Earliest growth record is treated as the birth measurement
+
   const sortedGrowthForBirth = [...growthRecords].sort((a, b) => {
     const dateA = new Date(a.date || 0).getTime();
     const dateB = new Date(b.date || 0).getTime();
 
-    if (dateA !== dateB) {
-      return dateA - dateB;
-    }
+    if (dateA !== dateB) return dateA - dateB;
 
     return Number(a.growth_id || 0) - Number(b.growth_id || 0);
   });
@@ -955,7 +854,6 @@ function PatientViewRecord() {
       ? `${birthGrowthRecord.weight_kg} kg`
       : "—";
 
-  // Use the earliest vaccination record with a recorded place
   const sortedVaccinationsForHealthCenter = [...vaccines]
     .filter((record) => record.place)
     .sort((a, b) => {
@@ -967,9 +865,7 @@ function PatientViewRecord() {
 
   const healthCenter = sortedVaccinationsForHealthCenter[0]?.place || "—";
 
-  // ==========================================
-  // RENDER
-  // ==========================================
+  // DOWNLOAD VACCINE CARD PDF
 
   const downloadVaccineCard = () => {
     if (!child) {
@@ -979,22 +875,14 @@ function PatientViewRecord() {
 
     const doc = new jsPDF("p", "mm", "a4");
 
-    // -----------------------------
-    // TITLE
-    // -----------------------------
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
-    doc.text("CHILD IMMUNIZATION RECORD", 105, 20, {
-      align: "center",
-    });
+    doc.text("CHILD IMMUNIZATION RECORD", 105, 20, { align: "center" });
 
-    // -----------------------------
-    // CHILD INFORMATION
-    // -----------------------------
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
 
-    const leftX = 20;
+    const leftX = 15;
     const rightX = 110;
 
     let leftY = 35;
@@ -1005,102 +893,57 @@ function PatientViewRecord() {
       doc.text(`${label}:`, x, y);
 
       doc.setFont("helvetica", "normal");
-      doc.text(String(value || "—"), x + 35, y);
+
+      const lines = doc.splitTextToSize(String(value || "—"), x < 100 ? 55 : 75);
+      doc.text(lines, x + 35, y);
     };
 
-    // LEFT COLUMN
-    addInfo("Child Name", child.child_name || "—", leftX, leftY);
-
+    addInfo("Child Name", child.child_name, leftX, leftY);
     leftY += 10;
-
-    addInfo("Date of Birth", child.birthdate || "—", leftX, leftY);
-
+    addInfo("Date of Birth", child.birthdate, leftX, leftY);
     leftY += 10;
-
-    addInfo("Address", child.address || "—", leftX, leftY);
-
+    addInfo("Address", child.address, leftX, leftY);
     leftY += 10;
+    addInfo("Gender", child.gender, leftX, leftY);
 
-    addInfo("Gender", child.gender || "—", leftX, leftY);
-
-    // RIGHT COLUMN
     addInfo("Parent/Guardian", parentName, rightX, rightY);
-
     rightY += 10;
-
     addInfo("Birth Height", birthHeight, rightX, rightY);
-
     rightY += 10;
-
     addInfo("Birth Weight", birthWeight, rightX, rightY);
-
     rightY += 10;
-
     addInfo("Health Center", healthCenter, rightX, rightY);
 
-    // -----------------------------
-    // VACCINATION TABLE
-    // -----------------------------
-    const vaccinationRows = [...vaccines]
-      .sort((a, b) => {
-        const dateA = new Date(a.date_taken || a.date || 0).getTime();
-
-        const dateB = new Date(b.date_taken || b.date || 0).getTime();
-
-        return dateA - dateB;
-      })
-      .map((record) => [
-        record.vaccine || getVaccineName(record.vaccine_id) || "—",
-
-        record.dose_number || record.dose || "—",
-
-        record.date_taken || record.date || "—",
-      ]);
+    const vaccinationRows = getVaccineCardRows().map((row) => [
+      row.vaccineName,
+      row.doseProgress,
+      row.doseDates.map((date, index) => `Dose ${index + 1}: ${date || "—"}`).join("\n"),
+    ]);
 
     autoTable(doc, {
       startY: 80,
-
-      head: [["Vaccine", "Dose", "Date of Vaccination"]],
-
+      head: [["Vaccine", "Doses", "Vaccination Dates"]],
       body: vaccinationRows,
-
       theme: "grid",
-
       styles: {
         font: "helvetica",
-        fontSize: 10,
-        cellPadding: 4,
+        fontSize: 8,
+        cellPadding: 3,
         valign: "middle",
+        overflow: "linebreak",
       },
-
       headStyles: {
         fontStyle: "bold",
         halign: "center",
       },
-
       columnStyles: {
-        0: {
-          cellWidth: 65,
-        },
-        1: {
-          cellWidth: 35,
-          halign: "center",
-        },
-        2: {
-          cellWidth: 65,
-          halign: "center",
-        },
+        0: { cellWidth: 65 },
+        1: { cellWidth: 25, halign: "center" },
+        2: { cellWidth: 80 },
       },
-
-      margin: {
-        left: 20,
-        right: 20,
-      },
+      margin: { left: 15, right: 15 },
     });
 
-    // -----------------------------
-    // DOWNLOAD
-    // -----------------------------
     const safeChildName = (child.child_name || "Child").replace(
       /[^a-z0-9]/gi,
       "_",
@@ -1109,13 +952,13 @@ function PatientViewRecord() {
     doc.save(`Child_Immunization_Record_${safeChildName}.pdf`);
   };
 
+  // RENDER
+
   return (
     <div className="viewRecord-dashboard">
       <Sidebar />
 
       <main className="viewRecord-main">
-        {/* HEADER */}
-
         <div className="viewRecord-header">
           <div>
             <button
@@ -1128,7 +971,6 @@ function PatientViewRecord() {
             </button>
 
             <h1>Child Record</h1>
-
             <p>
               Manage the child's vaccination records, growth history, and
               appointment history.
@@ -1146,7 +988,6 @@ function PatientViewRecord() {
 
             <div className="viewRecord-patient-info">
               <h2>{child?.child_name || "Child's Name"}</h2>
-
               <span className="viewRecord-patient-label">
                 {child?.status || "Continuing"}
               </span>
@@ -1158,47 +999,38 @@ function PatientViewRecord() {
               <span>Birthdate</span>
               <strong>{child?.birthdate || "—"}</strong>
             </div>
-
             <div>
               <span>Age</span>
               <strong>{calculateAge(child?.birthdate)}</strong>
             </div>
-
             <div>
               <span>Gender</span>
               <strong>{child?.gender || "—"}</strong>
             </div>
-
             <div>
               <span>Height</span>
               <strong>{latestHeight}</strong>
             </div>
-
             <div>
               <span>Weight</span>
               <strong>{latestWeight}</strong>
             </div>
-
             <div>
               <span>Parent / Guardian</span>
               <strong>{parentName}</strong>
             </div>
-
             <div>
               <span>Relationship</span>
               <strong>{child?.relationship || "—"}</strong>
             </div>
-
             <div>
               <span>Parent Contact</span>
               <strong>{parentPhone}</strong>
             </div>
-
             <div>
               <span>Parent Email</span>
               <strong>{parentEmail}</strong>
             </div>
-
             <div>
               <span>Address</span>
               <strong>{child?.address || "—"}</strong>
@@ -1208,9 +1040,9 @@ function PatientViewRecord() {
           <button
             type="button"
             className="download-vaccine-card-btn"
-            onClick={downloadVaccineCard}
+            onClick={() => setShowVaccineCardPreview(true)}
           >
-            Download Vaccine Card
+            View Vaccine Card
           </button>
 
           {hasPermission("edit_patients") && (
@@ -1224,14 +1056,15 @@ function PatientViewRecord() {
           )}
         </section>
 
-        {/* VACCINATION MANAGEMENT */}
+        {/* VACCINATION MANAGEMENT: ONE ROW PER VACCINE */}
 
         <section className="viewRecord-record-section viewRecord-vaccination-section">
           <div className="viewRecord-section-header">
             <div>
               <h2>Vaccination Management</h2>
-
-              <p>Set, update, and manage the child's vaccination records.</p>
+              <p>
+                View the child's vaccination progress and manage recorded doses.
+              </p>
             </div>
 
             {hasPermission("view_appointments") && child && (
@@ -1251,9 +1084,8 @@ function PatientViewRecord() {
               <thead>
                 <tr>
                   <th>Vaccine</th>
-                  <th>Dose</th>
-                  <th>Vaccination Date</th>
-                  <th>Status</th>
+                  <th>Doses</th>
+                  <th>Vaccination Dates</th>
                   <th>Place</th>
                   <th>Provider</th>
                   <th>Action</th>
@@ -1261,65 +1093,64 @@ function PatientViewRecord() {
               </thead>
 
               <tbody>
-                {vaccines.length > 0 ? (
-                  vaccines.map((item, index) => (
-                    <tr key={item.patient_recordID || index}>
+                {getVaccineCardRows().map((row) => {
+                  const latestRecord = [...row.matchingRecords]
+                    .filter((record) => record.status === "Completed")
+                    .sort((a, b) => {
+                      const dateA = new Date(
+                        a.date_taken || a.date || 0,
+                      ).getTime();
+                      const dateB = new Date(
+                        b.date_taken || b.date || 0,
+                      ).getTime();
+                      return dateB - dateA;
+                    })[0];
+
+                  const dates = row.doseDates
+                    .map((date, index) => (date ? `D${index + 1}: ${date}` : null))
+                    .filter(Boolean);
+
+                  return (
+                    <tr key={row.key}>
                       <td>
-                        <strong>
-                          {item.vaccine || getVaccineName(item.vaccine_id)}
-                        </strong>
+                        <strong>{row.vaccineName}</strong>
                       </td>
 
-                      <td>Dose {item.dose || item.dose_number || "—"}</td>
+                      <td>
+                        <strong>{row.doseProgress}</strong>
+                      </td>
 
-                      <td>{item.date || item.date_taken || "—"}</td>
+                      <td>{dates.length ? dates.join(" · ") : "—"}</td>
 
-                      <td>{item.status || "—"}</td>
+                      <td>{latestRecord?.place || "—"}</td>
 
-                      <td>{item.place || "—"}</td>
-
-                      <td>{item.provider || "—"}</td>
+                      <td>{latestRecord?.provider || "—"}</td>
 
                       <td>
                         <div className="viewRecord-action-buttons">
-                          <button
-                            className="viewRecord-delete-btn"
-                            onClick={() => {
-                              setSelectedDeleteVaccination(item);
-                              setShowDeleteVaccination(true);
-                            }}
-                          >
-                            Delete
-                          </button>
+                          {row.matchingRecords.length > 0 ? (
+                            row.matchingRecords.map((record) => (
+                              <button
+                                key={record.patient_recordID}
+                                type="button"
+                                className="viewRecord-delete-btn"
+                                onClick={() => {
+                                  setSelectedDeleteVaccination(record);
+                                  setShowDeleteVaccination(true);
+                                }}
+                              >
+                                Delete Dose{" "}
+                                {record.dose_number || record.dose || ""}
+                              </button>
+                            ))
+                          ) : (
+                            <span>—</span>
+                          )}
                         </div>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="7" className="viewRecord-empty">
-                      <div>
-                        <FaUserCircle />
-
-                        <h3>No vaccination records</h3>
-
-                        <p>
-                          No vaccination records have been added for this child
-                          yet.
-                        </p>
-
-                        {hasPermission("view_appointments") && (
-                          <button
-                            className="viewRecord-empty-add"
-                            onClick={() => navigate("/appointments")}
-                          >
-                            View Appointments
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -1331,7 +1162,6 @@ function PatientViewRecord() {
           <div className="viewRecord-section-header">
             <div>
               <h2>Growth History</h2>
-
               <p>
                 Historical height and weight measurements recorded during clinic
                 visits.
@@ -1366,7 +1196,6 @@ function PatientViewRecord() {
                   sortedGrowthRecords.map((growth, index) => (
                     <tr key={growth.growth_id}>
                       <td>{growth.date || "—"}</td>
-
                       <td>
                         {growth.weight_kg !== null &&
                         growth.weight_kg !== undefined &&
@@ -1374,7 +1203,6 @@ function PatientViewRecord() {
                           ? `${growth.weight_kg} kg`
                           : "—"}
                       </td>
-
                       <td>
                         {growth.height_cm !== null &&
                         growth.height_cm !== undefined &&
@@ -1382,13 +1210,8 @@ function PatientViewRecord() {
                           ? `${growth.height_cm} cm`
                           : "—"}
                       </td>
-
                       <td>{getGrowthChange(index)}</td>
-
-                      <td>
-                        {calculateBMI(growth.weight_kg, growth.height_cm)}
-                      </td>
-
+                      <td>{calculateBMI(growth.weight_kg, growth.height_cm)}</td>
                       <td>{getGrowthAssessment(growth)}</td>
                     </tr>
                   ))
@@ -1410,7 +1233,6 @@ function PatientViewRecord() {
           <div className="viewRecord-section-header">
             <div>
               <h2>Appointment History</h2>
-
               <p>Previous and upcoming clinic appointments for this child.</p>
             </div>
           </div>
@@ -1432,13 +1254,9 @@ function PatientViewRecord() {
                   child.appointments.map((appointment) => (
                     <tr key={appointment.appointment_id}>
                       <td>{appointment.appointment_date}</td>
-
                       <td>{appointment.appointment_time}</td>
-
                       <td>{appointment.appointment_type || "—"}</td>
-
                       <td>{appointment.address || "—"}</td>
-
                       <td>{appointment.status || "—"}</td>
                     </tr>
                   ))
@@ -1462,12 +1280,8 @@ function PatientViewRecord() {
               <div className="viewRecord-popup-header">
                 <div>
                   <h2>Add Growth Record</h2>
-
-                  <p>
-                    Record a new height and weight measurement for this child.
-                  </p>
+                  <p>Record a new height and weight measurement for this child.</p>
                 </div>
-
                 <button
                   onClick={() => setShowAddGrowth(false)}
                   className="viewRecord-popup-close"
@@ -1478,30 +1292,23 @@ function PatientViewRecord() {
 
               <div className="viewRecord-popup-child">
                 <FaUserCircle />
-
                 <div>
                   <strong>{child?.child_name || "Child's Name"}</strong>
-
                   <small>Parent: {parentName}</small>
                 </div>
               </div>
 
               <label>Date</label>
-
               <input
                 type="date"
                 className="vaccination-form-input"
                 value={growthForm.date}
                 onChange={(e) =>
-                  setGrowthForm((prev) => ({
-                    ...prev,
-                    date: e.target.value,
-                  }))
+                  setGrowthForm((prev) => ({ ...prev, date: e.target.value }))
                 }
               />
 
               <label>Weight (kg)</label>
-
               <input
                 type="number"
                 step="0.01"
@@ -1518,7 +1325,6 @@ function PatientViewRecord() {
               />
 
               <label>Height (cm)</label>
-
               <input
                 type="number"
                 step="0.01"
@@ -1535,7 +1341,6 @@ function PatientViewRecord() {
               />
 
               <label>BMI</label>
-
               <div
                 className="vaccination-form-input"
                 style={{
@@ -1566,7 +1371,6 @@ function PatientViewRecord() {
                 >
                   Cancel
                 </button>
-
                 <button
                   className="viewRecord-send-btn"
                   onClick={handleSaveGrowth}
@@ -1586,10 +1390,8 @@ function PatientViewRecord() {
               <div className="viewRecord-popup-header">
                 <div>
                   <h2>Edit Child</h2>
-
                   <p>Update the child's information.</p>
                 </div>
-
                 <button
                   onClick={() => setShowEditChild(false)}
                   className="viewRecord-popup-close"
@@ -1600,16 +1402,13 @@ function PatientViewRecord() {
 
               <div className="viewRecord-popup-child">
                 <FaUserCircle />
-
                 <div>
                   <strong>{child?.child_name || "Child's Name"}</strong>
-
                   <small>Parent: {parentName}</small>
                 </div>
               </div>
 
               <label>Child Name</label>
-
               <input
                 type="text"
                 className="vaccination-form-input"
@@ -1621,7 +1420,6 @@ function PatientViewRecord() {
               />
 
               <label>Birthdate</label>
-
               <input
                 type="date"
                 className="vaccination-form-input"
@@ -1632,7 +1430,6 @@ function PatientViewRecord() {
               />
 
               <label>Gender</label>
-
               <select
                 className="vaccination-form-input"
                 value={editChildForm.gender}
@@ -1641,14 +1438,11 @@ function PatientViewRecord() {
                 }
               >
                 <option value="">Select gender</option>
-
                 <option value="Male">Male</option>
-
                 <option value="Female">Female</option>
               </select>
 
               <label>Relationship</label>
-
               <select
                 className="vaccination-form-input"
                 value={editChildForm.relationship}
@@ -1657,16 +1451,12 @@ function PatientViewRecord() {
                 }
               >
                 <option value="">Select relationship</option>
-
                 <option value="Mother">Mother</option>
-
                 <option value="Father">Father</option>
-
                 <option value="Guardian">Guardian</option>
               </select>
 
               <label>Address</label>
-
               <input
                 className="vaccination-form-input"
                 value={editChildForm.address}
@@ -1677,7 +1467,6 @@ function PatientViewRecord() {
               />
 
               <label>Status</label>
-
               <select
                 className="vaccination-form-input"
                 value={editChildForm.status}
@@ -1686,9 +1475,7 @@ function PatientViewRecord() {
                 }
               >
                 <option value="Continuing">Continuing</option>
-
                 <option value="Completed">Completed</option>
-
                 <option value="Inactive">Inactive</option>
               </select>
 
@@ -1699,7 +1486,6 @@ function PatientViewRecord() {
                 >
                   Cancel
                 </button>
-
                 <button
                   className="viewRecord-send-btn"
                   onClick={handleSaveChild}
@@ -1719,10 +1505,8 @@ function PatientViewRecord() {
               <div className="viewRecord-popup-header">
                 <div>
                   <h2>Edit Vaccination</h2>
-
                   <p>Update this child's vaccination record.</p>
                 </div>
-
                 <button
                   onClick={() => setShowEditVaccination(false)}
                   className="viewRecord-popup-close"
@@ -1733,12 +1517,10 @@ function PatientViewRecord() {
 
               <div className="viewRecord-popup-child">
                 <FaUserCircle />
-
                 <strong>{child?.child_name || "Child's Name"}</strong>
               </div>
 
               <label>Vaccine</label>
-
               <select
                 className="vaccination-form-input"
                 value={editVaccinationForm.vaccine}
@@ -1750,7 +1532,6 @@ function PatientViewRecord() {
                 }
               >
                 <option value="">Select vaccine</option>
-
                 {vaccineInventory.map((vaccine) => (
                   <option key={vaccine.vaccine_ID} value={vaccine.vaccine_ID}>
                     {vaccine.vaccine_name}
@@ -1759,7 +1540,6 @@ function PatientViewRecord() {
               </select>
 
               <label>Dose</label>
-
               <select
                 className="vaccination-form-input"
                 value={editVaccinationForm.dose}
@@ -1771,16 +1551,12 @@ function PatientViewRecord() {
                 }
               >
                 <option value="">Select dose</option>
-
                 <option value="1">Dose 1</option>
-
                 <option value="2">Dose 2</option>
-
                 <option value="3">Dose 3</option>
               </select>
 
               <label>Vaccination Date</label>
-
               <input
                 type="date"
                 className="vaccination-form-input"
@@ -1794,7 +1570,6 @@ function PatientViewRecord() {
               />
 
               <label>Status</label>
-
               <select
                 className="vaccination-form-input"
                 value={editVaccinationForm.status}
@@ -1806,16 +1581,12 @@ function PatientViewRecord() {
                 }
               >
                 <option value="">Select status</option>
-
                 <option value="Completed">Completed</option>
-
                 <option value="Continuing">Continuing</option>
-
                 <option value="Missed">Missed</option>
               </select>
 
               <label>Place</label>
-
               <input
                 type="text"
                 className="vaccination-form-input"
@@ -1830,7 +1601,6 @@ function PatientViewRecord() {
               />
 
               <label>Provider</label>
-
               <input
                 type="text"
                 className="vaccination-form-input"
@@ -1851,7 +1621,6 @@ function PatientViewRecord() {
                 >
                   Cancel
                 </button>
-
                 <button
                   className="viewRecord-send-btn"
                   onClick={handleSaveEditVaccination}
@@ -1872,7 +1641,6 @@ function PatientViewRecord() {
 
               <div className="delete-vaccination-content">
                 <h2>Delete Vaccination Record?</h2>
-
                 <p>
                   Are you sure you want to delete this vaccination record? This
                   action cannot be undone.
@@ -1884,7 +1652,6 @@ function PatientViewRecord() {
                       {selectedDeleteVaccination.vaccine ||
                         getVaccineName(selectedDeleteVaccination.vaccine_id)}
                     </strong>
-
                     <span>
                       Dose{" "}
                       {selectedDeleteVaccination.dose ||
@@ -1907,12 +1674,144 @@ function PatientViewRecord() {
                 >
                   Cancel
                 </button>
-
                 <button
                   className="viewRecord-delete-confirm-btn"
                   onClick={handleDeleteVaccination}
                 >
                   Delete Record
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* VACCINE CARD PREVIEW */}
+
+        {showVaccineCardPreview && (
+          <div
+            className="viewRecord-vaccine-preview-overlay"
+            onClick={() => setShowVaccineCardPreview(false)}
+          >
+            <div
+              className="viewRecord-vaccine-preview-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="viewRecord-vaccine-preview-header">
+                <div>
+                  <h2>Vaccine Card Preview</h2>
+                  <p>Child Care Immunization Record</p>
+                </div>
+                <button
+                  type="button"
+                  className="viewRecord-popup-close"
+                  onClick={() => setShowVaccineCardPreview(false)}
+                  aria-label="Close vaccine card preview"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="viewRecord-vaccine-preview-scroll">
+                <div className="viewRecord-vaccine-card">
+                  <div className="viewRecord-vaccine-card-title">
+                    <h2>CHILD IMMUNIZATION RECORD</h2>
+                    <p>Official Child Vaccination Record</p>
+                  </div>
+
+                  <div className="viewRecord-vaccine-card-info">
+                    <div>
+                      <p>
+                        <strong>Child Name:</strong>
+                        <span>{child?.child_name || "—"}</span>
+                      </p>
+                      <p>
+                        <strong>Date of Birth:</strong>
+                        <span>{child?.birthdate || "—"}</span>
+                      </p>
+                      <p>
+                        <strong>Address:</strong>
+                        <span>{child?.address || "—"}</span>
+                      </p>
+                      <p>
+                        <strong>Gender:</strong>
+                        <span>{child?.gender || "—"}</span>
+                      </p>
+                    </div>
+
+                    <div>
+                      <p>
+                        <strong>Parent/Guardian:</strong>
+                        <span>{parentName}</span>
+                      </p>
+                      <p>
+                        <strong>Birth Height:</strong>
+                        <span>{birthHeight}</span>
+                      </p>
+                      <p>
+                        <strong>Birth Weight:</strong>
+                        <span>{birthWeight}</span>
+                      </p>
+                      <p>
+                        <strong>Health Center:</strong>
+                        <span>{healthCenter}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="viewRecord-vaccine-card-table">
+                    <h3>VACCINATION HISTORY</h3>
+
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Vaccine</th>
+                          <th>Doses</th>
+                          <th>Vaccination Dates</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {getVaccineCardRows().map((record) => (
+                          <tr key={record.key}>
+                            <td>{record.vaccineName}</td>
+                            <td>{record.doseProgress}</td>
+                            <td>
+                              {record.doseDates
+                                .map((date, index) =>
+                                  date ? `Dose ${index + 1}: ${date}` : null,
+                                )
+                                .filter(Boolean)
+                                .join("\n") || "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="viewRecord-vaccine-card-footer">
+                    <p>
+                      This card summarizes the child's recorded immunization
+                      history.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="viewRecord-vaccine-preview-actions">
+                <button
+                  type="button"
+                  className="viewRecord-cancel-btn"
+                  onClick={() => setShowVaccineCardPreview(false)}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className="download-vaccine-card-btn"
+                  onClick={downloadVaccineCard}
+                >
+                  Download PDF
                 </button>
               </div>
             </div>
@@ -1924,36 +1823,3 @@ function PatientViewRecord() {
 }
 
 export default PatientViewRecord;
-// ```
-
-// Now test **only this**:
-
-// 1. Make sure Laravel is running:
-
-//    ```bash
-//    php artisan serve
-//    ```
-// 2. Refresh the child record page.
-// 3. Check **Growth History**.
-
-// You should now see the existing records from `/api/growth-records/30`, including the records created through **Add Growth Record**.
-
-// The key change is that growth history now has its own state:
-
-// ```js
-// const [growthRecords, setGrowthRecords] = useState([]);
-// ```
-
-// and the Add button refreshes that exact state with:
-
-// ```js
-// await fetchGrowthRecords();
-// ```
-
-// instead of doing:
-
-// ```js
-// await fetchChild();
-// ```
-
-// That separates **child information retrieval** from **growth history retrieval**, which is much more reliable for this page.

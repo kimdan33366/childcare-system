@@ -260,7 +260,7 @@
                 </div>
 
                 <div class="summary-value">
-                    {{ $report->overall_coverage ?? 0 }}%
+                    {{ $overallCoverage ?? 0 }}%
                 </div>
 
                 <div class="summary-description">

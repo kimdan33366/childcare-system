@@ -1228,7 +1228,7 @@ function Notification() {
             <div
               className="notification-compose-modal"
               onClick={(e) =>
-                e.stopPropagation()
+                e.stopPropagation() 
               }
             >
               <div className="notification-compose-header">
@@ -1396,7 +1396,8 @@ function Notification() {
 
                   {isSending
                     ? "Sending..."
-                    : "Send Email"}
+                    : "Send Reminder"}
+
                 </button>
               </div>
             </div>

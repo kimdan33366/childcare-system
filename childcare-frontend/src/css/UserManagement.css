@@ -1,17 +1,35 @@
+
 /* =========================================
-   USER MANAGEMENT PAGE
+   USER MANAGEMENT PAGE SCROLLING
 ========================================= */
+
+html,
+body,
+#root {
+  min-height: 100%;
+  height: auto;
+}
+
+body {
+  margin: 0;
+  overflow-y: auto;
+}
 
 .user-management-dashboard {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 260px minmax(0, 1fr);
   min-height: 100vh;
+  height: auto;
   background: #f8fafc;
+  overflow: visible;
 }
 
 .user-management-container {
   padding: 35px 45px;
   min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
 }
 
 /* =========================================
@@ -62,15 +80,17 @@
 
 .user-summary-grid {
   display: flex;
-  gap: 84px;
+  flex-wrap: wrap;
+  gap: 25px;
   margin-bottom: 25px;
   justify-content: center;
 }
 
 .user-summary-card {
-  width: 280px;
+  width: 375px;
   min-height: 95px;
   padding: 20px 37px;
+  box-sizing: border-box;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -103,8 +123,10 @@
 
 .user-management-toolbar input {
   width: 320px;
+  max-width: 100%;
   height: 40px;
   padding: 0 13px;
+  box-sizing: border-box;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   background: #ffffff;
@@ -139,22 +161,57 @@
 }
 
 /* =========================================
-   TABLE
+   TABLE - INDEPENDENT SCROLLING
 ========================================= */
 
 .user-table-container {
+  position: relative;
+  width: 100%;
+  max-height: 380px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f8fafc;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  overflow: visible;
+  box-sizing: border-box;
+}
+
+.user-table-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.user-table-container::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.user-table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+
+.user-table-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .user-table-container table {
   width: 100%;
-  border-collapse: collapse;
+  min-width: 850px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.user-table-container thead {
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
 .user-table-container th {
+  position: sticky;
+  top: 0;
   height: 48px;
   padding: 0 18px;
   background: #f9fafb;
@@ -163,12 +220,14 @@
   font-size: 12px;
   font-weight: 600;
   text-align: left;
+  white-space: nowrap;
 }
 
 .user-table-container td {
   height: 68px;
   padding: 10px 18px;
   border-bottom: 1px solid #f0f0f0;
+  background: #ffffff;
   color: #374151;
   font-size: 13px;
 }
@@ -177,7 +236,7 @@
   border-bottom: none;
 }
 
-.user-table-container tbody tr:hover {
+.user-table-container tbody tr:hover td {
   background: #fafafa;
 }
 
@@ -211,6 +270,7 @@
   border-radius: 20px;
   font-size: 11px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .user-status.active {
@@ -237,6 +297,7 @@
   width: 34px;
   height: 34px;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   border: 1px solid #e5e7eb;
@@ -359,8 +420,6 @@
   box-shadow: 0 15px 40px rgba(15, 23, 42, 0.12);
 }
 
-/* Wider modal specifically for multi-child registration */
-
 .user-modal.add-user-modal {
   max-width: 760px;
 }
@@ -443,11 +502,7 @@
   white-space: nowrap;
 }
 
-.add-user-step.active {
-  color: #21457b;
-  font-weight: 600;
-}
-
+.add-user-step.active,
 .add-user-step.completed {
   color: #21457b;
   font-weight: 600;
@@ -624,8 +679,8 @@
   background: #ffffff;
   border: 1px solid #dfe5ec;
   border-radius: 9px;
-  overflow: hidden;
 }
+
 .child-form-card .user-form-row {
   gap: 12px;
 }
@@ -866,8 +921,6 @@
 .user-details {
   padding: 22px 0 5px;
 }
-
-/* Parent Profile Header */
 
 .user-details-top {
   display: flex;
@@ -1127,7 +1180,6 @@
 
 /* =========================================
    PARENT PROFILE PAGE
-   Support for standalone parent profile
 ========================================= */
 
 .parent-profile {
@@ -1416,7 +1468,11 @@
   }
 
   .user-summary-grid {
-    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .user-summary-card {
+    width: min(280px, 100%);
   }
 
   .user-management-toolbar {
@@ -1433,16 +1489,25 @@
 }
 
 @media (max-width: 700px) {
+  .user-management-container {
+    padding: 20px 15px;
+  }
+
   .user-management-header {
     flex-direction: column;
   }
 
+  .user-management-toolbar {
+    align-items: stretch;
+  }
+
   .user-table-container {
-    overflow-x: auto;
+    max-height: 450px;
+    overflow: auto;
   }
 
   .user-table-container table {
-    min-width: 700px;
+    min-width: 850px;
   }
 
   .parent-profile {
