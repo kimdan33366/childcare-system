@@ -48,11 +48,11 @@ class UserController extends Controller
             // PARENT INFORMATION
             // ==============================
             'user_fullname' => 'required|string|max:255',
-            'email' => ['required','email','regex:/^[^@\s]+@gmail\.com$/i','max:255','unique:user,email',],
+            'email' => 'nullable|email|max:255|unique:user,email',
             'date_of_birth' => 'nullable|date',
             'gender' => 'nullable|string|max:255',
             'address' => 'required|string|max:255',
-            'mobile_number' => ['required','digits:11',],
+            'mobile_number' => 'required|string|max:20',
             'password' => 'required|string|min:6',
             'status' => 'nullable|in:Active,Inactive',
 
@@ -146,11 +146,11 @@ class UserController extends Controller
 
         $request->validate([
             'user_fullname' => 'required|string|max:255',
-            'email' => ['required','email','regex:/^[^@\s]+@gmail\.com$/i','max:255','unique:user,email,' . $id . ',user_id',],
+            'email' => 'nullable|email|max:255|unique:user,email,' . $id . ',user_id',
             'date_of_birth' => 'nullable|date',
             'gender' => 'nullable|string|max:255',
             'address' => 'required|string|max:255',
-            'mobile_number' => ['required', 'digits:11'],
+            'mobile_number' => 'required|string|max:20',
             'password' => 'nullable|string|min:6',
             'status' => 'required|in:Active,Inactive',
         ]);
@@ -252,35 +252,57 @@ class UserController extends Controller
     }
 
     // POST /api/users/login
-    public function login(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ]);
+   // POST /api/users/login
+public function login(Request $request)
+{
+    $request->validate([
+        'username' => 'required|string',
+        'password' => 'required|string',
+    ]);
 
-        $user = User::where('email', $request->email)->first();
+    // Accept email as the username
+    $username = trim($request->username);
 
-        if (
-            !$user ||
-            !Hash::check($request->password, $user->password)
-        ) {
-            return response()->json([
-                'message' => 'Invalid email or password.'
-            ], 401);
-        }
+    $user = User::where('email', $username)->first();
+    \Log::info('LOGIN USER FOUND', [
+    'user_id' => $user?->user_id,
+    'password_matches' => $user
+        ? Hash::check($request->password, $user->password)
+        : false,
+]);
 
-        if ($user->status !== 'Active') {
-            return response()->json([
-                'message' => 'Your account is inactive.'
-            ], 403);
-        }
-
+    if (
+        !$user ||
+        !Hash::check($request->password, $user->password)
+    ) {
         return response()->json([
-            'message' => 'Login successful.',
-            'user' => $user->load('children'),
-        ]);
+            'success' => false,
+            'message' => 'Invalid email or password.',
+        ], 401);
     }
+
+    if ($user->status !== 'Active') {
+        return response()->json([
+            'success' => false,
+            'message' => 'Your account is inactive.',
+        ], 403);
+    }
+
+    return response()->json([
+    'success' => true,
+    'message' => 'Login successful.',
+    'user' => [
+        'user_id' => $user->user_id,
+        'user_fullname' => $user->user_fullname,
+        'email' => $user->email,
+        'date_of_birth' => $user->date_of_birth,
+        'gender' => $user->gender,
+        'address' => $user->address,
+        'mobile_number' => $user->mobile_number,
+        'status' => $user->status,
+    ],
+], 200);
+}
 
     // DELETE /api/users/{id}
     public function destroy($id)

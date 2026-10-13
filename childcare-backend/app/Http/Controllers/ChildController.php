@@ -13,7 +13,7 @@ class ChildController extends Controller
         $children = Child::with([
             'user',
             'patientRecords',
-            'appointments',
+            'appointments.vaccines.vaccine',
             'growthRecords',
         ])->get();
 
@@ -26,7 +26,7 @@ class ChildController extends Controller
         $child = Child::with([
             'user',
             'patientRecords',
-            'appointments',
+            'appointments.vaccines.vaccine',
             'growthRecords',
         ])->findOrFail($id);
 
