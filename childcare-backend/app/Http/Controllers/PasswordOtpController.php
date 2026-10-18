@@ -38,8 +38,6 @@ class PasswordOtpController extends Controller
         }
         
 
-
-
         // Generate a six-digit OTP.
         $otp = (string) random_int(100000, 999999);
 

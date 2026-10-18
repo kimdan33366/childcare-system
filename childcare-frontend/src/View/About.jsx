@@ -20,6 +20,7 @@ import {
   FaQuestionCircle,
   FaUser,
 } from "react-icons/fa";
+import {authFetch} from "../Controller/AuthController";
 
 function About() {
   const navigate = useNavigate();
