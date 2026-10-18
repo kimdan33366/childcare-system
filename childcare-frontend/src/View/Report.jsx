@@ -2,6 +2,7 @@ import "../css/Report.css";
 
 import Sidebar from "../View/Sidebar";
 import { useState, useEffect } from "react";
+import { authFetch } from "../Controller/AuthController";
 
 function Report() {
   const [report, setReport] = useState(null);
@@ -12,6 +13,32 @@ function Report() {
   const isAdmin = currentUser?.user_type === "Admin";
   const permissions = currentUser?.permissions || [];
 
+  const handleExportReport = async () => {
+    try {
+      const response = await authFetch(
+        "http://127.0.0.1:8000/api/reports/export",
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to export report");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "vaccination-report.pdf";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error exporting report:", error);
+      alert("Failed to export report. Please try again.");
+    }
+  };
   // Permission helper
   const hasPermission = (permission) => {
     return (
@@ -30,7 +57,7 @@ function Report() {
 
     const fetchReport = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/api/reports");
+        const response = await authFetch("http://127.0.0.1:8000/api/reports");
 
         if (!response.ok) {
           throw new Error("Failed to fetch report");
@@ -150,9 +177,7 @@ function Report() {
           <button
             type="button"
             className="report-export-btn"
-            onClick={() =>{
-              window.open("http://127.0.0.1:8000/api/reports/export", "_blank");
-            }}
+            onClick={handleExportReport}
           >
             Export Report
           </button>

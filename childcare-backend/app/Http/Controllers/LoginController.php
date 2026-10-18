@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Admin;
 use App\Models\Staff;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -29,13 +30,18 @@ class LoginController extends Controller
         if ($admin) {
             if (!Hash::check($request->password, $admin->Admin_password)) {
                 return response()->json([
-                    'message' => 'Invalid username or password.'
+                    'message' => 'Invalid username or password.',
                 ], 401);
             }
+
+            $token = $admin
+                ->createToken('childcare-react-admin')
+                ->plainTextToken;
 
             return response()->json([
                 'message' => 'Login successful.',
                 'user_type' => 'Admin',
+                'token' => $token,
                 'admin' => [
                     'Admin_id' => $admin->Admin_id,
                     'Admin_email' => $admin->Admin_email,
@@ -58,19 +64,24 @@ class LoginController extends Controller
         if ($staff) {
             if (!Hash::check($request->password, $staff->staff_password)) {
                 return response()->json([
-                    'message' => 'Invalid username or password.'
+                    'message' => 'Invalid username or password.',
                 ], 401);
             }
 
             if ($staff->status !== 'Active') {
                 return response()->json([
-                    'message' => 'This staff account is inactive.'
+                    'message' => 'This staff account is inactive.',
                 ], 403);
             }
+
+            $token = $staff
+                ->createToken('childcare-react-staff')
+                ->plainTextToken;
 
             return response()->json([
                 'message' => 'Login successful.',
                 'user_type' => 'Staff',
+                'token' => $token,
                 'staff' => [
                     'staff_id' => $staff->staff_id,
                     'staff_name' => $staff->staff_name,
@@ -81,39 +92,49 @@ class LoginController extends Controller
             ], 200);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | CHECK PARENT / USER ACCOUNT
+        |--------------------------------------------------------------------------
+        */
+
         $user = User::where('email', $request->username)
-                ->orWhere('user_fullname', $request->username)
-                ->first();
+            ->orWhere('user_fullname', $request->username)
+            ->first();
 
-                if($user){
-
-                if (!Hash::check($request->password, $user->password)){
-                    return response()->json([
-                        'message' => 'Invalid username or password.'
-                    ], 401);
-                }
-
-                if ($user->status !== 'Active'){
-                    return response()->json([
-                        'message' => 'This user account is inactive.'
-                    ], 403);
-                }
-
+        if ($user) {
+            if (!Hash::check($request->password, $user->password)) {
                 return response()->json([
-                    'message' => 'Login successful',
-                    'user_type' => 'User',
-                    'user' =>[
-                        'user_id' => $user->user_id,
-                        'user_fullname' => $user->user_fullname,
-                        'email' => $user->email,
-                        'date_of_birth' => $user->date_of_birth,
-                        'gender' => $user->gender,
-                        'address' => $user->address,
-                        'mobile_number' => $user->mobile_number,
-                        'status' => $user->status,
-                    ]
-                ], 200);
-                }
+                    'message' => 'Invalid username or password.',
+                ], 401);
+            }
+
+            if ($user->status !== 'Active') {
+                return response()->json([
+                    'message' => 'This user account is inactive.',
+                ], 403);
+            }
+
+            $token = $user
+                ->createToken('childcare-react-user')
+                ->plainTextToken;
+
+            return response()->json([
+                'message' => 'Login successful.',
+                'user_type' => 'User',
+                'token' => $token,
+                'user' => [
+                    'user_id' => $user->user_id,
+                    'user_fullname' => $user->user_fullname,
+                    'email' => $user->email,
+                    'date_of_birth' => $user->date_of_birth,
+                    'gender' => $user->gender,
+                    'address' => $user->address,
+                    'mobile_number' => $user->mobile_number,
+                    'status' => $user->status,
+                ],
+            ], 200);
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -122,7 +143,7 @@ class LoginController extends Controller
         */
 
         return response()->json([
-            'message' => 'Invalid username or password.'
+            'message' => 'Invalid username or password.',
         ], 401);
     }
 }

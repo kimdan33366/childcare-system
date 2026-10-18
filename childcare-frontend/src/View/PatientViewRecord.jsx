@@ -11,6 +11,7 @@ import autoTable from "jspdf-autotable";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 
 import Sidebar from "../View/Sidebar";
+import { authFetch } from "../Controller/AuthController";
 
 function PatientViewRecord() {
   const { child_id } = useParams();
@@ -77,7 +78,7 @@ function PatientViewRecord() {
 
   const fetchChild = async () => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/children/${child_id}`,
         {
           headers: {
@@ -108,7 +109,7 @@ function PatientViewRecord() {
 
   const fetchGrowthRecords = async () => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/growth-records/${child_id}?_=${Date.now()}`,
         {
           method: "GET",
@@ -137,7 +138,7 @@ function PatientViewRecord() {
 
   const fetchVaccinationRecords = async () => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/patient-records/${child_id}?_=${Date.now()}`,
         {
           method: "GET",
@@ -166,7 +167,7 @@ function PatientViewRecord() {
 
   const fetchVaccineInventory = async () => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/vaccines?_=${Date.now()}`,
         {
           headers: {
@@ -500,7 +501,7 @@ function PatientViewRecord() {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/growth-records", {
+      const response = await authFetch("http://127.0.0.1:8000/api/growth-records", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -578,7 +579,7 @@ function PatientViewRecord() {
     }
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/children/${child_id}`,
         {
           method: "PUT",
@@ -680,7 +681,7 @@ function PatientViewRecord() {
     }
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/patient-records/${selectedVaccination.patient_recordID}`,
         {
           method: "PUT",
@@ -750,7 +751,7 @@ function PatientViewRecord() {
     );
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/patient-records/${patientRecordID}/status?_=${Date.now()}`,
         {
           method: "PUT",
@@ -795,7 +796,7 @@ function PatientViewRecord() {
     if (!selectedDeleteVaccination) return;
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/patient-records/${selectedDeleteVaccination.patient_recordID}`,
         {
           method: "DELETE",

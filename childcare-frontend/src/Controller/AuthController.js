@@ -1,20 +1,20 @@
+
+const API_URL = "http://127.0.0.1:8000/api";
+
 export const loginUser = async (username, password) => {
   try {
-    // One login endpoint for both Administrator and Staff
-    const response = await fetch(
-      "http://127.0.0.1:8000/api/login",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          username: username,
-          password: password,
-        }),
-      }
-    );
+    // Log in through Laravel
+    const response = await fetch(`${API_URL}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        username,
+        password,
+      }),
+    });
 
     const data = await response.json();
 
@@ -22,18 +22,43 @@ export const loginUser = async (username, password) => {
       return {
         success: false,
         user: null,
-        message: data.message || "Invalid username or password",
+        message: data.message || "Invalid username or password.",
       };
     }
 
+    // Sanctum must return a token
+    if (!data.token) {
+      return {
+        success: false,
+        user: null,
+        message: "Login succeeded, but the server did not return an authentication token.",
+      };
+    }
+
+    const token = data.token;
     let loggedInUser;
 
     // =========================
     // STAFF LOGIN
     // =========================
     if (data.user_type === "Staff") {
+      if (!data.staff?.staff_id) {
+        return {
+          success: false,
+          user: null,
+          message: "Staff information was not returned by the server.",
+        };
+      }
+
+      // Request staff permissions using the Sanctum token
       const permissionResponse = await fetch(
-        `http://127.0.0.1:8000/api/staff/${data.staff.staff_id}/permissions`
+        `${API_URL}/staff/${data.staff.staff_id}/permissions`,
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       if (!permissionResponse.ok) {
@@ -75,7 +100,9 @@ export const loginUser = async (username, password) => {
       };
     }
 
-    // Save logged-in user
+    // Save the token separately from the user information
+    localStorage.setItem("authToken", token);
+
     localStorage.setItem(
       "currentUser",
       JSON.stringify(loggedInUser)
@@ -85,24 +112,59 @@ export const loginUser = async (username, password) => {
       success: true,
       user: loggedInUser,
     };
-
   } catch (error) {
     console.error("Login error:", error);
 
     return {
       success: false,
       user: null,
-      message: "Cannot connect to server",
+      message: "Cannot connect to server.",
     };
   }
 };
 
+// Get the currently logged-in user
 export const getCurrentUser = () => {
   const user = localStorage.getItem("currentUser");
 
-  return user ? JSON.parse(user) : null;
+  if (!user) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(user);
+  } catch (error) {
+    console.error("Error reading current user:", error);
+    return null;
+  }
 };
 
+// Get the saved Sanctum token for authenticated API requests
+export const getAuthToken = () => {
+  return localStorage.getItem("authToken");
+};
+
+// Clear local login information
 export const logoutUser = () => {
   localStorage.removeItem("currentUser");
+  localStorage.removeItem("authToken");
+};
+
+
+export const authFetch = async (url, options = {}) => {
+  const token = getAuthToken();
+
+  const headers = {
+    Accept: "application/json",
+    ...options.headers,
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return fetch(url, {
+    ...options,
+    headers,
+  });
 };

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { emptyVaccine } from "../model/VaccineModel";
+import { authFetch } from "./AuthController";
 
 function VaccineController() {
   const [vaccines, setVaccines] = useState([]);
@@ -95,7 +96,7 @@ function VaccineController() {
   // =========================================================
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/vaccines")
+    authFetch("http://127.0.0.1:8000/api/vaccines")
       .then((response) => response.json())
       .then((data) => {
         const formattedVaccines = data.map(
@@ -214,7 +215,7 @@ function VaccineController() {
         ? `http://127.0.0.1:8000/api/vaccines/${editingId}`
         : "http://127.0.0.1:8000/api/vaccines";
 
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method: isEditing
           ? "PUT"
           : "POST",
@@ -356,7 +357,7 @@ function VaccineController() {
     if (!confirmDelete) return;
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/vaccines/${id}`,
         {
           method: "DELETE",

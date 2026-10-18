@@ -15,6 +15,7 @@ import {
   FaClock,
 } from "react-icons/fa";
 import Sidebar from "../View/Sidebar";
+import {authFetch} from "../Controller/AuthController";
 
 function Appointments() {
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -89,16 +90,16 @@ function Appointments() {
   // ==============================
 
   useEffect(() => {
-    fetchAppointments();
-    fetchParents();
-    fetchChildren();
-    fetchVaccines();
-    fetchStaff();
+    authFetchAppointments();
+    authFetchParents();
+    authFetchChildren();
+    authFetchVaccines();
+    authFetchStaff();
   }, []);
 
-  const fetchAppointments = async () => {
+  const authFetchAppointments = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/appointments");
+      const response = await authFetch("http://127.0.0.1:8000/api/appointments");
 
       const data = await response.json();
 
@@ -106,7 +107,7 @@ function Appointments() {
         setAppointments(data);
       }
     } catch (error) {
-      console.error("Error fetching appointments:", error);
+      console.error("Error authFetching appointments:", error);
     }
   };
 
@@ -124,9 +125,9 @@ function Appointments() {
     }
   }, [childFilterId, children]);
 
-  const fetchParents = async () => {
+  const authFetchParents = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/users");
+      const response = await authFetch("http://127.0.0.1:8000/api/users");
 
       const data = await response.json();
 
@@ -134,13 +135,13 @@ function Appointments() {
         setParents(data.filter((parent) => parent.status === "Active"));
       }
     } catch (error) {
-      console.error("Error fetching parents:", error);
+      console.error("Error authFetching parents:", error);
     }
   };
 
-  const fetchChildren = async () => {
+  const authFetchChildren = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/children");
+      const response = await authFetch("http://127.0.0.1:8000/api/children");
 
       const data = await response.json();
 
@@ -148,13 +149,13 @@ function Appointments() {
         setChildren(data);
       }
     } catch (error) {
-      console.error("Error fetching children:", error);
+      console.error("Error authFetching children:", error);
     }
   };
 
-  const fetchVaccines = async () => {
+  const authFetchVaccines = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/vaccines");
+      const response = await authFetch("http://127.0.0.1:8000/api/vaccines");
 
       const data = await response.json();
 
@@ -162,13 +163,13 @@ function Appointments() {
         setVaccines(data);
       }
     } catch (error) {
-      console.error("Error fetching vaccines:", error);
+      console.error("Error authFetching vaccines:", error);
     }
   };
 
-  const fetchStaff = async () => {
+  const authFetchStaff = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/staff");
+      const response = await authFetch("http://127.0.0.1:8000/api/staff");
 
       const data = await response.json();
 
@@ -180,7 +181,7 @@ function Appointments() {
         );
       }
     } catch (error) {
-      console.error("Error fetching staff:", error);
+      console.error("Error authFetching staff:", error);
     }
   };
 
@@ -618,7 +619,7 @@ function Appointments() {
       let response;
 
       if (editingId !== null) {
-        response = await fetch(
+        response = await authFetch(
           `http://127.0.0.1:8000/api/appointments/${editingId}`,
           {
             method: "PUT",
@@ -630,7 +631,7 @@ function Appointments() {
           },
         );
       } else {
-        response = await fetch("http://127.0.0.1:8000/api/appointments", {
+        response = await authFetch("http://127.0.0.1:8000/api/appointments", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -652,7 +653,7 @@ function Appointments() {
         return;
       }
 
-      await fetchAppointments();
+      await authFetchAppointments();
 
       clearForm();
     } catch (error) {
@@ -762,7 +763,7 @@ function Appointments() {
     });
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/appointments/${completionAppointment.appointment_id}`,
         {
           method: "PUT",
@@ -789,7 +790,7 @@ function Appointments() {
         return;
       }
 
-      await fetchAppointments();
+      await authFetchAppointments();
 
       closeCompletionPopup();
     } catch (error) {
@@ -832,7 +833,7 @@ function Appointments() {
     }
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/appointments/${id}`,
         {
           method: "PUT",
@@ -856,7 +857,7 @@ function Appointments() {
         return;
       }
 
-      await fetchAppointments();
+      await authFetchAppointments();
     } catch (error) {
       console.error("Error updating appointment status:", error);
     }
@@ -1263,7 +1264,7 @@ function Appointments() {
             onChange={(e) => setAppointmentTypeFilter(e.target.value)}
           >
             <option value="All">Appointment Types</option>
-            <option value="Vaccination">Vaccination</option>
+            <option value="Vaccination">Vaccination </option>
             <option value="General">General</option>
           </select>
 

@@ -4,11 +4,11 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\Child;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use HasApiTokens, Notifiable;
 
     protected $table = 'user';
 
@@ -30,6 +30,11 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
     ];
+
+    public function getAuthPasswordName(): string
+    {
+        return 'password';
+    }
 
     protected function casts(): array
     {

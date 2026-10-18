@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable([
     'Admin_name',
@@ -11,8 +12,10 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
     'Admin_password',
     'Admin_role',
 ])]
-class Admin extends Model
+class Admin extends Authenticatable
 {
+    use HasApiTokens;
+
     protected $table = 'admin';
 
     protected $primaryKey = 'Admin_id';
@@ -22,6 +25,11 @@ class Admin extends Model
     protected $hidden = [
         'Admin_password',
     ];
+
+    public function getAuthPasswordName(): string
+    {
+        return 'Admin_password';
+    }
 
     public function appointments()
     {

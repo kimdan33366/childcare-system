@@ -1,3 +1,4 @@
+
 import "../css/Dashboard.css";
 
 import { NavLink } from "react-router-dom";
@@ -21,6 +22,7 @@ import {
 import Sidebar from "../View/Sidebar";
 
 import { COLORS } from "../Model/DashboardModel";
+import { authFetch } from "../Controller/AuthController";
 
 function Dashboard() {
   const [dashboardData, setDashboardData] = useState({
@@ -45,7 +47,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch(
+        const response = await authFetch(
           "http://127.0.0.1:8000/api/dashboard"
         );
 
@@ -69,7 +71,7 @@ function Dashboard() {
 
     const fetchAppointments = async () => {
       try {
-        const response = await fetch(
+        const response = await authFetch(
           "http://127.0.0.1:8000/api/appointments"
         );
 
@@ -88,7 +90,7 @@ function Dashboard() {
 
     const fetchMonthlyDoses = async () => {
       try {
-        const response = await fetch(
+        const response = await authFetch(
           "http://127.0.0.1:8000/api/reports"
         );
 
@@ -114,7 +116,7 @@ function Dashboard() {
 
     const fetchVaccines = async () => {
       try {
-        const response = await fetch(
+        const response = await authFetch(
           "http://127.0.0.1:8000/api/vaccines"
         );
 
@@ -220,17 +222,12 @@ function Dashboard() {
 
   return (
     <div className="dashboard">
-
       <Sidebar />
 
       <main className="dashboard-content">
-
-        {/* =====================================================
-            DASHBOARD SUMMARY CARDS
-        ===================================================== */}
+        {/* DASHBOARD SUMMARY CARDS */}
 
         <div className="dashboard-cards">
-
           <NavLink
             to="/patients"
             className="dashboard-card"
@@ -243,7 +240,6 @@ function Dashboard() {
 
             <h2>{dashboardData.children || 0}</h2>
           </NavLink>
-
 
           <NavLink
             to="/appointments"
@@ -258,7 +254,6 @@ function Dashboard() {
             <small>Appointments</small>
 
             <div className="dashboard-appointment-summary">
-
               <div className="dashboard-appointment-summary-item">
                 <strong>
                   {dashboardData.pending_appointments || 0}
@@ -282,10 +277,8 @@ function Dashboard() {
 
                 <span>Missed</span>
               </div>
-
             </div>
           </NavLink>
-
 
           <NavLink
             to="/user-management"
@@ -299,23 +292,14 @@ function Dashboard() {
 
             <h2>{dashboardData.active_user || 0}</h2>
           </NavLink>
-
-
-          
-
         </div>
 
-
-        {/* =====================================================
-            CHARTS
-        ===================================================== */}
+        {/* CHARTS */}
 
         <div className="dashboard-chart-row">
-
           {/* MONTHLY DOSES */}
 
           <div className="dashboard-chart-card">
-
             <h4>Monthly Doses</h4>
 
             <ResponsiveContainer
@@ -323,7 +307,6 @@ function Dashboard() {
               height="100%"
             >
               <PieChart>
-
                 <Pie
                   data={
                     monthlyDoses.length > 0
@@ -338,19 +321,15 @@ function Dashboard() {
                   paddingAngle={3}
                   label={false}
                 >
-
                   {(monthlyDoses.length > 0
                     ? monthlyDoses
                     : [{ name: "No Data", value: 0 }]
                   ).map((entry, index) => (
                     <Cell
                       key={`${entry.name}-${index}`}
-                      fill={
-                        COLORS[index % COLORS.length]
-                      }
+                      fill={COLORS[index % COLORS.length]}
                     />
                   ))}
-
                 </Pie>
 
                 <Tooltip />
@@ -365,17 +344,13 @@ function Dashboard() {
                     paddingTop: "10px",
                   }}
                 />
-
               </PieChart>
             </ResponsiveContainer>
-
           </div>
-
 
           {/* STATUS BREAKDOWN */}
 
           <div className="dashboard-chart-card">
-
             <h4>Status Breakdown</h4>
 
             <ResponsiveContainer
@@ -383,7 +358,6 @@ function Dashboard() {
               height="100%"
             >
               <PieChart>
-
                 <Pie
                   data={statusBreakdown}
                   dataKey="value"
@@ -395,18 +369,12 @@ function Dashboard() {
                   paddingAngle={3}
                   label={false}
                 >
-
-                  {statusBreakdown.map(
-                    (entry, index) => (
-                      <Cell
-                        key={`${entry.name}-${index}`}
-                        fill={
-                          COLORS[index % COLORS.length]
-                        }
-                      />
-                    )
-                  )}
-
+                  {statusBreakdown.map((entry, index) => (
+                    <Cell
+                      key={`${entry.name}-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  ))}
                 </Pie>
 
                 <Tooltip />
@@ -422,55 +390,38 @@ function Dashboard() {
                     lineHeight: "20px",
                   }}
                 />
-
               </PieChart>
             </ResponsiveContainer>
-
           </div>
-
         </div>
 
-
-        {/* =====================================================
-            BOTTOM SECTION
-        ===================================================== */}
+        {/* BOTTOM SECTION */}
 
         <div className="dashboard-bottom-row">
-
-          {/* ===================================================
-              UPCOMING APPOINTMENTS
-          =================================================== */}
+          {/* UPCOMING APPOINTMENTS */}
 
           <div className="dashboard-appointments">
-
             <div className="dashboard-appointment-header">
-
               <h3>Upcoming Appointments</h3>
 
               <NavLink to="/appointments">
                 View All
               </NavLink>
-
             </div>
 
-
             <div className="dashboard-appointments-list">
-
               <div className="dashboard-appointment-row dashboard-appointment-header-row">
                 <span>Name</span>
                 <span>Date</span>
                 <span>Status</span>
               </div>
 
-
               {upcomingAppointments.length > 0 ? (
                 upcomingAppointments.map((item) => (
-
                   <div
                     className="dashboard-appointment-row"
                     key={item.appointment_id}
                   >
-
                     <span>
                       {getAppointmentChildNames(item)}
                     </span>
@@ -488,52 +439,36 @@ function Dashboard() {
                     >
                       {item.status || "Pending"}
                     </span>
-
                   </div>
-
                 ))
               ) : (
-
                 <div className="dashboard-empty-state">
                   No upcoming appointments.
                 </div>
-
               )}
-
             </div>
-
           </div>
 
-
-          {/* ===================================================
-              VACCINE INVENTORY
-          =================================================== */}
+          {/* VACCINE INVENTORY */}
 
           <div className="dashboard-inventory">
-
             <div className="dashboard-inventory-header">
-
               <h3>Vaccine Inventory</h3>
 
               <NavLink to="/vaccines">
                 View All
               </NavLink>
-
             </div>
 
-
             <div className="dashboard-inventory-list">
-
               <div className="dashboard-inventory-item dashboard-inventory-header-row">
                 <span>Vaccine</span>
                 <span>Remaining</span>
                 <span>Status</span>
               </div>
 
-
               {lowStockVaccines.length > 0 ? (
                 lowStockVaccines.map((vaccine) => {
-
                   const stock = vaccine.currentStock;
 
                   let status = "Available";
@@ -545,21 +480,17 @@ function Dashboard() {
                   }
 
                   return (
-
                     <div
                       className="dashboard-inventory-item"
                       key={vaccine.vaccine_ID}
                     >
-
                       <span>
                         {vaccine.vaccine_name ||
                           vaccine.name ||
                           "Unknown Vaccine"}
                       </span>
 
-                      <span>
-                        {stock}
-                      </span>
+                      <span>{stock}</span>
 
                       <span
                         className={`inventory-status ${status
@@ -568,27 +499,18 @@ function Dashboard() {
                       >
                         {status}
                       </span>
-
                     </div>
-
                   );
                 })
               ) : (
-
                 <div className="dashboard-empty-state">
                   No low-stock vaccines.
                 </div>
-
               )}
-
             </div>
-
           </div>
-
         </div>
-
       </main>
-
     </div>
   );
 }

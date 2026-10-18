@@ -3,6 +3,7 @@ import "../css/Profile.css";
 
 import Sidebar from "../View/Sidebar";
 import { useState } from "react";
+import { authFetch } from "../Controller/AuthController";
 
 function Profile() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -225,7 +226,7 @@ function Profile() {
                     type="button"
                     onClick={async () => {
                       try {
-                        const response = await fetch(
+                        const response = await authFetch(
                           `http://127.0.0.1:8000/api/profile/${currentUser.Admin_id}`,
                           {
                             method: "PUT",

@@ -13,6 +13,7 @@ import {
 import Sidebar from "../View/Sidebar";
 
 import { defaultReminder } from "../Model/NotificationModel";
+import { authFetch } from "../Controller/AuthController";
 
 function Notification() {
   const [notifications, setNotifications] = useState([]);
@@ -88,7 +89,7 @@ function Notification() {
 
   const fetchNotifications = async () => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         "http://127.0.0.1:8000/api/notifications",
       );
 
@@ -106,7 +107,7 @@ function Notification() {
 
   const fetchAppointments = async () => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         "http://127.0.0.1:8000/api/appointments",
       );
 
@@ -130,7 +131,7 @@ function Notification() {
 
   const fetchChildren = async () => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         "http://127.0.0.1:8000/api/children",
       );
 
@@ -490,7 +491,7 @@ function Notification() {
       let failed = 0;
 
       for (const child of appointmentChildren) {
-        const response = await fetch(
+        const response = await authFetch(
           "http://127.0.0.1:8000/api/notifications",
           {
             method: "POST",
@@ -587,7 +588,7 @@ function Notification() {
       let failed = 0;
 
       for (const childId of selectedChildren) {
-        const response = await fetch(
+        const response = await authFetch(
           "http://127.0.0.1:8000/api/notifications",
           {
             method: "POST",
@@ -668,7 +669,7 @@ function Notification() {
     setIsSending(true);
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         "http://127.0.0.1:8000/api/notifications/broadcast",
         {
           method: "POST",
@@ -754,7 +755,7 @@ function Notification() {
     setIsDeleting(true);
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/notifications/${selectedNotification.id}`,
         {
           method: "DELETE",

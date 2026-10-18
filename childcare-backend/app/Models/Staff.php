@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
-class Staff extends Model
+class Staff extends Authenticatable
 {
+    use HasApiTokens;
+
     protected $table = 'staff';
 
     protected $primaryKey = 'staff_id';
@@ -21,6 +24,11 @@ class Staff extends Model
     protected $hidden = [
         'staff_password',
     ];
+
+    public function getAuthPasswordName(): string
+    {
+        return 'staff_password';
+    }
 
     public function permissions()
     {

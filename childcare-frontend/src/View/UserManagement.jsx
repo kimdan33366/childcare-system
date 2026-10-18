@@ -3,6 +3,7 @@ import { FiEye, FiEdit2, FiKey, FiTrash2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import "../css/UserManagement.css";
+import { authFetch } from "../Controller/AuthController";
 
 function UserManagement() {
   // ==============================
@@ -104,7 +105,7 @@ function UserManagement() {
   // FETCH USERS
   // ==============================
   const fetchUsers = () => {
-    fetch("http://127.0.0.1:8000/api/users")
+    authFetch("http://127.0.0.1:8000/api/users")
       .then((response) => response.json())
       .then((data) => {
         const formattedUsers = data.map((user) => ({
@@ -292,7 +293,7 @@ function UserManagement() {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/users", {
+      const response = await authFetch("http://127.0.0.1:8000/api/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -373,7 +374,7 @@ function UserManagement() {
     }
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/users/${editUser.id}`,
         {
           method: "PUT",
@@ -539,7 +540,7 @@ function UserManagement() {
     }
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/users/${resetPasswordUser.id}`,
         {
           method: "PUT",
@@ -616,7 +617,7 @@ function UserManagement() {
       selectedUser.action === "deactivate" ? "Inactive" : "Active";
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `http://127.0.0.1:8000/api/users/${selectedUser.id}`,
         {
           method: "PUT",

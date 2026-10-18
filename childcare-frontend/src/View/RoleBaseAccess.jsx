@@ -8,6 +8,7 @@ FaTrash,
 } from "react-icons/fa";
 import Sidebar from "./Sidebar";
 import "../css/RoleBaseAccess.css";
+import {authFetch} from "../Controller/AuthController";
 
 function RoleBaseAccess() {
 const [showPermissions, setShowPermissions] = useState(false);
@@ -245,7 +246,7 @@ setSelectedStaff(staff);
 setPermissions([]);
 
 try {
-  const response = await fetch(
+  const response = await authFetch(
     `http://127.0.0.1:8000/api/staff/${staff.staff_id}/permissions`,
     {
       headers: {
@@ -283,7 +284,7 @@ return;
 }
 
 try {
-  const response = await fetch(
+  const response = await authFetch(
     `http://127.0.0.1:8000/api/staff/${selectedStaff.staff_id}/permissions`,
     {
       method: "PUT",
@@ -360,7 +361,7 @@ if (
 }
 
 try {
-  const response = await fetch(
+  const response = await authFetch(
     "http://127.0.0.1:8000/api/staff",
     {
       method: "POST",
@@ -466,7 +467,7 @@ if (
 }
 
 try {
-  const response = await fetch(
+  const response = await authFetch(
     `http://127.0.0.1:8000/api/staff/${selectedStaff.staff_id}`,
     {
       method: "PUT",
@@ -579,7 +580,7 @@ if (
 }
 
 try {
-  const response = await fetch(
+  const response = await authFetch(
     `http://127.0.0.1:8000/api/staff/${selectedStaff.staff_id}/password`,
     {
       method: "PUT",
@@ -642,7 +643,7 @@ return;
 
 
 try {
-  const response = await fetch(
+  const response = await authFetch(
     `http://127.0.0.1:8000/api/staff/${selectedStaff.staff_id}/status`,
     {
       method: "PUT",
@@ -718,7 +719,7 @@ return;
 
 
 try {
-  const response = await fetch(
+  const response = await authFetch(
     `http://127.0.0.1:8000/api/staff/${selectedStaff.staff_id}`,
     {
       method: "DELETE",
@@ -773,7 +774,7 @@ try {
 useEffect(() => {
 const loadStaff = async () => {
 try {
-const response = await fetch(
+const response = await authFetch(
 "http://127.0.0.1:8000/api/staff",
 {
 headers: {
@@ -785,7 +786,7 @@ Accept: "application/json",
 
     if (!response.ok) {
       throw new Error(
-        "Failed to fetch staff.",
+        "Failed to authFetch staff.",
       );
     }
 
@@ -798,7 +799,7 @@ Accept: "application/json",
     );
   } catch (error) {
     console.error(
-      "Error fetching staff:",
+      "Error authFetching staff:",
       error,
     );
   } finally {

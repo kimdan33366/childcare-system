@@ -13,21 +13,33 @@ import {
   FaSignOutAlt,
   FaUserCircle,
   FaUser,
-  FaQuestionCircle,
 } from "react-icons/fa";
+
+import { logoutUser } from "../Controller/AuthController";
 
 function Sidebar() {
   const navigate = useNavigate();
 
-  // Get current logged-in user
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  // Get current logged-in user safely
+  const storedUser = localStorage.getItem("currentUser");
+
+  let currentUser = null;
+
+  try {
+    currentUser = storedUser ? JSON.parse(storedUser) : null;
+  } catch (error) {
+    console.error("Unable to read logged-in user:", error);
+  }
 
   // Check if the logged-in user is Admin
   const isAdmin = currentUser?.user_type === "Admin";
 
   const handleLogout = () => {
-    alert("Logged out!");
-    navigate("/login");
+    // Clear the user information and Sanctum token
+    logoutUser();
+
+    // Return to the login page
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -55,7 +67,7 @@ function Sidebar() {
           </NavLink>
         </div>
 
-        {/* PATIENT CARE */}
+        {/* CHILD CARE */}
         <div className="nav-section">
           <span className="nav-section-title">CHILD CARE</span>
 
@@ -79,14 +91,11 @@ function Sidebar() {
         <div className="nav-section">
           <span className="nav-section-title">ADMINISTRATION</span>
 
-          {/* Admin only */}
-
           <NavLink to="/patients">
             <FaUserFriends />
             Children
           </NavLink>
 
-          {/* Admin only */}
           {isAdmin && (
             <NavLink to="/role-base-access">
               <FaUser />
@@ -94,7 +103,6 @@ function Sidebar() {
             </NavLink>
           )}
 
-          {/* Everyone */}
           <NavLink to="/report">
             <FaChartBar />
             Reports
@@ -114,12 +122,7 @@ function Sidebar() {
           Profile
         </NavLink>
 
-        {/* <NavLink to="/help">
-          <FaQuestionCircle />
-          Help & Feedback
-        </NavLink> */}
-
-        <button onClick={handleLogout}>
+        <button type="button" onClick={handleLogout}>
           <FaSignOutAlt />
           <span>Logout</span>
         </button>

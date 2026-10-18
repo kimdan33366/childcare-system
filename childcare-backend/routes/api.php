@@ -107,3 +107,10 @@ Route::get('/test-email', function () {
         'message' => 'Test email sent!'
     ]);
 });
+
+Route::middleware('auth:sanctum')->get('/auth-test', function (\Illuminate\Http\Request $request) {
+    return response()->json([
+        'message' => 'Authenticated successfully.',
+        'user_id' => $request->user()->getKey(),
+    ]);
+});
