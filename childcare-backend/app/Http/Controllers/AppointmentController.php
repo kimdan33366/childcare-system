@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
+use App\Models\ExpectedAppointment;
 use App\Models\PatientRecord;
 use App\Models\Vaccine;
 use App\Models\GrowthRecord;
@@ -99,8 +100,10 @@ class AppointmentController extends Controller
              * generate the corresponding patient vaccination records.
              */
             if ($status === 'Completed') {
-                $this->createPatientRecordsFromAppointment($appointment);
-            }
+    $this->createPatientRecordsFromAppointment($appointment);
+
+    $this->generateExpectedAppointments($appointment);
+}
 
             DB::commit();
 
@@ -189,23 +192,6 @@ class AppointmentController extends Controller
             $newStatus = $request->has('status')
                 ? $request->status
                 : $oldStatus;
-
-            /*
-             * Completed appointments are historical records.
-             *
-             * Do not allow their children or vaccines to be changed.
-             */
-            if (
-                $oldStatus === 'Completed' &&
-                (
-                    $request->has('child_ids') ||
-                    $request->has('vaccines')
-                )
-            ) {
-                throw new \Exception(
-                    'Completed appointments cannot have their children or vaccines changed.'
-                );
-            }
 
             /*
              * Load the old appointment relationships before changing them.
@@ -351,6 +337,7 @@ class AppointmentController extends Controller
                 $appointment->refresh();
 
                 $this->createPatientRecordsFromAppointment($appointment);
+                $this->generateExpectedAppointments($appointment);
             }
                 if ($request->has('growth_records')) {
     foreach ($request->growth_records as $growth) {
@@ -599,6 +586,51 @@ class AppointmentController extends Controller
             }
         }
     }
+
+    
+    /**
+     * Generate expected follow-up appointments 28 days
+     * after a completed vaccination appointment.
+     *
+     * This does not create Pending appointments
+     * or modify vaccine stock.
+     */
+    private function generateExpectedAppointments(
+        Appointment $appointment
+    ): void {
+        if (
+            $appointment->status !== 'Completed' ||
+            $appointment->appointment_type !== 'Vaccination'
+        ) {
+            return;
+        }
+
+        $appointment->load('children');
+
+        $expectedDate = \Carbon\Carbon::parse(
+            $appointment->appointment_date
+        )->addDays(28)->toDateString();
+
+        foreach ($appointment->children as $child) {
+            if ($child->status !== 'Continuing') {
+                continue;
+            }
+
+            ExpectedAppointment::firstOrCreate(
+                [
+                    'source_appointment_id' =>
+                        $appointment->appointment_id,
+                    'child_id' => $child->child_id,
+                ],
+                [
+                    'expected_date' => $expectedDate,
+                    'expected_time' => $appointment->appointment_time,
+                    'status' => 'Awaiting Confirmation',
+                ]
+            );
+        }
+    }
+
 
     // Historical appointments should not be deleted
     public function destroy($id)

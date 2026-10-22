@@ -99,7 +99,7 @@ function Sidebar() {
           {isAdmin && (
             <NavLink to="/role-base-access">
               <FaUser />
-              Staff & Permissions
+              Roles & Permissions
             </NavLink>
           )}
 

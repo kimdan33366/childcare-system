@@ -13,6 +13,8 @@ import {
   FaSyringe,
   FaMapMarkerAlt,
   FaClock,
+  FaCheck,
+  FaCalendarPlus,
 } from "react-icons/fa";
 import Sidebar from "../View/Sidebar";
 import {authFetch} from "../Controller/AuthController";
@@ -36,6 +38,13 @@ function Appointments() {
   // ==============================
 
   const [appointments, setAppointments] = useState([]);
+  const [expectedAppointments, setExpectedAppointments] = useState([]);
+  const [expectedAppointmentsError, setExpectedAppointmentsError] = useState("");
+  const [selectedExpectedGroup, setSelectedExpectedGroup] = useState(null);
+  const [expectedDialog, setExpectedDialog] = useState(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+
   const [parents, setParents] = useState([]);
   const [children, setChildren] = useState([]);
   const [vaccines, setVaccines] = useState([]);
@@ -91,11 +100,31 @@ function Appointments() {
 
   useEffect(() => {
     authFetchAppointments();
+    authFetchExpectedAppointments();
     authFetchParents();
     authFetchChildren();
     authFetchVaccines();
     authFetchStaff();
   }, []);
+
+  // Expected appointments are separate from actual Pending appointments.
+  const authFetchExpectedAppointments = async () => {
+    try {
+      const response = await authFetch(
+        "http://127.0.0.1:8000/api/expected-appointments",
+      );
+      if (!response.ok) {
+        setExpectedAppointmentsError("Unable to load expected appointments.");
+        return;
+      }
+      const data = await response.json();
+      setExpectedAppointments(Array.isArray(data) ? data : []);
+      setExpectedAppointmentsError("");
+    } catch (error) {
+      console.error("Error fetching expected appointments:", error);
+      setExpectedAppointmentsError("Unable to load expected appointments.");
+    }
+  };
 
   const authFetchAppointments = async () => {
     try {
@@ -791,6 +820,7 @@ function Appointments() {
       }
 
       await authFetchAppointments();
+      await authFetchExpectedAppointments();
 
       closeCompletionPopup();
     } catch (error) {
@@ -1280,6 +1310,148 @@ function Appointments() {
             </button>
           )}
         </div>
+
+        {/* EXPECTING APPOINTMENTS — GROUPED CHILDREN */}
+        <section className="expected-appointments-section" aria-label="Expecting Appointments">
+          <div className="expected-appointments-heading">
+            <div>
+              <h3>Expecting Appointments</h3>
+              <p>Vaccination follow-ups awaiting Admin confirmation.</p>
+            </div>
+            <span className="expected-appointments-count">
+              {expectedAppointments.length} Expected
+            </span>
+          </div>
+          <div className="expected-appointments-table-container">
+            <div className="expected-appointments-scroll">
+            <table className="expected-appointments-table">
+              <thead>
+                <tr>
+                  <th>Date &amp; Time</th>
+                  <th>Parent / Guardian</th>
+                  <th>Children</th>
+                  <th>Appointment Type</th>
+                  <th>Clinic / Location</th>
+                  <th>Next Vaccines &amp; Doses</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expectedAppointmentsError ? (
+                  <tr><td colSpan={8} className="expected-appointments-empty">{expectedAppointmentsError}</td></tr>
+                ) : expectedAppointments.length === 0 ? (
+                  <tr><td colSpan={8} className="expected-appointments-empty">No expected appointments awaiting confirmation.</td></tr>
+                ) : expectedAppointments.map((expected) => {
+                  const members = expected.children || [];
+                  const source = expected.source_appointment;
+                  const parentNames = [...new Set(members.map(({ child }) =>
+                    child?.user?.user_fullname ||
+                    parents.find((parent) => Number(parent.user_id) === Number(child?.user_id))?.user_fullname ||
+                    "No parent assigned"
+                  ))];
+                  return (
+                    <tr key={`${expected.source_appointment_id}-${expected.expected_date}-${expected.expected_time}`}>
+                      <td><strong>{expected.expected_date || "—"}</strong><div>{expected.expected_time || "—"}</div></td>
+                      <td>{parentNames.join(", ")}</td>
+                      <td>{members.map(({ child }) => child?.child_name || "Unknown child").join(", ") || "No children"}</td>
+                      <td>Vaccination</td>
+                      <td>{source?.address || "Barangay Health Center"}</td>
+                      <td>
+                        <span style={{ color: "#64748b", fontSize: "12px" }}>
+                          Awaiting next-dose calculation
+                        </span>
+                      </td>
+                      <td><span className="expected-appointments-status">{expected.status || "Awaiting Confirmation"}</span></td>
+                      <td>
+                        {hasPermission("add_appointments") || hasPermission("edit_appointments") ? (
+                          <div style={{ display: "flex", gap: "8px", flexWrap: "nowrap", alignItems: "center", justifyContent: "center", minWidth: "90px" }}>
+                            <button type="button" className="appointment-table-action edit"
+                              title="Confirm expected appointment" aria-label="Confirm expected appointment"
+                              style={{ width: "34px", height: "34px", minWidth: "34px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#15803d", background: "#dcfce7" }}
+                              onClick={() => { setSelectedExpectedGroup(expected); setExpectedDialog("confirm"); }}>
+                              <FaCheck />
+                            </button>
+                            <button type="button" className="appointment-table-action view"
+                              title="Reschedule expected appointment" aria-label="Reschedule expected appointment"
+                              style={{ width: "34px", height: "34px", minWidth: "34px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#1d4ed8", background: "#dbeafe" }}
+                              onClick={() => {
+                                setSelectedExpectedGroup(expected);
+                                setRescheduleDate(expected.expected_date || "");
+                                setRescheduleTime(expected.expected_time?.slice(0, 5) || "");
+                                setExpectedDialog("reschedule");
+                              }}>
+                              <FaCalendarPlus />
+                            </button>
+                          </div>
+                        ) : <span>View only</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            </div>
+          </div>
+        </section>
+
+        {/* Expected appointment preview; no booking until the backend validates doses and stock. */}
+        {expectedDialog && selectedExpectedGroup && (
+          <div className="appointment-popup-overlay">
+            <div className="appointment-popup">
+              <div className="appointment-popup-header">
+                <div className="appointment-popup-title">
+                  <div className="appointment-popup-title-icon"><FaCalendarAlt /></div>
+                  <div>
+                    <h3>{expectedDialog === "confirm" ? "Confirm Expected Appointment" : "Reschedule Expected Appointment"}</h3>
+                    <p>{expectedDialog === "confirm" ? "Review all children before final confirmation." : "Choose a new date and time for this group."}</p>
+                  </div>
+                </div>
+                <button type="button" className="appointment-popup-close" aria-label="Close"
+                  onClick={() => { setExpectedDialog(null); setSelectedExpectedGroup(null); }}><FaTimes /></button>
+              </div>
+              <div className="appointment-popup-body">
+                <div className="appointment-form-section">
+                  <h4>Appointment Details</h4>
+                  <p>Location: {selectedExpectedGroup.source_appointment?.address || "Barangay Health Center"}</p>
+                  {expectedDialog === "confirm" ? (
+                    <p>Date: {selectedExpectedGroup.expected_date} | Time: {selectedExpectedGroup.expected_time}</p>
+                  ) : (
+                    <div className="appointment-details-grid">
+                      <div className="appointment-field"><label>Date</label><input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} /></div>
+                      <div className="appointment-field"><label>Time</label><input type="time" value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)} /></div>
+                    </div>
+                  )}
+                </div>
+                <div className="appointment-form-section">
+                  <h4>Children ({selectedExpectedGroup.children?.length || 0})</h4>
+                  {(selectedExpectedGroup.children || []).map(({ child, expected_appointment_id }) => (
+                    <div key={expected_appointment_id} style={{ padding: "10px 0", borderBottom: "1px solid #e2e8f0" }}>
+                      <strong>{child?.child_name || "Unknown child"}</strong>
+                      <div style={{ fontSize: "13px", color: "#64748b" }}>
+                        Parent: {child?.user?.user_fullname || parents.find((p) => Number(p.user_id) === Number(child?.user_id))?.user_fullname || "Unknown"}
+                      </div>
+                      <div style={{ fontSize: "13px", color: "#b45309" }}>Next vaccines and stock: not yet calculated</div>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ color: "#b45309", fontSize: "13px" }}>
+                  {expectedDialog === "confirm"
+                    ? "Final confirmation is unavailable until Laravel calculates each child's next doses and validates stock."
+                    : "Saving a rescheduled date requires a Laravel endpoint. No changes have been saved."}
+                </p>
+              </div>
+              <div className="appointment-popup-footer">
+                <div className="appointment-popup-actions">
+                  <button type="button" className="appointment-cancel" onClick={() => { setExpectedDialog(null); setSelectedExpectedGroup(null); }}>Close</button>
+                  <button type="button" className="set" disabled title="Backend endpoint required">
+                    {expectedDialog === "confirm" ? "Final Confirm" : "Save Reschedule"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* SINGLE APPOINTMENT TABLE */}
         <div className="appointment-table-container">

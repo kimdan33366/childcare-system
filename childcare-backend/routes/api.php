@@ -19,6 +19,7 @@ use App\Http\Controllers\StaffPermissionController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\GrowthRecordController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\ExpectedAppointmentController;
 
 Route::get('/children', [ChildController::class, 'index']);
 Route::get('/children/{id}', [ChildController::class, 'show']);
@@ -88,6 +89,9 @@ Route::put('/growth-record/{id}', [GrowthRecordController::class, 'update']);
 Route::delete('/growth-record/{id}', [GrowthRecordController::class, 'destroy']);
 
 Route::post('/login', [LoginController::class, 'login']);
+
+Route::get('/expected-appointments', [ExpectedAppointmentController::class,'index']);
+Route::post('/expected-appointments/generate', [ExpectedAppointmentController::class,'generate']);
 
 Route::get(
     '/staff/{staffId}/permissions',
