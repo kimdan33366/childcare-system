@@ -69,6 +69,8 @@ function UserManagement() {
   // Used for Activate / Deactivate
   // ==============================
   const [selectedUser, setSelectedUser] = useState(null);
+  const [deactivationReason, setDeactivationReason] = useState("");
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
 
   // ==============================
   // EDIT USER
@@ -591,6 +593,7 @@ function UserManagement() {
       return;
     }
 
+    setDeactivationReason("");
     setSelectedUser({
       ...user,
       action: user.status === "Active" ? "deactivate" : "activate",
@@ -604,38 +607,51 @@ function UserManagement() {
   // CHANGE USER STATUS
   // ==============================
   const handleStatusChange = async () => {
-    if (!hasPermission("edit_users")) {
-      alert("You do not have permission to edit users.");
+    if (!hasPermission("edit_users") || !selectedUser || isChangingStatus) {
       return;
     }
 
-    if (!selectedUser) {
-      return;
+    const isDeactivating = selectedUser.action === "deactivate";
+
+    if (isDeactivating) {
+      if (!selectedUser.email?.trim()) {
+        alert("This parent has no registered email address. Add an email before deactivating.");
+        return;
+      }
+
+      if (deactivationReason.trim().length < 5) {
+        alert("Please enter a reason with at least 5 characters.");
+        return;
+      }
     }
 
-    const newStatus =
-      selectedUser.action === "deactivate" ? "Inactive" : "Active";
+    setIsChangingStatus(true);
 
     try {
-      const response = await authFetch(
-        `http://127.0.0.1:8000/api/users/${selectedUser.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
+      const url = isDeactivating
+        ? `http://127.0.0.1:8000/api/users/${selectedUser.id}/deactivate-with-notice`
+        : `http://127.0.0.1:8000/api/users/${selectedUser.id}`;
+
+      const body = isDeactivating
+        ? { reason: deactivationReason.trim() }
+        : {
             user_fullname: selectedUser.name,
             email: selectedUser.email || null,
             date_of_birth: selectedUser.date_of_birth || null,
             gender: selectedUser.gender || null,
             address: selectedUser.address || "",
             mobile_number: selectedUser.mobile,
-            status: newStatus,
-          }),
-        }
-      );
+            status: "Active",
+          };
+
+      const response = await authFetch(url, {
+        method: isDeactivating ? "POST" : "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(body),
+      });
 
       const data = await response.json();
 
@@ -645,16 +661,18 @@ function UserManagement() {
       }
 
       setSelectedUser(null);
+      setDeactivationReason("");
       fetchUsers();
-
       alert(
-        newStatus === "Active"
-          ? "User activated successfully."
-          : "User deactivated successfully."
+        isDeactivating
+          ? "Deactivation notice sent and user deactivated successfully."
+          : "User activated successfully."
       );
     } catch (error) {
       console.error("Error changing user status:", error);
-      alert("Unable to connect to the server.");
+      alert("Unable to complete the request. Please check the server and notification history before retrying.");
+    } finally {
+      setIsChangingStatus(false);
     }
   };
 
@@ -694,11 +712,7 @@ function UserManagement() {
             <p>Manage registered parent accounts and access.</p>
           </div>
 
-          {hasPermission("add_users") && (
-            <button className="add-user-button" onClick={openAddUser}>
-              + Add User
-            </button>
-          )}
+          
         </div>
 
         {/* SUMMARY CARDS */}
@@ -740,6 +754,11 @@ function UserManagement() {
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
           </select>
+          {hasPermission("add_users") && (
+            <button className="add-user-button" onClick={openAddUser}>
+              + Add User
+            </button>
+          )}
         </div>
 
         {/* USER TABLE */}
@@ -1574,75 +1593,101 @@ function UserManagement() {
           </div>
         )}
 
-        {/* ==============================
-            ACTIVATE / DEACTIVATE MODAL
-        ============================== */}
+        {/* ACTIVATE / DEACTIVATE MODAL */}
         {selectedUser?.action && hasPermission("edit_users") && (
           <div className="user-modal-overlay">
-            <div className="user-modal">
+            <div className="user-modal user-status-notice-modal">
               <div className="user-modal-header">
                 <div>
                   <h2>
                     {selectedUser.action === "deactivate"
-                      ? "Deactivate User"
+                      ? "Account Deactivation Notice"
                       : "Activate User"}
                   </h2>
-
                   <p>
                     {selectedUser.action === "deactivate"
-                      ? "This user will no longer be able to access the system."
+                      ? "Compose an email notice before deactivating this parent's account."
                       : "This user will be allowed to access the system again."}
                   </p>
                 </div>
-
                 <button
                   type="button"
                   className="user-modal-close"
                   onClick={() => setSelectedUser(null)}
+                  disabled={isChangingStatus}
+                  aria-label="Close"
                 >
                   ×
                 </button>
               </div>
 
-              <div className="user-details">
-                <div className="user-detail-item">
-                  <span>User</span>
-                  <strong>{selectedUser.name}</strong>
+              {selectedUser.action === "deactivate" ? (
+                <div className="user-deactivation-composer">
+                  <div className="user-form-group">
+                    <label>Recipient</label>
+                    <input type="text" value={selectedUser.name} readOnly />
+                  </div>
+                  <div className="user-form-group">
+                    <label>Email address</label>
+                    <input type="email" value={selectedUser.email || "No email registered"} readOnly />
+                  </div>
+                  <div className="user-form-group">
+                    <label>Subject</label>
+                    <input type="text" value="Account Deactivation Notice" readOnly />
+                  </div>
+                  <div className="user-form-group">
+                    <label htmlFor="deactivation-reason">Reason for deactivation *</label>
+                    <textarea
+                      id="deactivation-reason"
+                      className="user-deactivation-reason"
+                      value={deactivationReason}
+                      onChange={(e) => setDeactivationReason(e.target.value)}
+                      placeholder="Explain why the parent's account is being deactivated..."
+                      rows={5}
+                      maxLength={2000}
+                      disabled={isChangingStatus}
+                    />
+                  </div>
+                  <p className="user-deactivation-help">
+                    The notice will be saved in Sent Notifications and emailed to the parent.
+                    Their account and registered children will be set to Inactive after the email is sent.
+                  </p>
                 </div>
-
-                <div
-                  className="user-detail-item"
-                  style={{ marginTop: "15px" }}
-                >
-                  <span>Current Status</span>
-
-                  <span
-                    className={`user-status ${(
-                      selectedUser.status || ""
-                    ).toLowerCase()}`}
-                  >
-                    {selectedUser.status}
-                  </span>
+              ) : (
+                <div className="user-details">
+                  <div className="user-detail-item">
+                    <span>User</span>
+                    <strong>{selectedUser.name}</strong>
+                  </div>
+                  <div className="user-detail-item">
+                    <span>Current Status</span>
+                    <span className={`user-status ${(selectedUser.status || "").toLowerCase()}`}>
+                      {selectedUser.status}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="user-modal-actions">
                 <button
                   type="button"
                   className="user-cancel-button"
                   onClick={() => setSelectedUser(null)}
+                  disabled={isChangingStatus}
                 >
                   Cancel
                 </button>
-
                 <button
                   type="button"
                   className="user-create-button"
                   onClick={handleStatusChange}
+                  disabled={isChangingStatus || (selectedUser.action === "deactivate" && (!selectedUser.email?.trim() || deactivationReason.trim().length < 5))}
                 >
-                  {selectedUser.action === "deactivate"
-                    ? "Deactivate User"
-                    : "Activate User"}
+                  {isChangingStatus
+                    ? "Processing..."
+                    : selectedUser.action === "deactivate"
+                      ? "Send Notice & Deactivate"
+                      : "Activate User"}
                 </button>
               </div>
             </div>

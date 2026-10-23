@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../css/forgotpassword.css";
 import logo1 from "../images/logo1.png";
+import { FaEnvelope, FaArrowRight, FaArrowLeft, FaLock, FaEye, FaEyeSlash, FaShieldAlt, FaCheck } from "react-icons/fa";
 
 function ForgotPassword() {
   const navigate = useNavigate();
@@ -256,380 +257,87 @@ function ForgotPassword() {
   };
 
 
+  const titles = ["", "Forgot Password?", "Verify Your Email", "Reset Password"];
+  const subtitles = ["", "Don't worry. We'll help you reset your password.", "Enter the verification code sent to your email.", "Choose a secure new password for your account."];
+
   return (
-    <div className="forgot-page">
+    <main className="forgot-page">
+      <section className="forgot-container">
+        <aside className="forgot-left">
+          <div className="forgot-branding">
+            <h1>childcare</h1>
+            <p className="forgot-brand-subtitle">IMMUNIZATION SYSTEM</p>
+            <p className="forgot-tagline">Together for<br />Healthier Generations</p>
+            <span className="forgot-accent" />
+          </div>
+          <div className="forgot-illustration"><img src={logo1} alt="Childcare Immunization System" /></div>
+          <div className="forgot-waves" aria-hidden="true"><span /><span /></div>
+        </aside>
 
-      <div className="forgot-container">
-
-        {/* =====================================
-            LEFT SIDE
-        ====================================== */}
-
-        <div className="forgot-left">
-
-          <img
-            src={logo1}
-            alt="ChildCare Logo"
-            className="forgot-logo"
-          />
-
-        </div>
-
-
-        {/* =====================================
-            RIGHT SIDE
-        ====================================== */}
-
-        <div className="forgot-right">
-
+        <section className="forgot-right">
           <div className="forgot-content">
-
-            {/* BRAND */}
-
-            <div className="forgot-brand">
-
-              <h1>childcare</h1>
-
-              <h2>Forgot Password</h2>
-
+            <div className="forgot-header">
+              <div className="forgot-mobile-brand">childcare <small>IMMUNIZATION SYSTEM</small></div>
+              <h2>{titles[step]}</h2>
+              <p>{subtitles[step]}</p>
             </div>
-
-
-            {/* =================================
-                STEP INDICATOR
-            ================================== */}
-
-            <div className="step-indicator">
-
-              <div
-                className={`step ${
-                  step >= 1 ? "active" : ""
-                }`}
-              >
-                <div className="step-number">
-                  {step > 1 ? "✓" : "1"}
-                </div>
-
-                <span>Email</span>
-              </div>
-
-
-              <div
-                className={`step-line ${
-                  step >= 2 ? "active" : ""
-                }`}
-              ></div>
-
-
-              <div
-                className={`step ${
-                  step >= 2 ? "active" : ""
-                }`}
-              >
-                <div className="step-number">
-                  {step > 2 ? "✓" : "2"}
-                </div>
-
-                <span>Verify OTP</span>
-              </div>
-
-
-              <div
-                className={`step-line ${
-                  step >= 3 ? "active" : ""
-                }`}
-              ></div>
-
-
-              <div
-                className={`step ${
-                  step >= 3 ? "active" : ""
-                }`}
-              >
-                <div className="step-number">
-                  3
-                </div>
-
-                <span>Reset</span>
-              </div>
-
+            <div className="step-indicator" aria-label={`Step ${step} of 3`}>
+              {[1, 2, 3].map((number) => (
+                <React.Fragment key={number}>
+                  {number > 1 && <div className={`step-line ${step >= number ? "active" : ""}`} />}
+                  <div className={`step ${step >= number ? "active" : ""}`}>
+                    <div className="step-number">{step > number ? <FaCheck /> : number}</div>
+                    <span>{["", "Email", "Verify OTP", "Reset"][number]}</span>
+                  </div>
+                </React.Fragment>
+              ))}
             </div>
-
-
-            {/* =================================
-                MESSAGE
-            ================================== */}
-
-            {message && (
-              <div className="forgot-message success">
-                {message}
-              </div>
-            )}
-
-            {error && (
-              <div className="forgot-message error">
-                {error}
-              </div>
-            )}
-
-
-            {/* =================================
-                STEP 1 — EMAIL
-            ================================== */}
+            {message && <div className="forgot-message success" role="status">{message}</div>}
+            {error && <div className="forgot-message error" role="alert">{error}</div>}
 
             {step === 1 && (
-
               <div className="forgot-step-content">
-
-                <p className="forgot-description">
-                  Enter your email address and we'll send
-                  you a 6-digit OTP to reset your password.
-                </p>
-
+                <div className="forgot-info"><FaEnvelope /><span>Enter your email address and we'll send you a 6-digit OTP to reset your password.</span></div>
                 <form onSubmit={handleSendOTP}>
-
-                  <label>Email</label>
-
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) =>
-                      setEmail(e.target.value)
-                    }
-                    required
-                  />
-
-                  <button
-                    className="forgot-btn"
-                    type="submit"
-                    disabled={loading}
-                  >
-                    {loading ? "SENDING..." : "SEND OTP"}
-                  </button>
-
+                  <label htmlFor="forgot-email">Email Address</label>
+                  <div className="forgot-input-wrap"><FaEnvelope /><input id="forgot-email" type="email" autoComplete="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+                  <button className="forgot-btn" type="submit" disabled={loading}>{loading ? "Sending..." : "Send OTP"}<FaArrowRight /></button>
                 </form>
-
-                <button
-                  className="back-login-btn"
-                  onClick={() => navigate("/login")}
-                >
-                  Back to Login
-                </button>
-
+                <button className="back-login-btn" type="button" onClick={() => navigate("/login")}><FaArrowLeft /> Back to Login</button>
               </div>
-
             )}
-
-
-            {/* =================================
-                STEP 2 — OTP
-            ================================== */}
 
             {step === 2 && (
-
               <div className="forgot-step-content">
-
-                <p className="forgot-description">
-                  Enter the 6-digit OTP that was sent to
-                  <br />
-
-                  <strong>{email}</strong>
-                </p>
-
+                <div className="forgot-info"><FaEnvelope /><span>We've sent a 6-digit verification code to <strong>{email}</strong></span></div>
                 <form onSubmit={handleVerifyOTP}>
-
-                  <label>Verification Code</label>
-
-                  <input
-                    type="text"
-                    className="otp-input"
-                    placeholder="Enter 6-digit OTP"
-                    value={otp}
-                    maxLength="6"
-                    onChange={(e) =>
-                      setOtp(
-                        e.target.value.replace(
-                          /\D/g,
-                          ""
-                        )
-                      )
-                    }
-                    required
-                  />
-
-                  <button
-                    className="forgot-btn"
-                    type="submit"
-                    disabled={loading}
-                  >
-                    {loading
-                      ? "VERIFYING..."
-                      : "VERIFY OTP"}
-                  </button>
-
+                  <label htmlFor="forgot-otp">Verification Code</label>
+                  <div className="forgot-input-wrap"><FaShieldAlt /><input id="forgot-otp" className="otp-input" type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="000000" value={otp} maxLength={6} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} required /></div>
+                  <button className="forgot-btn" type="submit" disabled={loading}>{loading ? "Verifying..." : "Verify OTP"}<FaArrowRight /></button>
                 </form>
-
-
-                <div className="resend-container">
-
-                  <span>
-                    Didn't receive the OTP?
-                  </span>
-
-                  {resendCooldown > 0 ? (
-
-                    <span className="resend-disabled">
-                      Resend in {resendCooldown}s
-                    </span>
-
-                  ) : (
-
-                    <button
-                      className="resend-btn"
-                      onClick={handleResendOTP}
-                    >
-                      Resend OTP
-                    </button>
-
-                  )}
-
-                </div>
-
-
-                <button
-                  className="back-step-btn"
-                  onClick={handleBack}
-                >
-                  ← Change Email
-                </button>
-
+                <div className="resend-container"><span>Didn't receive the code?</span>{resendCooldown > 0 ? <span className="resend-disabled">Resend in {resendCooldown}s</span> : <button className="resend-btn" type="button" disabled={loading} onClick={handleResendOTP}>Resend OTP</button>}</div>
+                <button className="back-step-btn" type="button" onClick={handleBack}><FaArrowLeft /> Change Email</button>
               </div>
-
             )}
-
-
-            {/* =================================
-                STEP 3 — RESET PASSWORD
-            ================================== */}
 
             {step === 3 && (
-
               <div className="forgot-step-content">
-
-                <p className="forgot-description">
-                  Create a new password for your account.
-                </p>
-
+                <div className="forgot-info"><FaLock /><span>Create a new password to securely access your account.</span></div>
                 <form onSubmit={handleResetPassword}>
-
-                  {/* NEW PASSWORD */}
-
-                  <label>New Password</label>
-
-                  <div className="password-field">
-
-                    <input
-                      type={
-                        showNewPassword
-                          ? "text"
-                          : "password"
-                      }
-                      placeholder="Enter new password"
-                      value={newPassword}
-                      onChange={(e) =>
-                        setNewPassword(e.target.value)
-                      }
-                      required
-                    />
-
-                    <button
-                      type="button"
-                      className="password-toggle"
-                      onClick={() =>
-                        setShowNewPassword(
-                          !showNewPassword
-                        )
-                      }
-                    >
-                      {showNewPassword ? "Hide" : "Show"}
-                    </button>
-
-                  </div>
-
-
-                  {/* CONFIRM PASSWORD */}
-
-                  <label>Confirm Password</label>
-
-                  <div className="password-field">
-
-                    <input
-                      type={
-                        showConfirmPassword
-                          ? "text"
-                          : "password"
-                      }
-                      placeholder="Confirm new password"
-                      value={confirmPassword}
-                      onChange={(e) =>
-                        setConfirmPassword(
-                          e.target.value
-                        )
-                      }
-                      required
-                    />
-
-                    <button
-                      type="button"
-                      className="password-toggle"
-                      onClick={() =>
-                        setShowConfirmPassword(
-                          !showConfirmPassword
-                        )
-                      }
-                    >
-                      {showConfirmPassword
-                        ? "Hide"
-                        : "Show"}
-                    </button>
-
-                  </div>
-
-
-                  <button
-                    className="forgot-btn"
-                    type="submit"
-                    disabled={loading}
-                  >
-                    {loading
-                      ? "RESETTING..."
-                      : "RESET PASSWORD"}
-                  </button>
-
+                  <label htmlFor="forgot-new-password">New Password</label>
+                  <div className="forgot-input-wrap password-field"><FaLock /><input id="forgot-new-password" type={showNewPassword ? "text" : "password"} placeholder="Enter new password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required /><button className="password-toggle" type="button" aria-label={showNewPassword ? "Hide password" : "Show password"} onClick={() => setShowNewPassword(!showNewPassword)}>{showNewPassword ? <FaEyeSlash /> : <FaEye />}</button></div>
+                  <label htmlFor="forgot-confirm-password">Confirm Password</label>
+                  <div className="forgot-input-wrap password-field"><FaLock /><input id="forgot-confirm-password" type={showConfirmPassword ? "text" : "password"} placeholder="Confirm new password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required /><button className="password-toggle" type="button" aria-label={showConfirmPassword ? "Hide password" : "Show password"} onClick={() => setShowConfirmPassword(!showConfirmPassword)}>{showConfirmPassword ? <FaEyeSlash /> : <FaEye />}</button></div>
+                  <button className="forgot-btn" type="submit" disabled={loading}>{loading ? "Resetting..." : "Reset Password"}<FaArrowRight /></button>
                 </form>
-
-
-                <button
-                  className="back-step-btn"
-                  onClick={handleBack}
-                >
-                  ← Back to OTP
-                </button>
-
+                <button className="back-step-btn" type="button" onClick={handleBack}><FaArrowLeft /> Back to OTP</button>
               </div>
-
             )}
-
           </div>
-
-        </div>
-
-      </div>
-
-    </div>
+        </section>
+      </section>
+    </main>
   );
 }
 
 export default ForgotPassword;
-

@@ -6,6 +6,10 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use App\Models\Notification;
+use App\Mail\NotificationMail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -319,4 +323,106 @@ public function login(Request $request)
             'message' => 'Parent accounts cannot be deleted because child, vaccination, growth, and appointment history must be preserved. Deactivate the account instead.'
         ], 403);
     }
+    
+public function deactivateWithNotice(Request $request, $id)
+{
+    $validated = $request->validate([
+        'reason' => 'required|string|min:5|max:2000',
+    ]);
+
+    // Only authenticated administrators can use this endpoint.
+    // Check if the logged-in account is an Admin
+$actor = $request->user();
+
+if (!$actor instanceof \App\Models\Admin) {
+    return response()->json([
+        'message' => 'Only administrators can deactivate accounts.',
+    ], 403);
+}
+
+    $user = User::with('children')->find($id);
+
+    if (!$user) {
+        return response()->json([
+            'message' => 'Parent account not found.',
+        ], 404);
+    }
+
+    if ($user->status !== 'Active') {
+        return response()->json([
+            'message' => 'This parent account is already inactive.',
+        ], 409);
+    }
+
+    if (empty($user->email)) {
+        return response()->json([
+            'message' => 'The parent has no registered email address.',
+        ], 422);
+    }
+
+    $message =
+        "Dear {$user->user_fullname},\n\n" .
+        "We are writing to inform you that your Child Care " .
+        "Immunization System account is being deactivated.\n\n" .
+        "Reason for deactivation:\n" .
+        trim($validated['reason']) . "\n\n" .
+        "You will no longer be able to access your account. " .
+        "If you have questions or believe this is a mistake, " .
+        "please contact the clinic.\n\n" .
+        "Thank you.";
+
+    $notification = Notification::create([
+        'child_id' => null,
+        'appointment_id' => null,
+        'child_name' => null,
+        'parent' => $user->user_fullname,
+        'phone' => $user->mobile_number,
+        'email' => $user->email,
+        'type' => 'Account Deactivation',
+        'message' => $message,
+        'status' => 'Pending',
+    ]);
+
+    try {
+        Mail::to($user->email)->send(
+            new NotificationMail($notification)
+        );
+
+        $notification->update([
+            'status' => 'Sent',
+        ]);
+
+    } catch (\Throwable $e) {
+        $notification->update([
+            'status' => 'Failed',
+        ]);
+
+        Log::error('Account deactivation email failed', [
+            'user_id' => $user->user_id,
+            'notification_id' => $notification->getKey(),
+            'error' => $e->getMessage(),
+        ]);
+
+        return response()->json([
+            'message' => 'The email could not be sent. The account remains active.',
+        ], 500);
+    }
+
+    DB::transaction(function () use ($user) {
+        $user->update([
+            'status' => 'Inactive',
+        ]);
+
+        $user->children()->update([
+            'status' => 'Inactive',
+        ]);
+    });
+
+    return response()->json([
+        'message' => 'Notice sent and parent account deactivated successfully.',
+        'notification' => $notification->fresh(),
+        'user' => $user->fresh()->load('children'),
+    ]);
+}
+
 }

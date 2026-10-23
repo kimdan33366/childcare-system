@@ -226,15 +226,7 @@ function Vaccine() {
             </p>
           </div>
 
-          {hasPermission("add_vaccines") && (
-            <button
-              className="vaccine-add-btn"
-              onClick={openAddModal}
-            >
-              <FaPlus />
-              Add Vaccine
-            </button>
-          )}
+          
 
         </div>
 
@@ -378,6 +370,15 @@ function Vaccine() {
             </option>
 
           </select>
+          {hasPermission("add_vaccines") && (
+            <button
+              className="vaccine-add-btn"
+              onClick={openAddModal}
+            >
+              <FaPlus />
+              Add Vaccine
+            </button>
+          )}
 
         </div>
 

@@ -57,6 +57,11 @@ class AppointmentController extends Controller
             $childIds = $request->child_ids ?? [];
             $vaccines = $request->vaccines ?? [];
 
+            // Prevent repeated completed doses before reserving stock.
+            if (in_array($status, ['Pending', 'Completed'])) {
+                $this->validateNoDuplicateCompletedDoses($childIds, $vaccines);
+            }
+
             /*
              * A Pending or Completed appointment reserves stock.
              *
@@ -244,6 +249,20 @@ class AppointmentController extends Controller
                 $request->has('child_ids') ||
                 $request->has('vaccines');
 
+            // Validate before releasing or reserving any vaccine stock.
+            // Recheck on completion because vaccination history may have changed
+            // since this appointment was originally created.
+            if (
+                in_array($newStatus, ['Pending', 'Completed']) &&
+                ($configurationChanged || $oldStatus !== $newStatus)
+            ) {
+                $this->validateNoDuplicateCompletedDoses(
+                    $newChildIds,
+                    $newVaccines,
+                    $appointment->appointment_id
+                );
+            }
+
             /*
              * If changing children/vaccines while still reserving stock,
              * release the old reservation first.
@@ -373,6 +392,59 @@ class AppointmentController extends Controller
             return response()->json([
                 'message' => $e->getMessage(),
             ], 422);
+        }
+    }
+
+    /**
+     * Reject vaccine doses already recorded as Completed for a child.
+     * The current appointment is excluded during updates so its own records
+     * are not mistaken for a separate appointment's completed dose.
+     * Existing historical records are never changed here.
+     */
+    private function validateNoDuplicateCompletedDoses(
+        array $childIds,
+        array $vaccines,
+        ?int $excludeAppointmentId = null
+    ): void {
+        $seen = [];
+
+        foreach (array_unique(array_map('intval', $childIds)) as $childId) {
+            foreach ($vaccines as $selectedVaccine) {
+                $vaccineId = (int) $selectedVaccine['vaccine_id'];
+                $doseNumber = (int) $selectedVaccine['dose_number'];
+                $key = "{$childId}:{$vaccineId}:{$doseNumber}";
+
+                // The same dose must not be listed twice in one request.
+                if (isset($seen[$key])) {
+                    throw new \Exception(
+                        "The same vaccine dose was selected more than once for child ID {$childId}."
+                    );
+                }
+                $seen[$key] = true;
+
+                $query = PatientRecord::where('child_id', $childId)
+                    ->where('vaccine_id', $vaccineId)
+                    ->where('dose_number', $doseNumber)
+                    ->where('status', 'Completed');
+
+                if ($excludeAppointmentId !== null) {
+                    $query->where(function ($q) use ($excludeAppointmentId) {
+                        $q->where('appointment_id', '!=', $excludeAppointmentId)
+                          ->orWhereNull('appointment_id');
+                    });
+                }
+
+                if ($query->exists()) {
+                    $vaccineName = Vaccine::where('vaccine_ID', $vaccineId)
+                        ->value('vaccine_name') ?? "Vaccine ID {$vaccineId}";
+
+                    throw new \Exception(
+                        "Duplicate completed dose: child ID {$childId} already has " .
+                        "{$vaccineName} Dose {$doseNumber} recorded as Completed. " .
+                        "Review the child's vaccination history before proceeding."
+                    );
+                }
+            }
         }
     }
 

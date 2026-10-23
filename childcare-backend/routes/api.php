@@ -20,6 +20,7 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\GrowthRecordController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ExpectedAppointmentController;
+use App\Models\PatientRecord;
 
 Route::get('/children', [ChildController::class, 'index']);
 Route::get('/children/{id}', [ChildController::class, 'show']);
@@ -33,6 +34,10 @@ Route::post('/users', [UserController::class, 'store']);
 Route::put('/users/{id}', [UserController::class, 'update']);
 Route::delete('/users/{id}', [UserController::class, 'destroy']);  
 Route::post('/users/login',[UserController::class,'login']);
+Route::post(
+    '/users/{id}/deactivate-with-notice',
+    [UserController::class, 'deactivateWithNotice']
+)->middleware('auth:sanctum');
 
 Route::get('/admins', [AdminController::class, 'index']);
 Route::post('/admins', [AdminController::class, 'store']);
@@ -92,6 +97,10 @@ Route::post('/login', [LoginController::class, 'login']);
 
 Route::get('/expected-appointments', [ExpectedAppointmentController::class,'index']);
 Route::post('/expected-appointments/generate', [ExpectedAppointmentController::class,'generate']);
+Route::put('/expected-appointments/reschedule', [ExpectedAppointmentController::class, 'reschedule']);
+Route::get('/expected-appointments/preview', [ExpectedAppointmentController::class, 'preview']);
+Route::post('/expected-appointments/confirm', [ExpectedAppointmentController::class, 'confirm']);
+
 
 Route::get(
     '/staff/{staffId}/permissions',
@@ -117,4 +126,17 @@ Route::middleware('auth:sanctum')->get('/auth-test', function (\Illuminate\Http\
         'message' => 'Authenticated successfully.',
         'user_id' => $request->user()->getKey(),
     ]);
+});
+Route::get('/children/{id}/completed-doses', function ($id) {
+    $completedDoses = PatientRecord::where('child_id', $id)
+        ->where('status', 'Completed')
+        ->whereNotNull('vaccine_id')
+        ->whereNotNull('dose_number')
+        ->get([
+            'vaccine_id',
+            'dose_number',
+            'date_taken',
+        ]);
+
+    return response()->json($completedDoses);
 });

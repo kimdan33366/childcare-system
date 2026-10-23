@@ -44,6 +44,13 @@ function Appointments() {
   const [expectedDialog, setExpectedDialog] = useState(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
+  const [savingExpectedReschedule, setSavingExpectedReschedule] = useState(false);
+  const [expectedActionError, setExpectedActionError] = useState("");
+  const [confirmPreview, setConfirmPreview] = useState(null);
+  const [confirmSelections, setConfirmSelections] = useState({});
+  const [loadingConfirmPreview, setLoadingConfirmPreview] = useState(false);
+  const [savingExpectedConfirm, setSavingExpectedConfirm] = useState(false);
+  const [expectedActionSuccess, setExpectedActionSuccess] = useState("");
 
   const [parents, setParents] = useState([]);
   const [children, setChildren] = useState([]);
@@ -92,6 +99,51 @@ function Appointments() {
   const [selectedChildren, setSelectedChildren] = useState([]);
 
   const [selectedVaccines, setSelectedVaccines] = useState([]);
+  // Completed doses are fetched from the Laravel patient_records table.
+  const [completedDoseMap, setCompletedDoseMap] = useState({});
+  const [completedDosesLoading, setCompletedDosesLoading] = useState(false);
+  const [completedDosesError, setCompletedDosesError] = useState("");
+
+  useEffect(() => {
+    if (!selectedChildren.length) {
+      setCompletedDoseMap({});
+      setCompletedDosesError("");
+      setCompletedDosesLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setCompletedDosesLoading(true);
+    setCompletedDosesError("");
+    Promise.all(selectedChildren.map(async (childId) => {
+      const response = await authFetch(
+        `http://127.0.0.1:8000/api/children/${childId}/completed-doses`
+      );
+      if (!response.ok) throw new Error(`Could not load completed doses for child ${childId}`);
+      const data = await response.json();
+      if (!Array.isArray(data)) throw new Error("Invalid completed-dose response");
+      return [String(childId), data];
+    })).then((entries) => {
+      if (!cancelled) setCompletedDoseMap(Object.fromEntries(entries));
+    }).catch((error) => {
+      if (!cancelled) {
+        setCompletedDoseMap({});
+        setCompletedDosesError(error.message || "Unable to load completed doses");
+      }
+    }).finally(() => { if (!cancelled) setCompletedDosesLoading(false); });
+    return () => { cancelled = true; };
+  }, [selectedChildren]);
+
+  const completedDoseUnavailable = (vaccineId, doseNumber) =>
+    selectedChildren.some((childId) =>
+      (completedDoseMap[String(childId)] || []).some((record) =>
+        Number(record.vaccine_id) === Number(vaccineId) &&
+        Number(record.dose_number) === Number(doseNumber)
+      )
+    );
+
+  const doseCheckPending = completedDosesLoading || Boolean(completedDosesError) ||
+    selectedChildren.some((childId) => !Object.hasOwn(completedDoseMap, String(childId)));
+
   const [parentSearch, setParentSearch] = useState("");
 
   // ==============================
@@ -106,6 +158,124 @@ function Appointments() {
     authFetchVaccines();
     authFetchStaff();
   }, []);
+
+  const saveExpectedReschedule = async () => {
+    if (!selectedExpectedGroup || savingExpectedReschedule) return;
+    if (!hasPermission("edit_appointments")) {
+      setExpectedActionError("Rescheduling requires edit_appointments permission.");
+      return;
+    }
+    if (!rescheduleDate || !rescheduleTime) {
+      setExpectedActionError("Please choose both a date and a time.");
+      return;
+    }
+    const ids = selectedExpectedGroup.expected_appointment_ids ||
+      (selectedExpectedGroup.children || []).map(c => c.expected_appointment_id);
+    if (!ids.length) {
+      setExpectedActionError("No expected appointment IDs were found. Refresh the page.");
+      return;
+    }
+    setSavingExpectedReschedule(true);
+    setExpectedActionError("");
+    try {
+      const response = await authFetch("http://127.0.0.1:8000/api/expected-appointments/reschedule", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          expected_appointment_ids: ids,
+          expected_date: rescheduleDate,
+          expected_time: rescheduleTime,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const detail = result.errors ? Object.values(result.errors).flat().join(" ") : "";
+        throw new Error(detail || result.message || "Unable to reschedule the expected appointment.");
+      }
+      setExpectedDialog(null);
+      setSelectedExpectedGroup(null);
+      setExpectedActionSuccess("Expected appointment rescheduled. It will reappear when its date is due or tomorrow.");
+      await authFetchExpectedAppointments();
+    } catch (error) {
+      setExpectedActionError(error.message || "Unable to connect to Laravel.");
+    } finally {
+      setSavingExpectedReschedule(false);
+    }
+  };
+
+  const openExpectedConfirm = async (group) => {
+    setSelectedExpectedGroup(group);
+    setExpectedDialog("confirm");
+    setExpectedActionError("");
+    setConfirmPreview(null);
+    setConfirmSelections({});
+    setLoadingConfirmPreview(true);
+    try {
+      const ids = group.expected_appointment_ids || group.children.map(c => c.expected_appointment_id);
+      const response = await authFetch(`http://127.0.0.1:8000/api/expected-appointments/preview?ids=${ids.join(",")}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Unable to load vaccination history.");
+      setConfirmPreview(data);
+    } catch (error) {
+      setExpectedActionError(error.message || "Unable to load confirmation details.");
+    } finally {
+      setLoadingConfirmPreview(false);
+    }
+  };
+
+  const toggleConfirmVaccine = (childId, vaccineId, doseNumber) => {
+    const key = String(childId);
+    setConfirmSelections(previous => {
+      const existing = previous[key] || [];
+      const next = existing.some(item => Number(item.vaccine_id) === Number(vaccineId))
+        ? existing.filter(item => Number(item.vaccine_id) !== Number(vaccineId))
+        : [...existing, { vaccine_id: Number(vaccineId), dose_number: Number(doseNumber) }];
+      return { ...previous, [key]: next };
+    });
+  };
+
+  const saveExpectedConfirm = async () => {
+    if (!selectedExpectedGroup || savingExpectedConfirm) return;
+    if (!hasPermission("add_appointments")) {
+      setExpectedActionError("You do not have permission to create appointments.");
+      return;
+    }
+    const members = selectedExpectedGroup.children || [];
+    if (members.some(({ child_id, child }) => !(confirmSelections[String(child_id || child?.child_id)] || []).length)) {
+      setExpectedActionError("Select at least one clinically verified vaccine dose for every child.");
+      return;
+    }
+    setSavingExpectedConfirm(true);
+    setExpectedActionError("");
+    try {
+      const response = await authFetch("http://127.0.0.1:8000/api/expected-appointments/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          expected_appointment_ids: selectedExpectedGroup.expected_appointment_ids || members.map(m => m.expected_appointment_id),
+          selections: members.map(m => ({
+            child_id: m.child_id || m.child?.child_id,
+            vaccines: confirmSelections[String(m.child_id || m.child?.child_id)] || [],
+          })),
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const detail = result.errors ? Object.values(result.errors).flat().join(" ") : "";
+        throw new Error(detail || result.message || "Unable to confirm the appointment.");
+      }
+      setExpectedDialog(null);
+      setSelectedExpectedGroup(null);
+      setExpectedActionSuccess("Confirmed successfully. New appointment(s) are now Pending.");
+      await Promise.all([authFetchExpectedAppointments(), authFetchAppointments(), authFetchVaccines()]);
+      setStatusFilter("All");
+      setDateFilter("All");
+    } catch (error) {
+      setExpectedActionError(error.message || "Unable to confirm the appointment.");
+    } finally {
+      setSavingExpectedConfirm(false);
+    }
+  };
 
   // Expected appointments are separate from actual Pending appointments.
   const authFetchExpectedAppointments = async () => {
@@ -476,6 +646,8 @@ function Appointments() {
       }
 
       const newSelectedChildren = [...previous, childId];
+      // A newly selected child may have already completed one of the chosen doses.
+      // Existing selections remain visible but Save is blocked until corrected.
 
       const insufficientVaccine = selectedVaccines.find((selected) => {
         const vaccine = vaccines.find(
@@ -552,11 +724,22 @@ function Appointments() {
         return previous;
       }
 
+      if (doseCheckPending) {
+        alert(completedDosesError || "Please wait for completed-dose records to load.");
+        return previous;
+      }
+      const firstAvailableDose = [1, 2, 3, 4, 5].find(
+        (dose) => !completedDoseUnavailable(vaccineId, dose)
+      );
+      if (!firstAvailableDose) {
+        alert("All displayed doses of this vaccine are already completed for at least one selected child.");
+        return previous;
+      }
       return [
         ...previous,
         {
           vaccine_id: vaccineId,
-          dose_number: 1,
+          dose_number: firstAvailableDose,
         },
       ];
     });
@@ -567,6 +750,7 @@ function Appointments() {
   // ==============================
 
   const changeDose = (vaccineId, dose) => {
+    if (doseCheckPending || completedDoseUnavailable(vaccineId, dose)) return;
     setSelectedVaccines((previous) =>
       previous.map((item) =>
         Number(item.vaccine_id) === Number(vaccineId)
@@ -616,6 +800,15 @@ function Appointments() {
 
     if (selectedChildren.length === 0) {
       alert("Please select at least one continuing child.");
+      return;
+    }
+
+    if (doseCheckPending) {
+      alert(completedDosesError || "Please wait until completed-dose records are loaded.");
+      return;
+    }
+    if (selectedVaccines.some((item) => completedDoseUnavailable(item.vaccine_id, item.dose_number))) {
+      alert("A selected dose is already Completed for at least one child. Please change the dose or child selection.");
       return;
     }
 
@@ -1311,6 +1504,7 @@ function Appointments() {
           )}
         </div>
 
+        {expectedActionSuccess && <p role="status" className="expected-action-success">{expectedActionSuccess}</p>}
         {/* EXPECTING APPOINTMENTS — GROUPED CHILDREN */}
         <section className="expected-appointments-section" aria-label="Expecting Appointments">
           <div className="expected-appointments-heading">
@@ -1358,27 +1552,27 @@ function Appointments() {
                       <td>Vaccination</td>
                       <td>{source?.address || "Barangay Health Center"}</td>
                       <td>
-                        <span style={{ color: "#64748b", fontSize: "12px" }}>
-                          Awaiting next-dose calculation
-                        </span>
+                        <span className="expected-muted">Review vaccine history on Confirm</span>
                       </td>
                       <td><span className="expected-appointments-status">{expected.status || "Awaiting Confirmation"}</span></td>
                       <td>
                         {hasPermission("add_appointments") || hasPermission("edit_appointments") ? (
-                          <div style={{ display: "flex", gap: "8px", flexWrap: "nowrap", alignItems: "center", justifyContent: "center", minWidth: "90px" }}>
-                            <button type="button" className="appointment-table-action edit"
+                          <div className="expected-actions">
+                            <button type="button" className="appointment-table-action expected-confirm-action"
+                              disabled={!hasPermission("add_appointments")}
                               title="Confirm expected appointment" aria-label="Confirm expected appointment"
-                              style={{ width: "34px", height: "34px", minWidth: "34px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#15803d", background: "#dcfce7" }}
-                              onClick={() => { setSelectedExpectedGroup(expected); setExpectedDialog("confirm"); }}>
+                              onClick={() => openExpectedConfirm(expected)}>
                               <FaCheck />
                             </button>
-                            <button type="button" className="appointment-table-action view"
+                            <button type="button" className="appointment-table-action expected-reschedule-action"
+                              disabled={!hasPermission("edit_appointments")}
                               title="Reschedule expected appointment" aria-label="Reschedule expected appointment"
-                              style={{ width: "34px", height: "34px", minWidth: "34px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "#1d4ed8", background: "#dbeafe" }}
+                              
                               onClick={() => {
                                 setSelectedExpectedGroup(expected);
                                 setRescheduleDate(expected.expected_date || "");
                                 setRescheduleTime(expected.expected_time?.slice(0, 5) || "");
+                                setExpectedActionError("");
                                 setExpectedDialog("reschedule");
                               }}>
                               <FaCalendarPlus />
@@ -1425,28 +1619,52 @@ function Appointments() {
                 </div>
                 <div className="appointment-form-section">
                   <h4>Children ({selectedExpectedGroup.children?.length || 0})</h4>
-                  {(selectedExpectedGroup.children || []).map(({ child, expected_appointment_id }) => (
-                    <div key={expected_appointment_id} style={{ padding: "10px 0", borderBottom: "1px solid #e2e8f0" }}>
-                      <strong>{child?.child_name || "Unknown child"}</strong>
-                      <div style={{ fontSize: "13px", color: "#64748b" }}>
-                        Parent: {child?.user?.user_fullname || parents.find((p) => Number(p.user_id) === Number(child?.user_id))?.user_fullname || "Unknown"}
+                  {expectedDialog === "confirm" && loadingConfirmPreview && <p>Loading vaccination history and stock...</p>}
+                  {(selectedExpectedGroup.children || []).map(({ child, expected_appointment_id, child_id }) => {
+                    const id = String(child_id || child?.child_id);
+                    const detail = confirmPreview?.children?.find(item => String(item.child_id) === id);
+                    return (
+                      <div key={expected_appointment_id} className="expected-child-preview">
+                        <strong>{child?.child_name || "Unknown child"}</strong>
+                        <div className="expected-muted">Parent: {child?.user?.user_fullname || parents.find(p => Number(p.user_id) === Number(child?.user_id))?.user_fullname || "Unknown"}</div>
+                        {expectedDialog === "confirm" && detail && (
+                          <div className="expected-vaccine-options">
+                            {detail.vaccines.map(vaccine => {
+                              const selected = (confirmSelections[id] || []).some(item => Number(item.vaccine_id) === Number(vaccine.vaccine_id));
+                              return (
+                                <label key={vaccine.vaccine_id} className="expected-vaccine-option">
+                                  <input type="checkbox" checked={selected} disabled={vaccine.stock_quantity < 1 || vaccine.expired || vaccine.already_completed || vaccine.already_pending}
+                                    onChange={() => toggleConfirmVaccine(id, vaccine.vaccine_id, vaccine.next_dose)} />
+                                  <span>{vaccine.vaccine_name} — Dose {vaccine.next_dose} · Stock {vaccine.stock_quantity}
+                                    {vaccine.already_completed ? " · Already completed" : vaccine.already_pending ? " · Already pending" : vaccine.expired ? " · Expired" : ""}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                      <div style={{ fontSize: "13px", color: "#b45309" }}>Next vaccines and stock: not yet calculated</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-                <p style={{ color: "#b45309", fontSize: "13px" }}>
+                {expectedActionError && <p role="alert" className="expected-action-error">{expectedActionError}</p>}
+                <p className="expected-action-note">
                   {expectedDialog === "confirm"
-                    ? "Final confirmation is unavailable until Laravel calculates each child's next doses and validates stock."
-                    : "Saving a rescheduled date requires a Laravel endpoint. No changes have been saved."}
+                    ? "Suggested dose numbers are based on recorded history, not clinical eligibility. A qualified provider must verify the schedule and select the appropriate vaccines before booking."
+                    : "Rescheduling updates this expected group only. It does not create a Pending appointment or change stock."}
                 </p>
               </div>
               <div className="appointment-popup-footer">
                 <div className="appointment-popup-actions">
                   <button type="button" className="appointment-cancel" onClick={() => { setExpectedDialog(null); setSelectedExpectedGroup(null); }}>Close</button>
-                  <button type="button" className="set" disabled title="Backend endpoint required">
-                    {expectedDialog === "confirm" ? "Final Confirm" : "Save Reschedule"}
-                  </button>
+                  {expectedDialog === "confirm" ? (
+                    <button type="button" className="set" onClick={saveExpectedConfirm} disabled={savingExpectedConfirm || loadingConfirmPreview || !confirmPreview}>
+                      {savingExpectedConfirm ? "Confirming..." : "Final Confirm"}
+                    </button>
+                  ) : (
+                    <button type="button" className="set" onClick={saveExpectedReschedule} disabled={savingExpectedReschedule}>
+                      {savingExpectedReschedule ? "Saving..." : "Save Reschedule"}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -1802,6 +2020,11 @@ function Appointments() {
                       </span>
                     </div>
 
+                    {selectedChildren.length > 0 && (completedDosesLoading || completedDosesError) && (
+                      <p role="status" style={{ color: completedDosesError ? "#b91c1c" : "#64748b", fontSize: "13px" }}>
+                        {completedDosesError || "Checking completed vaccine doses..."}
+                      </p>
+                    )}
                     <div className="appointment-vaccine-list">
                       {vaccines.length === 0 ? (
                         <div className="appointment-no-data">
@@ -1829,7 +2052,11 @@ function Appointments() {
                                   !selected &&
                                   (selectedChildren.length === 0 ||
                                     Number(vaccine.stock_quantity || 0) <
-                                      selectedChildren.length)
+                                      selectedChildren.length ||
+                                    doseCheckPending ||
+                                    [1, 2, 3, 4, 5].every((dose) =>
+                                      completedDoseUnavailable(vaccine.vaccine_ID, dose)
+                                    ))
                                 }
                                 onClick={() =>
                                   toggleVaccine(vaccine.vaccine_ID)
@@ -1862,11 +2089,15 @@ function Appointments() {
                                     )
                                   }
                                 >
-                                  <option value="1">Dose 1</option>
-                                  <option value="2">Dose 2</option>
-                                  <option value="3">Dose 3</option>
-                                  <option value="4">Dose 4</option>
-                                  <option value="5">Dose 5</option>
+                                  {[1, 2, 3, 4, 5].map((dose) => {
+                                    const completed = completedDoseUnavailable(vaccine.vaccine_ID, dose);
+                                    return (
+                                      <option key={dose} value={dose} disabled={completed || doseCheckPending}
+                                        style={completed ? { color: "#94a3b8", backgroundColor: "#f1f5f9" } : {}}>
+                                        Dose {dose}{completed ? " — Completed" : ""}
+                                      </option>
+                                    );
+                                  })}
                                 </select>
                               )}
                             </div>

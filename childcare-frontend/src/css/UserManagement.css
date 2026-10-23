@@ -256,6 +256,49 @@ body {
   color: #6b7280;
 }
 
+/* Account deactivation notification composer */
+.user-status-notice-modal {
+  max-width: 560px;
+  width: min(560px, 94vw);
+}
+
+.user-deactivation-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 24px;
+}
+
+.user-deactivation-composer .user-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.user-deactivation-reason {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 11px 12px;
+  font: inherit;
+}
+
+.user-deactivation-reason:focus {
+  outline: 2px solid #93c5fd;
+  outline-offset: 1px;
+}
+
+.user-deactivation-help {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
 /* =========================================
    STATUS
 ========================================= */
