@@ -1,5 +1,5 @@
-
 import "../css/Dashboard.css";
+import Header from "../View/Header";
 
 import { NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -7,22 +7,118 @@ import { useEffect, useState } from "react";
 import {
   FaChild,
   FaUserFriends,
-  FaShieldAlt,
+  FaCalendarAlt,
+  FaArrowRight,
+  FaSyringe,
+  FaChartBar,
+  FaClock,
+  FaCheckCircle,
+  FaExclamationCircle,
 } from "react-icons/fa";
 
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   PieChart,
   Pie,
   Cell,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 
 import Sidebar from "../View/Sidebar";
-
-import { COLORS } from "../Model/DashboardModel";
 import { authFetch } from "../Controller/AuthController";
+
+/* =========================================================
+   DASHBOARD COLORS
+========================================================= */
+
+const STATUS_COLORS = {
+  completed: "#3186e6",
+  continuing: "#22b58a",
+  missed: "#f5b544",
+  "not started": "#ff875f",
+};
+
+const DEFAULT_STATUS_COLORS = [
+  "#3186e6",
+  "#22b58a",
+  "#f5b544",
+  "#ff875f",
+];
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+const formatDate = (dateString) => {
+  if (!dateString) return "No date";
+
+  const date = new Date(`${dateString.slice(0, 10)}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return dateString;
+  }
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const getStatusColor = (name, index) => {
+  const key = String(name || "").trim().toLowerCase();
+
+  return (
+    STATUS_COLORS[key] ||
+    DEFAULT_STATUS_COLORS[index % DEFAULT_STATUS_COLORS.length]
+  );
+};
+
+const getAppointmentChildNames = (appointment) => {
+  if (
+    Array.isArray(appointment.children) &&
+    appointment.children.length > 0
+  ) {
+    return (
+      appointment.children
+        .map((child) => child.child_name)
+        .filter(Boolean)
+        .join(", ") || "No child"
+    );
+  }
+
+  if (appointment.child?.child_name) {
+    return appointment.child.child_name;
+  }
+
+  return "No child";
+};
+
+/* =========================================================
+   CUSTOM CHART TOOLTIP
+========================================================= */
+
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+
+  const item = payload[0];
+
+  return (
+    <div className="dashboard-chart-tooltip">
+      <strong>{label || item.name}</strong>
+      <span>{item.value} doses / records</span>
+    </div>
+  );
+}
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
 
 function Dashboard() {
   const [dashboardData, setDashboardData] = useState({
@@ -39,12 +135,15 @@ function Dashboard() {
   const [appointments, setAppointments] = useState([]);
   const [monthlyDoses, setMonthlyDoses] = useState([]);
   const [vaccines, setVaccines] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   /* =========================================================
      FETCH DASHBOARD DATA
   ========================================================= */
 
   useEffect(() => {
+    let active = true;
+
     const fetchDashboardData = async () => {
       try {
         const response = await authFetch(
@@ -57,13 +156,15 @@ function Dashboard() {
 
         const data = await response.json();
 
-        setDashboardData((prev) => ({
-          ...prev,
-          ...data,
-          status_breakdown: Array.isArray(data.status_breakdown)
-            ? data.status_breakdown
-            : [],
-        }));
+        if (active) {
+          setDashboardData((prev) => ({
+            ...prev,
+            ...data,
+            status_breakdown: Array.isArray(data.status_breakdown)
+              ? data.status_breakdown
+              : [],
+          }));
+        }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       }
@@ -81,10 +182,15 @@ function Dashboard() {
 
         const data = await response.json();
 
-        setAppointments(Array.isArray(data) ? data : []);
+        if (active) {
+          setAppointments(Array.isArray(data) ? data : []);
+        }
       } catch (error) {
         console.error("Error fetching appointments:", error);
-        setAppointments([]);
+
+        if (active) {
+          setAppointments([]);
+        }
       }
     };
 
@@ -100,17 +206,24 @@ function Dashboard() {
 
         const data = await response.json();
 
-        const formattedDoses = (data.monthly_doses || []).map(
-          (item) => ({
-            name: item.month,
-            value: Number(item.dose_count || 0),
-          })
-        );
+        const formattedDoses = (
+          Array.isArray(data.monthly_doses)
+            ? data.monthly_doses
+            : []
+        ).map((item) => ({
+          name: item.month,
+          value: Number(item.dose_count || 0),
+        }));
 
-        setMonthlyDoses(formattedDoses);
+        if (active) {
+          setMonthlyDoses(formattedDoses);
+        }
       } catch (error) {
         console.error("Error fetching monthly doses:", error);
-        setMonthlyDoses([]);
+
+        if (active) {
+          setMonthlyDoses([]);
+        }
       }
     };
 
@@ -126,30 +239,66 @@ function Dashboard() {
 
         const data = await response.json();
 
-        setVaccines(Array.isArray(data) ? data : []);
+        if (active) {
+          setVaccines(Array.isArray(data) ? data : []);
+        }
       } catch (error) {
         console.error("Error fetching vaccines:", error);
-        setVaccines([]);
+
+        if (active) {
+          setVaccines([]);
+        }
       }
     };
 
-    fetchDashboardData();
-    fetchAppointments();
-    fetchMonthlyDoses();
-    fetchVaccines();
+    const loadDashboard = async () => {
+      await Promise.all([
+        fetchDashboardData(),
+        fetchAppointments(),
+        fetchMonthlyDoses(),
+        fetchVaccines(),
+      ]);
+
+      if (active) {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      active = false;
+    };
   }, []);
+
+  /* =========================================================
+     APPOINTMENT STATISTICS
+  ========================================================= */
+
+  const pendingAppointments =
+    Number(dashboardData.pending_appointments) || 0;
+
+  const completedAppointments =
+    Number(dashboardData.completed_appointments) || 0;
+
+  const missedAppointments =
+    Number(dashboardData.missed_appointments) || 0;
+
+  const totalAppointments =
+    pendingAppointments +
+    completedAppointments +
+    missedAppointments;
 
   /* =========================================================
      UPCOMING APPOINTMENTS
   ========================================================= */
 
   const upcomingAppointments = appointments
-    .filter(
-      (appointment) =>
-        appointment.status !== "Completed" &&
-        appointment.status !== "Missed" &&
-        appointment.status !== "Cancelled"
-    )
+    .filter((appointment) => {
+      const status = String(appointment.status || "").toLowerCase();
+
+      return !["completed", "missed", "cancelled"].includes(status);
+    })
     .sort((a, b) => {
       const dateA = `${a.appointment_date || ""} ${
         a.appointment_time || ""
@@ -167,14 +316,31 @@ function Dashboard() {
      STATUS BREAKDOWN
   ========================================================= */
 
-  const statusBreakdown =
-    dashboardData.status_breakdown &&
-    dashboardData.status_breakdown.length > 0
+  const statusBreakdown = (
+    Array.isArray(dashboardData.status_breakdown)
       ? dashboardData.status_breakdown
-      : [{ name: "No Data", value: 0 }];
+      : []
+  ).map((item) => ({
+    name: item.name,
+    value: Number(item.value) || 0,
+  }));
+
+  const totalStatusRecords = statusBreakdown.reduce(
+    (total, item) => total + item.value,
+    0
+  );
 
   /* =========================================================
-     LOW VACCINE STOCK
+     MONTHLY DOSES
+  ========================================================= */
+
+  const totalMonthlyDoses = monthlyDoses.reduce(
+    (total, item) => total + item.value,
+    0
+  );
+
+  /* =========================================================
+     LOW STOCK VACCINES
   ========================================================= */
 
   const lowStockVaccines = vaccines
@@ -195,28 +361,6 @@ function Dashboard() {
     .slice(0, 5);
 
   /* =========================================================
-     APPOINTMENT CHILD NAME
-  ========================================================= */
-
-  const getAppointmentChildNames = (appointment) => {
-    if (
-      Array.isArray(appointment.children) &&
-      appointment.children.length > 0
-    ) {
-      return appointment.children
-        .map((child) => child.child_name)
-        .filter(Boolean)
-        .join(", ");
-    }
-
-    if (appointment.child?.child_name) {
-      return appointment.child.child_name;
-    }
-
-    return "No child";
-  };
-
-  /* =========================================================
      RENDER
   ========================================================= */
 
@@ -225,243 +369,441 @@ function Dashboard() {
       <Sidebar />
 
       <main className="dashboard-content">
-        {/* DASHBOARD SUMMARY CARDS */}
+        
 
-        <div className="dashboard-cards">
+        {/* ==========================================
+            DASHBOARD HEADER
+        ========================================== */}
+
+        <header className="dashboard-page-header">
+          <div className="dashboard-heading">
+            <div className="dashboard-heading-icon">
+              <FaChartBar />
+            </div>
+
+            <div>
+              <h1>Dashboard</h1>
+              <p>
+                Overview of your childcare immunization system
+              </p>
+            </div>
+          </div>
+
+          <div className="dashboard-header-date">
+            <FaCalendarAlt />
+
+            <span>
+              {new Date().toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+            <Header />
+          </div>
+        </header>
+
+        {/* ==========================================
+            SUMMARY CARDS
+        ========================================== */}
+
+        <section className="dashboard-cards">
+
+          {/* TOTAL CHILDREN */}
+
           <NavLink
             to="/patients"
             className="dashboard-card"
           >
-            <div className="dashboard-card-top">
-              <FaChild className="dashboard-card-icon" />
+            <div className="dashboard-card-information">
+              <div className="dashboard-card-icon blue">
+                <FaChild />
+              </div>
+
+              <div className="dashboard-card-text">
+                <span className="dashboard-card-label">
+                  Total Children
+                </span>
+
+                <h2>{dashboardData.children || 0}</h2>
+
+                <p>Registered children</p>
+              </div>
             </div>
 
-            <small>Total Children</small>
-
-            <h2>{dashboardData.children || 0}</h2>
+            <div className="dashboard-card-arrow">
+              <FaArrowRight />
+            </div>
           </NavLink>
+
+          {/* APPOINTMENTS */}
 
           <NavLink
             to="/appointments"
             className="dashboard-card dashboard-appointment-card"
           >
-            <div className="dashboard-card-top">
-              <span className="dashboard-card-icon">
-                📅
-              </span>
-            </div>
+            <div className="dashboard-card-information">
+              <div className="dashboard-card-icon purple">
+                <FaCalendarAlt />
+              </div>
 
-            <small>Appointments</small>
+              <div className="dashboard-card-text">
+                <span className="dashboard-card-label">
+                  Appointments
+                </span>
+
+                <h2>{totalAppointments}</h2>
+
+                <p>Pending, completed and missed</p>
+              </div>
+            </div>
 
             <div className="dashboard-appointment-summary">
               <div className="dashboard-appointment-summary-item">
-                <strong>
-                  {dashboardData.pending_appointments || 0}
-                </strong>
-
+                <span className="dashboard-mini-dot pending" />
+                <strong>{pendingAppointments}</strong>
                 <span>Pending</span>
               </div>
 
               <div className="dashboard-appointment-summary-item">
-                <strong>
-                  {dashboardData.completed_appointments || 0}
-                </strong>
-
+                <span className="dashboard-mini-dot completed" />
+                <strong>{completedAppointments}</strong>
                 <span>Completed</span>
               </div>
 
               <div className="dashboard-appointment-summary-item">
-                <strong>
-                  {dashboardData.missed_appointments || 0}
-                </strong>
-
+                <span className="dashboard-mini-dot missed" />
+                <strong>{missedAppointments}</strong>
                 <span>Missed</span>
               </div>
             </div>
           </NavLink>
 
+          {/* ACTIVE USERS */}
+
           <NavLink
             to="/user-management"
             className="dashboard-card"
           >
-            <div className="dashboard-card-top">
-              <FaUserFriends className="dashboard-card-icon due" />
+            <div className="dashboard-card-information">
+              <div className="dashboard-card-icon amber">
+                <FaUserFriends />
+              </div>
+
+              <div className="dashboard-card-text">
+                <span className="dashboard-card-label">
+                  Active Users
+                </span>
+
+                <h2>{dashboardData.active_user || 0}</h2>
+
+                <p>Active parent accounts</p>
+              </div>
             </div>
 
-            <small>Active Users</small>
-
-            <h2>{dashboardData.active_user || 0}</h2>
+            <div className="dashboard-card-arrow">
+              <FaArrowRight />
+            </div>
           </NavLink>
-        </div>
 
-        {/* CHARTS */}
+        </section>
 
-        <div className="dashboard-chart-row">
+        {/* ==========================================
+            CHARTS
+        ========================================== */}
+
+        <section className="dashboard-chart-row">
+
           {/* MONTHLY DOSES */}
 
-          <div className="dashboard-chart-card">
-            <h4>Monthly Doses</h4>
+          <div className="dashboard-chart-card dashboard-monthly-chart">
 
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-            >
-              <PieChart>
-                <Pie
-                  data={
-                    monthlyDoses.length > 0
-                      ? monthlyDoses
-                      : [{ name: "No Data", value: 0 }]
-                  }
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="42%"
-                  outerRadius={60}
-                  paddingAngle={3}
-                  label={false}
-                >
-                  {(monthlyDoses.length > 0
-                    ? monthlyDoses
-                    : [{ name: "No Data", value: 0 }]
-                  ).map((entry, index) => (
-                    <Cell
-                      key={`${entry.name}-${index}`}
-                      fill={COLORS[index % COLORS.length]}
+            <div className="dashboard-section-heading">
+              <div>
+                <h3>Monthly Vaccination Activity</h3>
+                <p>Vaccination doses recorded by month</p>
+              </div>
+
+              <div className="dashboard-section-icon">
+                <FaSyringe />
+              </div>
+            </div>
+
+            <div className="dashboard-chart-container">
+              {monthlyDoses.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={monthlyDoses}
+                    margin={{
+                      top: 15,
+                      right: 12,
+                      left: -20,
+                      bottom: 0,
+                    }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#edf1f7"
                     />
-                  ))}
-                </Pie>
 
-                <Tooltip />
+                    <XAxis
+                      dataKey="name"
+                      tick={{
+                        fill: "#71839b",
+                        fontSize: 11,
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
 
-                <Legend
-                  verticalAlign="bottom"
-                  align="center"
-                  layout="horizontal"
-                  iconType="circle"
-                  wrapperStyle={{
-                    fontSize: "12px",
-                    paddingTop: "10px",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                    <YAxis
+                      allowDecimals={false}
+                      tick={{
+                        fill: "#71839b",
+                        fontSize: 11,
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+
+                    <Tooltip
+                      content={<ChartTooltip />}
+                      cursor={{
+                        fill: "rgba(49, 134, 230, 0.06)",
+                      }}
+                    />
+
+                    <Bar
+                      dataKey="value"
+                      fill="#3186e6"
+                      radius={[6, 6, 0, 0]}
+                      maxBarSize={38}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="dashboard-chart-empty">
+                  <FaChartBar />
+                  <span>No monthly vaccination data available.</span>
+                </div>
+              )}
+            </div>
+
+            <div className="dashboard-chart-footer">
+              <span className="dashboard-chart-legend-dot" />
+
+              <span>Vaccination doses</span>
+
+              <strong>
+                {totalMonthlyDoses} total
+              </strong>
+            </div>
+
           </div>
 
           {/* STATUS BREAKDOWN */}
 
-          <div className="dashboard-chart-card">
-            <h4>Status Breakdown</h4>
+          <div className="dashboard-chart-card dashboard-status-chart">
 
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-            >
-              <PieChart>
-                <Pie
-                  data={statusBreakdown}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="42%"
-                  innerRadius={35}
-                  outerRadius={60}
-                  paddingAngle={3}
-                  label={false}
-                >
-                  {statusBreakdown.map((entry, index) => (
-                    <Cell
-                      key={`${entry.name}-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
+            <div className="dashboard-section-heading">
+              <div>
+                <h3>Immunization Status</h3>
+                <p>Current vaccination status breakdown</p>
+              </div>
 
-                <Tooltip />
+              <div className="dashboard-section-icon">
+                <FaCheckCircle />
+              </div>
+            </div>
 
-                <Legend
-                  verticalAlign="bottom"
-                  align="center"
-                  layout="horizontal"
-                  iconType="circle"
-                  wrapperStyle={{
-                    fontSize: "12px",
-                    paddingTop: "10px",
-                    lineHeight: "20px",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="dashboard-status-content">
+
+              <div className="dashboard-donut-wrapper">
+                {totalStatusRecords > 0 ? (
+                  <>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={statusBreakdown}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius="65%"
+                          outerRadius="85%"
+                          paddingAngle={2}
+                          stroke="none"
+                        >
+                          {statusBreakdown.map((entry, index) => (
+                            <Cell
+                              key={`${entry.name}-${index}`}
+                              fill={getStatusColor(entry.name, index)}
+                            />
+                          ))}
+                        </Pie>
+
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+
+                    <div className="dashboard-donut-center">
+                      <strong>{totalStatusRecords}</strong>
+                      <span>Records</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="dashboard-chart-empty">
+                    <span>No status data</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="dashboard-status-legend">
+                {statusBreakdown.map((item, index) => {
+                  const percentage =
+                    totalStatusRecords > 0
+                      ? Math.round(
+                          (item.value / totalStatusRecords) * 100
+                        )
+                      : 0;
+
+                  return (
+                    <div
+                      className="dashboard-status-legend-item"
+                      key={`${item.name}-${index}`}
+                    >
+                      <div className="dashboard-status-name">
+                        <span
+                          className="dashboard-status-dot"
+                          style={{
+                            backgroundColor: getStatusColor(
+                              item.name,
+                              index
+                            ),
+                          }}
+                        />
+
+                        <span>{item.name}</span>
+                      </div>
+
+                      <strong>{percentage}%</strong>
+                    </div>
+                  );
+                })}
+
+                {statusBreakdown.length === 0 && (
+                  <p className="dashboard-legend-empty">
+                    No status records available.
+                  </p>
+                )}
+              </div>
+
+            </div>
+
           </div>
-        </div>
 
-        {/* BOTTOM SECTION */}
+        </section>
 
-        <div className="dashboard-bottom-row">
+        {/* ==========================================
+            BOTTOM SECTION
+        ========================================== */}
+
+        <section className="dashboard-bottom-row">
+
           {/* UPCOMING APPOINTMENTS */}
 
           <div className="dashboard-appointments">
-            <div className="dashboard-appointment-header">
-              <h3>Upcoming Appointments</h3>
+
+            <div className="dashboard-table-heading">
+              <div className="dashboard-table-heading-left">
+                <div className="dashboard-table-icon blue">
+                  <FaClock />
+                </div>
+
+                <div>
+                  <h3>Upcoming Appointments</h3>
+                  <p>Scheduled immunization visits</p>
+                </div>
+              </div>
 
               <NavLink to="/appointments">
-                View All
+                View All <FaArrowRight />
               </NavLink>
             </div>
 
-            <div className="dashboard-appointments-list">
-              <div className="dashboard-appointment-row dashboard-appointment-header-row">
-                <span>Name</span>
+            <div className="dashboard-table-scroll">
+              <div className="dashboard-appointment-row dashboard-table-header">
+                <span>Child Name</span>
                 <span>Date</span>
                 <span>Status</span>
               </div>
 
               {upcomingAppointments.length > 0 ? (
-                upcomingAppointments.map((item) => (
-                  <div
-                    className="dashboard-appointment-row"
-                    key={item.appointment_id}
-                  >
-                    <span>
-                      {getAppointmentChildNames(item)}
-                    </span>
+                upcomingAppointments.map((item) => {
+                  const status = item.status || "Pending";
 
-                    <span>
-                      {item.appointment_date || "No date"}
-                    </span>
-
-                    <span
-                      className={`appointment-status ${
-                        item.status
-                          ? item.status.toLowerCase()
-                          : "pending"
-                      }`}
+                  return (
+                    <div
+                      className="dashboard-appointment-row"
+                      key={item.appointment_id}
                     >
-                      {item.status || "Pending"}
-                    </span>
-                  </div>
-                ))
+                      <span
+                        className="dashboard-table-name"
+                        title={getAppointmentChildNames(item)}
+                      >
+                        {getAppointmentChildNames(item)}
+                      </span>
+
+                      <span>
+                        {formatDate(item.appointment_date)}
+                      </span>
+
+                      <span
+                        className={`dashboard-appointment-status ${status.toLowerCase()}`}
+                      >
+                        {status}
+                      </span>
+                    </div>
+                  );
+                })
               ) : (
                 <div className="dashboard-empty-state">
-                  No upcoming appointments.
+                  <FaCalendarAlt />
+                  <p>
+                    {loading
+                      ? "Loading appointments..."
+                      : "No upcoming appointments."}
+                  </p>
                 </div>
               )}
             </div>
+
           </div>
 
           {/* VACCINE INVENTORY */}
 
           <div className="dashboard-inventory">
-            <div className="dashboard-inventory-header">
-              <h3>Vaccine Inventory</h3>
+
+            <div className="dashboard-table-heading">
+              <div className="dashboard-table-heading-left">
+                <div className="dashboard-table-icon teal">
+                  <FaSyringe />
+                </div>
+
+                <div>
+                  <h3>Vaccine Inventory</h3>
+                  <p>Vaccines requiring attention</p>
+                </div>
+              </div>
 
               <NavLink to="/vaccines">
-                View All
+                View All <FaArrowRight />
               </NavLink>
             </div>
 
-            <div className="dashboard-inventory-list">
-              <div className="dashboard-inventory-item dashboard-inventory-header-row">
+            <div className="dashboard-table-scroll">
+              <div className="dashboard-inventory-item dashboard-table-header">
                 <span>Vaccine</span>
                 <span>Remaining</span>
                 <span>Status</span>
@@ -484,19 +826,32 @@ function Dashboard() {
                       className="dashboard-inventory-item"
                       key={vaccine.vaccine_ID}
                     >
-                      <span>
+                      <span
+                        className="dashboard-table-name"
+                        title={
+                          vaccine.vaccine_name ||
+                          vaccine.name ||
+                          "Unknown Vaccine"
+                        }
+                      >
                         {vaccine.vaccine_name ||
                           vaccine.name ||
                           "Unknown Vaccine"}
                       </span>
 
-                      <span>{stock}</span>
+                      <span className="inventory-quantity">
+                        {stock}
+                      </span>
 
                       <span
                         className={`inventory-status ${status
                           .toLowerCase()
                           .replace(/\s+/g, "-")}`}
                       >
+                        {status === "Out of Stock" && (
+                          <FaExclamationCircle />
+                        )}
+
                         {status}
                       </span>
                     </div>
@@ -504,12 +859,21 @@ function Dashboard() {
                 })
               ) : (
                 <div className="dashboard-empty-state">
-                  No low-stock vaccines.
+                  <FaCheckCircle />
+
+                  <p>
+                    {loading
+                      ? "Loading vaccine inventory..."
+                      : "No low-stock vaccines."}
+                  </p>
                 </div>
               )}
             </div>
+
           </div>
-        </div>
+
+        </section>
+
       </main>
     </div>
   );

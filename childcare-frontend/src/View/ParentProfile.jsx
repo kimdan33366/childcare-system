@@ -725,13 +725,25 @@ function ParentProfile() {
   // ==========================================
 
   const handleViewRecord = (childId) => {
-    navigate(`/patient_viewrecord/${childId}`, {
-      state: {
-        from: `/parent-profile/${userId}`,
-        fromLabel: "Back to Parent Profile",
-      },
-    });
-  };
+  const selectedChild = parent?.children?.find(
+    (child) => String(child.child_id) === String(childId)
+  );
+
+  navigate(`/patient_viewrecord/${childId}`, {
+    state: {
+      // Preserve existing back-button functionality
+      from: `/parent-profile/${userId}`,
+      fromLabel: "Back to Parent Profile",
+
+      // New sidebar navigation information
+      navigationSource: "users",
+      parentId: userId,
+      parentName: parent?.user_fullname || "Unnamed Parent",
+      childId: childId,
+      childName: selectedChild?.child_name || "Unnamed Child",
+    },
+  });
+};
 
   // ==========================================
   // ACCESS CONTROL

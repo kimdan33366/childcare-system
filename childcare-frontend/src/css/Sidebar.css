@@ -951,3 +951,51 @@
         transition: none;
     }
 }
+/* Append these rules to the END of your existing Sidebar.css */
+.sidebar .sidebar-record-tree {
+  position: relative;
+  margin: -1px 0 9px 23px;
+  padding-left: 12px;
+  border-left: 1.5px solid #c8dcf5;
+}
+.sidebar nav a.sidebar-record-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 34px;
+  padding: 7px 9px;
+  margin: 2px 0;
+  font-size: 12px;
+  border-radius: 8px;
+}
+.sidebar nav a.sidebar-record-child {
+  margin-left: 15px;
+  width: calc(100% - 15px);
+}
+.sidebar nav a.sidebar-record-link::after {
+  content: "";
+  position: absolute;
+  width: 11px;
+  height: 1.5px;
+  background: #c8dcf5;
+  left: -12px;
+  top: 50%;
+}
+.sidebar nav a.sidebar-record-child::after { left: -27px; width: 26px; }
+.sidebar .sidebar-record-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94b9e7;
+}
+.sidebar nav a.sidebar-record-link.active .sidebar-record-dot { background: #0875e7; }
+.sidebar .sidebar-record-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.sidebar nav a.sidebar-record-link.active::before { top: 6px; bottom: 6px; }

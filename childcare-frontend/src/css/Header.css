@@ -1,0 +1,312 @@
+/* =========================================================
+   CHILDCARE HEADER
+   MODERN MINIMALIST HEALTHCARE
+========================================================= */
+
+.childcare-header {
+    width: 100%;
+    min-height: 70px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 10px 0;
+
+    position: relative;
+    z-index: 50;
+
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.childcare-header-spacer {
+    flex: 1;
+}
+
+/* =========================================================
+   PROFILE BUTTON
+========================================================= */
+
+.childcare-header-profile-wrapper {
+    position: relative;
+}
+
+.childcare-header-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 7px 12px 7px 8px;
+
+    background: #ffffff;
+
+    border: 1px solid #e4edf8;
+    border-radius: 13px;
+
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+}
+
+.childcare-header-profile:hover,
+.childcare-header-profile.opened {
+    border-color: #b9d7fa;
+    background: #f9fcff;
+
+    box-shadow: 0 4px 15px rgba(40, 100, 170, 0.08);
+}
+
+/* =========================================================
+   AVATAR
+========================================================= */
+
+.childcare-header-avatar,
+.childcare-header-dropdown-avatar {
+    width: 39px;
+    height: 39px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: linear-gradient(
+        135deg,
+        #6fb0ff,
+        #2479dc
+    );
+
+    color: white;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    letter-spacing: 0.5px;
+}
+
+/* =========================================================
+   USER INFORMATION
+========================================================= */
+
+.childcare-header-user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 4px;
+
+    min-width: 0;
+}
+
+.childcare-header-user-info strong {
+    max-width: 150px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #24466f;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.childcare-header-user-info span {
+    color: #8b9aaf;
+
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.childcare-header-chevron {
+    margin-left: 8px;
+
+    color: #8aa2be;
+
+    font-size: 11px;
+
+    transition: transform 0.2s ease;
+}
+
+.childcare-header-chevron.rotated {
+    transform: rotate(180deg);
+}
+
+/* =========================================================
+   DROPDOWN MENU
+========================================================= */
+
+.childcare-header-dropdown {
+    position: absolute;
+
+    top: calc(100% + 10px);
+    right: 0;
+
+    width: 250px;
+
+    padding: 8px;
+
+    background: #ffffff;
+
+    border: 1px solid #e4edf8;
+    border-radius: 15px;
+
+    box-shadow: 0 15px 40px rgba(29, 71, 120, 0.13);
+
+    z-index: 100;
+
+    animation: childcareDropdownAppear 0.18s ease;
+}
+
+/* =========================================================
+   DROPDOWN USER INFORMATION
+========================================================= */
+
+.childcare-header-dropdown-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 12px 10px;
+}
+
+.childcare-header-dropdown-user > div:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    min-width: 0;
+}
+
+.childcare-header-dropdown-user strong {
+    color: #24466f;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.childcare-header-dropdown-user span {
+    color: #8b9aaf;
+    font-size: 10px;
+}
+
+.childcare-header-dropdown-divider {
+    height: 1px;
+
+    margin: 5px 4px 7px;
+
+    background: #edf2f8;
+}
+
+/* =========================================================
+   DROPDOWN ITEMS
+========================================================= */
+
+.childcare-header-dropdown-item {
+    width: 100%;
+    min-height: 42px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 10px 12px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: #31547e;
+
+    font-family: "Poppins", Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+
+    text-align: left;
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+}
+
+.childcare-header-dropdown-item svg {
+    font-size: 16px;
+    color: #3186e6;
+}
+
+.childcare-header-dropdown-item:hover {
+    background: #edf5ff;
+    color: #0864c9;
+}
+
+/* LOGOUT */
+
+.childcare-header-dropdown-item.logout {
+    color: #d94b52;
+}
+
+.childcare-header-dropdown-item.logout svg {
+    color: #d94b52;
+}
+
+.childcare-header-dropdown-item.logout:hover {
+    background: #fff0f1;
+}
+
+/* =========================================================
+   ANIMATION
+========================================================= */
+
+@keyframes childcareDropdownAppear {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 600px) {
+    .childcare-header {
+        min-height: 60px;
+    }
+
+    .childcare-header-user-info {
+        display: none;
+    }
+
+    .childcare-header-chevron {
+        margin-left: 0;
+    }
+
+    .childcare-header-dropdown {
+        width: 230px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .childcare-header-dropdown {
+        animation: none;
+    }
+
+    .childcare-header-profile,
+    .childcare-header-chevron {
+        transition: none;
+    }
+}
