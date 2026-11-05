@@ -1,5 +1,5 @@
 import "../css/Patients.css";
-
+import Header from "../View/Header";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -913,6 +913,17 @@ function Patients() {
             <h2>Children</h2>
 
             <p>Manage registered children and their vaccination records.</p>
+          </div>
+          <div className="user-management-header-date">
+            <span>
+              {new Date().toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+
+             <Header/>
           </div>
         </div>
 

@@ -1,4 +1,5 @@
 import "../css/Report.css";
+import Header from "../View/Header";
 
 import Sidebar from "../View/Sidebar";
 import { useState, useEffect } from "react";
@@ -173,14 +174,27 @@ function Report() {
 
             <p>Vaccination and clinic performance overview.</p>
           </div>
+          <div className="user-management-header-date">
+            <span>
+              {new Date().toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
 
-          <button
+             <Header/>
+             <button
             type="button"
             className="report-export-btn"
             onClick={handleExportReport}
           >
             Export Report
           </button>
+          </div>
+
+          
+          
         </div>
 
         {/* =====================================================

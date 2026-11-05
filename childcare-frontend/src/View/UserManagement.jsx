@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FiEye, FiEdit2, FiKey, FiTrash2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
+import Header from "../View/Header";
 import "../css/UserManagement.css";
 import { authFetch } from "../Controller/AuthController";
 
@@ -710,11 +711,21 @@ function UserManagement() {
           <div>
             <h1>User Management</h1>
             <p>Manage registered parent accounts and access.</p>
+           
           </div>
+          <div className="user-management-header-date">
+            <span>
+              {new Date().toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
 
-          
+             <Header/>
+          </div>
         </div>
-
+        
         {/* SUMMARY CARDS */}
         <div className="user-summary-grid">
           <div className="user-summary-card">

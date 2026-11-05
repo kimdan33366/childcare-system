@@ -47,8 +47,26 @@ PAGE HEADER
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #ffffff;
-  border-bottom: 1px solid #e8edf3;
+  
+}
+
+.appointment-header-date{
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    padding: 11px 16px;
+
+    background: white;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 10px;
+
+    color: #56749b;
+
+    font-size: 12px;
+    font-weight: 500;
+
+    white-space: nowrap;
 }
 
 .appointment-header h3 {

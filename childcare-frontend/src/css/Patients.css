@@ -48,8 +48,7 @@ body,
   align-items: center;
   width: 100%;
   padding: 22px 25px 18px;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  
   flex-shrink: 0;
 }
 

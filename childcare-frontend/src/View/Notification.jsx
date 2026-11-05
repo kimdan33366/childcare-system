@@ -1,4 +1,5 @@
 import "../css/Notification.css";
+import Header from "../View/Header";
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -873,6 +874,17 @@ function Notification() {
               Send Appointment reminders and manage parent
               notifications.
             </p>
+          </div>
+          <div className="user-management-header-date">
+            <span>
+              {new Date().toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+
+             <Header/>
           </div>
 
           {hasPermission("send_notifications") && (

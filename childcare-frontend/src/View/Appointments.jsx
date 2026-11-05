@@ -1,4 +1,5 @@
 import "../css/Appointment.css";
+import Header from "../View/Header";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -1396,7 +1397,19 @@ function Appointments() {
 
             <p>Manage all scheduled and past appointments.</p>
           </div>
+          <div className="appointment-header-date">
+            <span>
+              {new Date().toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+
+             <Header/>
+          </div>
         </div>
+        
 
         {/* OVERVIEW */}
         <div className="appointment-overview">
